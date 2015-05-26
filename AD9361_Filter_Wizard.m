@@ -2532,8 +2532,8 @@ end
 % Add libiio sys object library to search path
 % (assumes we're running in the full repo checkout)
 [pathstr, name, ext] = fileparts(mfilename('fullpath'));
-if exist(fullfile(pathstr, '..', 'iio_sys_obj'), 'dir')
-    addpath(fullfile(pathstr, '..', 'iio_sys_obj'));
+if exist(fullfile(pathstr, 'libiio'), 'dir')
+    addpath(fullfile(pathstr, 'libiio'));
 
     % Initialize the libiio_if object
     handles.libiio_ctrl_dev = libiio_if();
@@ -2541,7 +2541,7 @@ if exist(fullfile(pathstr, '..', 'iio_sys_obj'), 'dir')
         'ad9361-phy', '', 0, 0);
     fprintf('%s', msg_log);
 else
-    err_msg = 'The libiio_if object was not found. Make sure the ''iio_sys_obj'' directory is in the root of the repository.';
+    err_msg = 'The libiio_if object was not found. Make sure the ''libiio'' directory is in the root of the repository.';
     ret = -1;
 end
 
