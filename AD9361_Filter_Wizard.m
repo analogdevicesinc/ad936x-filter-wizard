@@ -2541,7 +2541,10 @@ if exist(fullfile(pathstr, 'libiio', 'libiio_if.m'), 'file')
         'ad9361-phy', '', 0, 0);
     fprintf('%s', msg_log);
 else
-    err_msg = 'The libiio_if object was not found. Make sure the ''libiio'' directory is in the root of the repository.';
+    err_msg = ['The libiio_if object was not found. ' ...
+        'If running from a git checkout the repo will ' ...
+        'have to be recursively cloned so the libiio ' ...
+        'bindings exist within the ''libiio'' directory.'];
     ret = -1;
 end
 
