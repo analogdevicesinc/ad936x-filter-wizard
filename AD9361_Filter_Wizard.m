@@ -2532,7 +2532,7 @@ end
 % Add libiio sys object library to search path
 % (assumes we're running in the full repo checkout)
 [pathstr, name, ext] = fileparts(mfilename('fullpath'));
-if exist(fullfile(pathstr, 'libiio'), 'dir')
+if exist(fullfile(pathstr, 'libiio', 'libiio_if.m'), 'file')
     addpath(fullfile(pathstr, 'libiio'));
 
     % Initialize the libiio_if object
