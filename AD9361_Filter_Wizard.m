@@ -1472,6 +1472,12 @@ set(handles.save2workspace, 'Enable', 'off');
 set(handles.save2coefficients, 'Enable', 'off');
 set(handles.save2target, 'Enable', 'off');
 
+% disable connect to target button if libiio bindings are missing
+[pathstr, ~, ~] = fileparts(mfilename('fullpath'));
+if ~exist(fullfile(pathstr, 'libiio', 'libiio_if.m'), 'file')
+    set(handles.connect2target, 'Enable', 'off');
+end
+
 %set(handles.target_get_clock, 'Visible', 'off');
 
 if OK
@@ -2531,7 +2537,7 @@ end
 
 % Add libiio sys object library to search path
 % (assumes we're running in the full repo checkout)
-[pathstr, name, ext] = fileparts(mfilename('fullpath'));
+[pathstr, ~, ~] = fileparts(mfilename('fullpath'));
 if exist(fullfile(pathstr, 'libiio', 'libiio_if.m'), 'file')
     addpath(fullfile(pathstr, 'libiio'));
 
