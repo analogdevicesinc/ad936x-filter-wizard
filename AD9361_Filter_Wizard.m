@@ -1927,6 +1927,7 @@ end
 plot_buttons_off(handles);
 
 dirty(hObject, handles);
+set(handles.design_filter, 'Enable', 'on');
 guidata(hObject, handles);
 
 
