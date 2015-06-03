@@ -1,6 +1,7 @@
 *.mlappinstall
 *.prj
 *.mexw64
+*.swp
 **/slprj/**
 *TestFiltWiz*.m
 .previous_ip_addr
