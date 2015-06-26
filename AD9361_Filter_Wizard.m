@@ -664,11 +664,16 @@ fprintf(fid, 'RTX %d %d %d %d %d %d\r\n', handles.tx.PLL, handles.tx.HB3, handle
 fprintf(fid, 'RRX %d %d %d %d %d %d\r\n', handles.rx.PLL, handles.rx.HB3, handles.rx.HB2, handles.rx.HB1, handles.rx.FIR, handles.rx.DATA);
 fprintf(fid, 'BWTX %d\r\n', handles.tx.BW);
 fprintf(fid, 'BWRX %d\r\n', handles.rx.BW);
-fclose(fid);
 
 % concat and transform Rx and Tx coefficient matrices for output
-output = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
-dlmwrite(newpath, output, '-append', 'newline', 'pc');
+coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
+
+% output all non-zero coefficients since they're padded to 128 with zeros
+for i = 1:handles.taps_length
+    fprintf(fid, '%d,%d\r\n', coefficients(i,:));
+end
+
+fclose(fid);
 
 
 % --- Executes on button press in save2target.
@@ -687,7 +692,8 @@ fir_filter_str = strcat(fir_filter_str, sprintf('\nBWRX %d', handles.rx.BW));
 % concat and transform Rx and Tx coefficient matrices for outputting
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
 
-for i = 1:length(coefficients)
+% output all non-zero coefficients since they're padded to 128 with zeros
+for i = 1:handles.taps_length
     fir_filter_str = strcat(fir_filter_str, sprintf('\n%d,%d', coefficients(i,:)));
 end
 
@@ -1035,7 +1041,7 @@ else
     handles.tx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.tx.DATA = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
 end
-handles.taps_length = filter_result.tohw.CoefficientSize;
+handles.taps_length = filter_result.taps_length;
 
 set(gcf, 'Pointer', oldpointer);
 
