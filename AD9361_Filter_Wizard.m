@@ -1161,7 +1161,10 @@ initial_step = 1; % 1/(2^n)
 
 for j = initial_step:10
     i = -(span * initial_step);
+    i_start = i;
     i_end = (span * initial_step);
+    i_min = (nom + i/(2^j));
+    i_max = nom + (i_end/(2^j));
     while (i < i_end)
         filter_input.phEQ = nom + i/(2^j);
         i = i + 1;
@@ -1179,13 +1182,23 @@ for j = initial_step:10
             set(handles.results_group_delay, 'String', str);
             if (results(minidx) + span/(2^j) > nom + i_end/(2^j))
                 i_end = ceil(abs(results(minidx) + span/(2^j) - nom) * (2^j));
+                i_max = max(i_max, nom + (i_end/(2^j)));
             end
 
             plot(results(:,1), results(:,2) ,'r.');
-            xlim([(nom - (span * initial_step)/(2^j)) (nom + (i_end/(2^j)))]);
+            xlim([i_min i_max]);
             xlabel('Group Delay target (ns)');
             ylabel('Group Delay variance (ns)');
             drawnow;
+        end
+        if i == i_end
+            [minval, minidx] = min(results(:,2));
+            if minidx == 1
+                i = i_start - (span * initial_step);
+                i_end = i_start;
+                i_start = i;
+                i_min = (nom + i/(2^j));  
+            end
         end
     end
 
