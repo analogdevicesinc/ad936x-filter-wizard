@@ -1003,7 +1003,7 @@ if (get(handles.filter_type, 'Value') == 1)
     filter_result = internal_designrxfilters9361_sinc(filter_input);
 
     handles.filters = filter_result.rxFilters;
-    handles.rfirtaps = filter_result.rfirtaps;
+    handles.rfirtaps = int32(filter_result.rfirtaps);
     handles.analogfilter = filter_result.Hanalog;
     handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.rxFilters);
     handles.grpdelayvar = filter_result.grpdelayvar;
@@ -1026,7 +1026,7 @@ else
     filter_result = internal_designtxfilters9361_sinc(filter_input);
 
     handles.filters = filter_result.txFilters;
-    handles.tfirtaps = filter_result.tfirtaps;
+    handles.tfirtaps = int32(filter_result.tfirtaps);
     handles.analogfilter = filter_result.Hanalog;
     handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
     handles.grpdelayvar = filter_result.grpdelayvar;
