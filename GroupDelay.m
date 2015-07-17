@@ -4,7 +4,7 @@ function t = GroupDelay(freq,phase)
 k = length(phase);
 
 % Unwrap phase data
-phase = radtodeg(unwrap(phase));
+phase = rad2deg(unwrap(phase));
 
 % Calculate Group Delay
 for n = 2:k-1
