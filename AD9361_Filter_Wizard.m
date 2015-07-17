@@ -664,11 +664,16 @@ fprintf(fid, 'RTX %d %d %d %d %d %d\r\n', handles.tx.PLL, handles.tx.HB3, handle
 fprintf(fid, 'RRX %d %d %d %d %d %d\r\n', handles.rx.PLL, handles.rx.HB3, handles.rx.HB2, handles.rx.HB1, handles.rx.FIR, handles.rx.DATA);
 fprintf(fid, 'BWTX %d\r\n', handles.tx.BW);
 fprintf(fid, 'BWRX %d\r\n', handles.rx.BW);
-fclose(fid);
 
 % concat and transform Rx and Tx coefficient matrices for output
-output = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
-dlmwrite(newpath, output, '-append', 'newline', 'pc');
+coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
+
+% output all non-zero coefficients since they're padded to 128 with zeros
+for i = 1:handles.taps_length
+    fprintf(fid, '%d,%d\r\n', coefficients(i,:));
+end
+
+fclose(fid);
 
 
 % --- Executes on button press in save2target.
@@ -687,7 +692,8 @@ fir_filter_str = strcat(fir_filter_str, sprintf('\nBWRX %d', handles.rx.BW));
 % concat and transform Rx and Tx coefficient matrices for outputting
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
 
-for i = 1:length(coefficients)
+% output all non-zero coefficients since they're padded to 128 with zeros
+for i = 1:handles.taps_length
     fir_filter_str = strcat(fir_filter_str, sprintf('\n%d,%d', coefficients(i,:)));
 end
 
@@ -997,7 +1003,7 @@ if (get(handles.filter_type, 'Value') == 1)
     filter_result = internal_designrxfilters9361_sinc(filter_input);
 
     handles.filters = filter_result.rxFilters;
-    handles.rfirtaps = filter_result.rfirtaps;
+    handles.rfirtaps = int32(filter_result.rfirtaps);
     handles.analogfilter = filter_result.Hanalog;
     handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.rxFilters);
     handles.grpdelayvar = filter_result.grpdelayvar;
@@ -1020,7 +1026,7 @@ else
     filter_result = internal_designtxfilters9361_sinc(filter_input);
 
     handles.filters = filter_result.txFilters;
-    handles.tfirtaps = filter_result.tfirtaps;
+    handles.tfirtaps = int32(filter_result.tfirtaps);
     handles.analogfilter = filter_result.Hanalog;
     handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
     handles.grpdelayvar = filter_result.grpdelayvar;
@@ -1035,7 +1041,7 @@ else
     handles.tx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.tx.DATA = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
 end
-handles.taps_length = filter_result.tohw.CoefficientSize;
+handles.taps_length = filter_result.taps_length;
 
 set(gcf, 'Pointer', oldpointer);
 
@@ -1155,7 +1161,10 @@ initial_step = 1; % 1/(2^n)
 
 for j = initial_step:10
     i = -(span * initial_step);
+    i_start = i;
     i_end = (span * initial_step);
+    i_min = (nom + i/(2^j));
+    i_max = nom + (i_end/(2^j));
     while (i < i_end)
         filter_input.phEQ = nom + i/(2^j);
         i = i + 1;
@@ -1173,13 +1182,23 @@ for j = initial_step:10
             set(handles.results_group_delay, 'String', str);
             if (results(minidx) + span/(2^j) > nom + i_end/(2^j))
                 i_end = ceil(abs(results(minidx) + span/(2^j) - nom) * (2^j));
+                i_max = max(i_max, nom + (i_end/(2^j)));
             end
 
             plot(results(:,1), results(:,2) ,'r.');
-            xlim([(nom - (span * initial_step)/(2^j)) (nom + (i_end/(2^j)))]);
+            xlim([i_min i_max]);
             xlabel('Group Delay target (ns)');
             ylabel('Group Delay variance (ns)');
             drawnow;
+        end
+        if i == i_end
+            [minval, minidx] = min(results(:,2));
+            if minidx == 1
+                i = i_start - (span * initial_step);
+                i_end = i_start;
+                i_start = i;
+                i_min = (nom + i/(2^j));  
+            end
         end
     end
 

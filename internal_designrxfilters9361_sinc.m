@@ -417,6 +417,7 @@ tohw.Gain = gain;
 tohw.RFBandwidth = input.RFbw;
 
 result.rfirtaps = rfirtaps;
+result.taps_length = length(h);
 result.rxFilters = rxFilters;
 result.Hanalog = Hanalog;
 result.dBripple_actual = dBripple_actual;
