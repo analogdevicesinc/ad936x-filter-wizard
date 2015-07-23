@@ -1,3 +1,0 @@
-[submodule "libiio"]
-	path = libiio
-	url = https://github.com/analogdevicesinc/libiio-matlab.git
