@@ -19,6 +19,10 @@
 % tfirtaps         = fixed point coefficients for AD9361
 % txFilters        = system object for visualization
 %
-function [tfirtaps,txFilters] = designtxfilters9361(Fin,FIR_interp,HB_interp,DAC_mult,PLL_mult,Fpass,Fstop,dBripple,dBstop,dBstop_FIR,phEQ,int_FIR, wnom)
+function result = designtxfilters9361(input)
 
-[tfirtaps,txFilters,~,~,~,~,~,~,~,~,~,~] = internal_designtxfilters9361_sinc(Fin,FIR_interp,HB_interp,DAC_mult,PLL_mult,Fpass,Fstop,dBripple,dBstop,dBstop_FIR,phEQ,int_FIR, wnom);
+wnom = 1.6 * input.Fstop;
+div = ceil((input.clkPLL/wnom)*(log(2)/(2*pi)));
+input.caldiv = min(max(div,1),511);
+
+result = internal_designtxfilters9361_sinc(input);

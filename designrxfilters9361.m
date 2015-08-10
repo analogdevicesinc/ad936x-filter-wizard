@@ -18,6 +18,10 @@
 % rfirtaps         = fixed point coefficients for AD9361
 % rxFilters        = system object for visualization
 %
-function [rfirtaps,rxFilters] = designrxfilters9361(Fout,FIR_interp,HB_interp,PLL_mult,Fpass,Fstop,dBripple,dBstop,dBstop_FIR,phEQ,int_FIR,wnom)
+function result = designrxfilters9361(input)
 
-[rfirtaps,rxFilters,~,~,~,~,~,~,~,~,~,~] = internal_designrxfilters9361_sinc(Fout,FIR_interp,HB_interp,PLL_mult,Fpass,Fstop,dBripple,dBstop,dBstop_FIR,phEQ,int_FIR,wnom);
+wnom = 1.4 * input.Fstop;
+div = ceil((input.clkPLL/wnom)*(log(2)/(2*pi)));
+input.caldiv = min(max(div,1),511);
+
+result = internal_designrxfilters9361_sinc(input);
