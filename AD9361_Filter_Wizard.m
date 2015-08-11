@@ -926,8 +926,8 @@ function create_filter(hObject, handles)
 handles = guidata(hObject);
 v = version('-release');
 v = str2double(v(1:4));
-if (v < 2012)
-    choice = questdlg('Sorry. The AD9361/AD9364 Filter Design Wizard requires at least the R2012 version of MATLAB. You do not seem to have it installed.', ...
+if (v < 2014)
+    choice = questdlg('Sorry. The AD9361/AD9364 Filter Design Wizard requires at least the R2014 version of MATLAB. You do not seem to have it installed.', ...
         'Error Message', ...
         'More Information','OK','OK');
     switch choice
@@ -938,8 +938,15 @@ if (v < 2012)
     return
 end
 
+error_msg = ''
 if ~ license('test','signal_blocks') || ~ license('checkout','signal_blocks')
-    choice = questdlg('Sorry. The AD9361/AD9364 Filter Design Wizard requires the DSP System Toolbox. You do not seem to have it installed.', ...
+    error_msg = 'You are missing the license for it.'
+else if isempty(ver('dsp'))
+    error_msg = 'You do not seem to have it installed.'
+end
+
+if error_msg
+    choice = questdlg(['Sorry. The AD9361/AD9364 Filter Design Wizard requires the DSP System Toolbox. You do not seem to have it installed. ' error_msg], ...
         'Error Message', ...
         'More Information','OK','OK');
     switch choice
@@ -1197,7 +1204,7 @@ for j = initial_step:10
                 i = i_start - (span * initial_step);
                 i_end = i_start;
                 i_start = i;
-                i_min = (nom + i/(2^j));  
+                i_min = (nom + i/(2^j));
             end
         end
     end
@@ -2131,8 +2138,15 @@ function save2HDL_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+error_msg = ''
 if ~ license('test','fixed_point_toolbox') || ~ license('checkout','fixed_point_toolbox')
-    choice = questdlg('Sorry. Generating HDL requires the Fixed-Point Designer. You do not seem to have it installed.', ...
+    error_msg = 'You are missing the license for it.'
+else if isempty(ver('fixedpoint'))
+    error_msg = 'You do not seem to have it installed.'
+end
+
+if error_msg
+    choice = questdlg(['Sorry. The AD9361/AD9364 Filter Design Wizard requires the Fixed-Point Designer. You do not seem to have it installed. ' error_msg], ...
         'Error Message', ...
         'More Information','OK','OK');
     switch choice

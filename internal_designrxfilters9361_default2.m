@@ -113,7 +113,7 @@ Hm2 = mfilt.firdecim(2,hb2);
 Hm3 = mfilt.firdecim(2,hb3);
 Hm4 = mfilt.firdecim(3,dec3);
 
-if license('test','fixed_point_toolbox') &&  license('checkout','fixed_point_toolbox')
+if ~isempty(ver('fixedpoint'))
     
     set(Hm1,'arithmetic','fixed');
     set(Hm2,'arithmetic','fixed');
@@ -309,7 +309,7 @@ end
 h=ccoef+scoef;
 
 Hmd = mfilt.firdecim(FIR_decim,h);
-if license('test','fixed_point_toolbox') &&  license('checkout','fixed_point_toolbox')
+if ~isempty(ver('fixedpoint'))
     set(Hmd,'arithmetic','fixed');
     Hmd.InputWordLength = 16;
     Hmd.InputFracLength = 14;
