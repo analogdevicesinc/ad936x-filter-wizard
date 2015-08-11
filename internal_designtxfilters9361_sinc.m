@@ -93,7 +93,7 @@ Hm2 = mfilt.firinterp(2,hb2);
 Hm3 = mfilt.firinterp(2,hb3);
 Hm4 = mfilt.firinterp(3,int3);
 
-if license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
+if ~isempty(ver('fixedpoint'))
     set(Hm1,'arithmetic','fixed');
     set(Hm2,'arithmetic','fixed');
     set(Hm3,'arithmetic','fixed');
@@ -317,7 +317,7 @@ while (1)
     tap_store(i,1:M)=ccoef+scoef;
     
     Hmd = mfilt.firinterp(input.FIR_interp,tap_store(i,1:M));
-    if license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
+    if ~isempty(ver('fixedpoint'))
         set(Hmd,'arithmetic','fixed');
         Hmd.InputWordLength = 16;
         Hmd.InputFracLength = 14;
@@ -370,7 +370,7 @@ elseif input.int_FIR == 1 && input.FIR_interp == 4
 end
 
 Hmd = mfilt.firinterp(input.FIR_interp,h);
-if license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
+if ~isempty(ver('fixedpoint'))
     set(Hmd,'arithmetic','fixed');
     Hmd.InputWordLength = 16;
     Hmd.InputFracLength = 14;
