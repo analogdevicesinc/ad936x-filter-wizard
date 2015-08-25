@@ -1324,7 +1324,7 @@ set(handles.Astop, 'String', num2str(sel.dBstop));
 
 set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Rdata)));
 
-if handles.input_rx.Fstop <= handles.input_rx.Rdata / 2
+if handles.input_rx.Fstop <= sel.FIR * (handles.input_rx.Rdata / 2)
     set(handles.Fstop, 'ForegroundColor', [0 0 0]);
 else
     set(handles.Fstop, 'ForegroundColor', [1 0 0]);
