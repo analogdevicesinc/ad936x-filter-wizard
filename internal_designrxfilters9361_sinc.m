@@ -87,45 +87,49 @@ hb2 = 2^(-8)*[-9 0 73 128 73 0 -9];
 hb3 = 2^(-4)*[1 4 6 4 1];
 dec3 = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 4041 1914 0 -580 -393 0 83 55];
 
-Hm1 = mfilt.firdecim(2,hb1);
-Hm2 = mfilt.firdecim(2,hb2);
-Hm3 = mfilt.firdecim(2,hb3);
-Hm4 = mfilt.firdecim(3,dec3);
+%Hm1 = mfilt.firdecim(2,hb1);
+Hm1 = dsp.FIRDecimator(2, hb1);
+%Hm2 = mfilt.firdecim(2,hb2);
+Hm2 = dsp.FIRDecimator(2, hb2);
+%Hm3 = mfilt.firdecim(2,hb3);
+Hm3 = dsp.FIRDecimator(2, hb3);
+%Hm4 = mfilt.firdecim(3,dec3);
+Hm4 = dsp.FIRDecimator(3, dec3);
 
-if ~isempty(ver('fixedpoint'))
-    set(Hm1,'arithmetic','fixed');
-    set(Hm2,'arithmetic','fixed');
-    set(Hm3,'arithmetic','fixed');
-    set(Hm4,'arithmetic','fixed');
-    
-    Hm1.InputWordLength = 16;
-    Hm1.InputFracLength = 14;
-    Hm1.FilterInternals = 'SpecifyPrecision';
-    Hm1.OutputWordLength = 16;
-    Hm1.OutputFracLength = 14;
-    Hm1.CoeffWordLength = 16;
-    
-    Hm2.InputWordLength = 16;
-    Hm2.InputFracLength = 14;
-    Hm2.FilterInternals = 'SpecifyPrecision';
-    Hm2.OutputWordLength = 16;
-    Hm2.OutputFracLength = 14;
-    Hm2.CoeffWordLength = 16;
-    
-    Hm3.InputWordLength = 4;
-    Hm3.InputFracLength = 2;
-    Hm3.FilterInternals = 'SpecifyPrecision';
-    Hm3.OutputWordLength = 8;
-    Hm3.OutputFracLength = 6;
-    Hm3.CoeffWordLength = 16;
-    
-    Hm4.InputWordLength = 4;
-    Hm4.InputFracLength = 2;
-    Hm4.FilterInternals = 'SpecifyPrecision';
-    Hm4.OutputWordLength = 16;
-    Hm4.OutputFracLength = 14;
-    Hm4.CoeffWordLength = 16;
-end
+% if ~isempty(ver('fixedpoint'))
+%     set(Hm1,'FullPrecisionOverride',false);
+%     set(Hm2,'arithmetic','fixed');
+%     set(Hm3,'arithmetic','fixed');
+%     set(Hm4,'arithmetic','fixed');
+%     
+%     Hm1.InputWordLength = 16;
+%     Hm1.InputFracLength = 14;
+%     Hm1.FilterInternals = 'SpecifyPrecision';
+%     Hm1.OutputWordLength = 16;
+%     Hm1.OutputFracLength = 14;
+%     Hm1.CoeffWordLength = 16;
+%     
+%     Hm2.InputWordLength = 16;
+%     Hm2.InputFracLength = 14;
+%     Hm2.FilterInternals = 'SpecifyPrecision';
+%     Hm2.OutputWordLength = 16;
+%     Hm2.OutputFracLength = 14;
+%     Hm2.CoeffWordLength = 16;
+%     
+%     Hm3.InputWordLength = 4;
+%     Hm3.InputFracLength = 2;
+%     Hm3.FilterInternals = 'SpecifyPrecision';
+%     Hm3.OutputWordLength = 8;
+%     Hm3.OutputFracLength = 6;
+%     Hm3.CoeffWordLength = 16;
+%     
+%     Hm4.InputWordLength = 4;
+%     Hm4.InputFracLength = 2;
+%     Hm4.FilterInternals = 'SpecifyPrecision';
+%     Hm4.OutputWordLength = 16;
+%     Hm4.OutputFracLength = 14;
+%     Hm4.CoeffWordLength = 16;
+% end
 
 hb1 = input.HB1;
 hb2 = input.HB2;
@@ -306,17 +310,18 @@ while (1)
     end
     tap_store(i,1:M)=ccoef+scoef;
     
-    Hmd = mfilt.firdecim(input.FIR_interp,tap_store(i,1:M));
-    if ~isempty(ver('fixedpoint'))
-        set(Hmd,'arithmetic','fixed');
-        Hmd.InputWordLength = 16;
-        Hmd.InputFracLength = 14;
-        Hmd.FilterInternals = 'SpecifyPrecision';
-        Hmd.OutputWordLength = 12;
-        Hmd.OutputFracLength = 10;
-        Hmd.CoeffWordLength = 16;
-    end
-    rxFilters=cascade(Filter1,Hmd);
+    %Hmd = mfilt.firdecim(input.FIR_interp,tap_store(i,1:M));
+    Hmd = dsp.FIRDecimator(input.FIR_interp,tap_store(i,1:M));
+%     if ~isempty(ver('fixedpoint'))
+%         set(Hmd,'arithmetic','fixed');
+%         Hmd.InputWordLength = 16;
+%         Hmd.InputFracLength = 14;
+%         Hmd.FilterInternals = 'SpecifyPrecision';
+%         Hmd.OutputWordLength = 12;
+%         Hmd.OutputFracLength = 10;
+%         Hmd.CoeffWordLength = 16;
+%     end
+    rxFilters=addStage(Filter1,Hmd);
     
     % quantitative values about actual passband and stopband
     rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2).*freqz(rxFilters,omega(1:Gpass+1),input.converter_rate));
@@ -345,17 +350,18 @@ while (1)
     end
 end
 
-Hmd = mfilt.firdecim(input.FIR_interp,h);
-if ~isempty(ver('fixedpoint'))
-    set(Hmd,'arithmetic','fixed');
-    Hmd.InputWordLength = 16;
-    Hmd.InputFracLength = 14;
-    Hmd.FilterInternals = 'SpecifyPrecision';
-    Hmd.OutputWordLength = 12;
-    Hmd.OutputFracLength = 10;
-    Hmd.CoeffWordLength = 16;
-end
-rxFilters=cascade(Filter1,Hmd);
+%Hmd = mfilt.firdecim(input.FIR_interp,h);
+Hmd = dsp.FIRDecimator(input.FIR_interp,h);
+% if ~isempty(ver('fixedpoint'))
+%     set(Hmd,'arithmetic','fixed');
+%     Hmd.InputWordLength = 16;
+%     Hmd.InputFracLength = 14;
+%     Hmd.FilterInternals = 'SpecifyPrecision';
+%     Hmd.OutputWordLength = 12;
+%     Hmd.OutputFracLength = 10;
+%     Hmd.CoeffWordLength = 16;
+% end
+rxFilters=addStage(Filter1,Hmd);
 gd2 = grpdelay(Hmd,omega1,clkRFIR).*(1/clkRFIR);
 if input.phEQ == -1
     groupdelay = gd1 + gd2;
