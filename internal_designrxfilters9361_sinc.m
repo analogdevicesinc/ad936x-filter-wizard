@@ -101,28 +101,36 @@ if ~isempty(ver('fixedpoint'))
     set(Hm2,'FullPrecisionOverride',false);
     set(Hm3,'FullPrecisionOverride',false);
     set(Hm4,'FullPrecisionOverride',false);
-
+    
     %Hm1.InputWordLength = 16;
     %Hm1.InputFracLength = 14;
     %Hm1.FilterInternals = 'SpecifyPrecision';
+    set(Hm1,'OutputDataType','Custom');
+    set(Hm1,'CoefficientsDataType','Custom');
     set(Hm1,'CustomOutputDataType',numerictype([],16,14));
     set(Hm1,'CustomCoefficientsDataType',numerictype([],16,14));
     
-%     Hm2.InputWordLength = 16;
-%     Hm2.InputFracLength = 14;
+    %     Hm2.InputWordLength = 16;
+    %     Hm2.InputFracLength = 14;
     %Hm2.FilterInternals = 'SpecifyPrecision';
+    set(Hm2,'OutputDataType','Custom');
+    set(Hm2,'CoefficientsDataType','Custom');
     set(Hm2,'CustomOutputDataType',numerictype([],16,14));
     set(Hm2,'CustomCoefficientsDataType',numerictype([],16,14));
-
-%     Hm3.InputWordLength = 4;
-%     Hm3.InputFracLength = 2;
-%     Hm3.FilterInternals = 'SpecifyPrecision';
+    
+    %     Hm3.InputWordLength = 4;
+    %     Hm3.InputFracLength = 2;
+    %     Hm3.FilterInternals = 'SpecifyPrecision';
+    set(Hm3,'OutputDataType','Custom');
+    set(Hm3,'CoefficientsDataType','Custom');
     set(Hm3,'CustomOutputDataType',numerictype([],8,6))
     set(Hm3,'CustomCoefficientsDataType',numerictype([],16,14));
-
-%     Hm4.InputWordLength = 4;
-%     Hm4.InputFracLength = 2;
-%     Hm4.FilterInternals = 'SpecifyPrecision';
+    
+    %     Hm4.InputWordLength = 4;
+    %     Hm4.InputFracLength = 2;
+    %     Hm4.FilterInternals = 'SpecifyPrecision';
+    set(Hm4,'OutputDataType','Custom');
+    set(Hm4,'CoefficientsDataType','Custom');
     set(Hm4,'CustomOutputDataType',numerictype([],16,14));
     set(Hm4,'CustomCoefficientsDataType',numerictype([],16,14));
 end
