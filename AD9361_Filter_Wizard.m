@@ -211,7 +211,6 @@ set(handles.ADI_logo, 'HandleVisibility', 'off');
 
 % Set the defaults
 set(handles.Use_FIR, 'Value', 1);
-set(handles.Advanced_options, 'Value', 0);
 hide_advanced(handles);
 
 % restore previously used IP address
@@ -1301,14 +1300,12 @@ end
 if sel.phEQ == -1
     set(handles.phase_eq, 'Value', 0);
 else
-    set(handles.Advanced_options, 'Value', 1);
     show_advanced(handles);
     set(handles.phase_eq, 'Value', 1);
     set(handles.target_delay, 'Value', sel.phEQ);
 end
 
 if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
-    set(handles.Advanced_options, 'Value', 1);
     show_advanced(handles);
     set_caldiv(handles, sel.caldiv);
 end
@@ -2458,6 +2455,7 @@ if get(handles.phase_eq, 'Value')
     set(handles.target_delay, 'Visible', 'on');
     set(handles.target_delay_units, 'Visible', 'on');
 end
+set(handles.Advanced_options, 'Value', 1);
 set(handles.Fcutoff_label, 'Visible', 'on');
 set(handles.RFbw_label, 'Visible', 'on');
 set(handles.Fcutoff, 'Visible', 'on');
@@ -2482,6 +2480,7 @@ set(handles.HB3_rate, 'Visible', 'on');
 
 
 function hide_advanced(handles)
+set(handles.Advanced_options, 'Value', 0);
 set(handles.phase_eq, 'Value', 0);
 set(handles.Use_FIR, 'Value', 1);
 set(handles.target_delay, 'String', '0');
