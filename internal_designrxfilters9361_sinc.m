@@ -76,10 +76,13 @@ wTIA = wc*(2.5/1.4);
 [z1,p1,k1] = butter(3,coerce_cutoff(wc/(input.converter_rate/2)),'low');
 [sos1,g1] = zp2sos(z1,p1,k1);
 Hd1 = dfilt.df2tsos(sos1,g1);
+Hd1 = sysobj(Hd1);
 [z2,p2,k2] = butter(1,coerce_cutoff(wTIA/(input.converter_rate/2)),'low');
 [sos2,g2] = zp2sos(z2,p2,k2);
 Hd2 = dfilt.df2tsos(sos2,g2);
+Hd2 = sysobj(Hd2);
 Hanalog = cascade(Hd2,Hd1);
+
 
 % Define the digital filters with fixed coefficients
 hb1 = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
@@ -266,7 +269,11 @@ W1 = weight(1:Gpass+1);
 W2 = weight(Gpass+2:end);
 
 % Determine the number of taps for RFIR
-N = min(16*floor(input.converter_rate/(2*input.data_rate)),128);
+if hb3 == 1
+    N = min(16*floor(input.converter_rate/(input.data_rate)),128);
+else
+    N = min(16*floor(input.converter_rate/(2*input.data_rate)),128);
+end
 tap_store = zeros(N/16,N);
 dBripple_actual_vector = zeros(N/16,1);
 dBstop_actual_vector = zeros(N/16,1);
@@ -436,6 +443,8 @@ result.rfirtaps = rfirtaps;
 result.taps_length = length(h);
 result.rxFilters = rxFilters;
 result.Hanalog = Hanalog;
+result.Hd1 = Hd1;
+result.Hd2 = Hd2;
 result.dBripple_actual = dBripple_actual;
 result.dBstop_actual = dBstop_actual;
 result.delay = delay;
