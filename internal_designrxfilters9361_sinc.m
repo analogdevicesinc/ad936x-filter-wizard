@@ -99,44 +99,44 @@ Hm3 = dsp.FIRDecimator(2, hb3);
 %Hm4 = mfilt.firdecim(3,dec3);
 Hm4 = dsp.FIRDecimator(3, dec3);
 
-if ~isempty(ver('fixedpoint'))
-    set(Hm1,'FullPrecisionOverride',false);
-    set(Hm2,'FullPrecisionOverride',false);
-    set(Hm3,'FullPrecisionOverride',false);
-    set(Hm4,'FullPrecisionOverride',false);
-    
-    %Hm1.InputWordLength = 16;
-    %Hm1.InputFracLength = 14;
-    %Hm1.FilterInternals = 'SpecifyPrecision';
-    set(Hm1,'OutputDataType','Custom');
-    set(Hm1,'CoefficientsDataType','Custom');
-    set(Hm1,'CustomOutputDataType',numerictype([],16,14));
-    set(Hm1,'CustomCoefficientsDataType',numerictype([],16,14));
-    
-    %     Hm2.InputWordLength = 16;
-    %     Hm2.InputFracLength = 14;
-    %Hm2.FilterInternals = 'SpecifyPrecision';
-    set(Hm2,'OutputDataType','Custom');
-    set(Hm2,'CoefficientsDataType','Custom');
-    set(Hm2,'CustomOutputDataType',numerictype([],16,14));
-    set(Hm2,'CustomCoefficientsDataType',numerictype([],16,14));
-    
-    %     Hm3.InputWordLength = 4;
-    %     Hm3.InputFracLength = 2;
-    %     Hm3.FilterInternals = 'SpecifyPrecision';
-    set(Hm3,'OutputDataType','Custom');
-    set(Hm3,'CoefficientsDataType','Custom');
-    set(Hm3,'CustomOutputDataType',numerictype([],8,6))
-    set(Hm3,'CustomCoefficientsDataType',numerictype([],16,14));
-    
-    %     Hm4.InputWordLength = 4;
-    %     Hm4.InputFracLength = 2;
-    %     Hm4.FilterInternals = 'SpecifyPrecision';
-    set(Hm4,'OutputDataType','Custom');
-    set(Hm4,'CoefficientsDataType','Custom');
-    set(Hm4,'CustomOutputDataType',numerictype([],16,14));
-    set(Hm4,'CustomCoefficientsDataType',numerictype([],16,14));
-end
+% if ~isempty(ver('fixedpoint'))
+%     set(Hm1,'FullPrecisionOverride',false);
+%     set(Hm2,'FullPrecisionOverride',false);
+%     set(Hm3,'FullPrecisionOverride',false);
+%     set(Hm4,'FullPrecisionOverride',false);
+%     
+%     %Hm1.InputWordLength = 16;
+%     %Hm1.InputFracLength = 14;
+%     %Hm1.FilterInternals = 'SpecifyPrecision';
+%     set(Hm1,'OutputDataType','Custom');
+%     set(Hm1,'CoefficientsDataType','Custom');
+%     set(Hm1,'CustomOutputDataType',numerictype([],16,14));
+%     set(Hm1,'CustomCoefficientsDataType',numerictype([],16,14));
+%     
+%     %     Hm2.InputWordLength = 16;
+%     %     Hm2.InputFracLength = 14;
+%     %Hm2.FilterInternals = 'SpecifyPrecision';
+%     set(Hm2,'OutputDataType','Custom');
+%     set(Hm2,'CoefficientsDataType','Custom');
+%     set(Hm2,'CustomOutputDataType',numerictype([],16,14));
+%     set(Hm2,'CustomCoefficientsDataType',numerictype([],16,14));
+%     
+%     %     Hm3.InputWordLength = 4;
+%     %     Hm3.InputFracLength = 2;
+%     %     Hm3.FilterInternals = 'SpecifyPrecision';
+%     set(Hm3,'OutputDataType','Custom');
+%     set(Hm3,'CoefficientsDataType','Custom');
+%     set(Hm3,'CustomOutputDataType',numerictype([],8,6))
+%     set(Hm3,'CustomCoefficientsDataType',numerictype([],16,14));
+%     
+%     %     Hm4.InputWordLength = 4;
+%     %     Hm4.InputFracLength = 2;
+%     %     Hm4.FilterInternals = 'SpecifyPrecision';
+%     set(Hm4,'OutputDataType','Custom');
+%     set(Hm4,'CoefficientsDataType','Custom');
+%     set(Hm4,'CustomOutputDataType',numerictype([],16,14));
+%     set(Hm4,'CustomCoefficientsDataType',numerictype([],16,14));
+% end
 
 hb1 = input.HB1;
 hb2 = input.HB2;
@@ -332,7 +332,7 @@ while (1)
     %         Hmd.OutputFracLength = 10;
     %         Hmd.CoeffWordLength = 16;
     %     end
-    
+    %Filter1 = dsp.FilterCascade; 
     addStage(Filter1,Hmd);
     
     % quantitative values about actual passband and stopband
@@ -367,7 +367,7 @@ while (1)
 end
 
 %Hmd = mfilt.firdecim(input.FIR_interp,h);
-Hmd_new = dsp.FIRDecimator(input.FIR_interp,h);
+Hmd = dsp.FIRDecimator(input.FIR_interp,h);
 % if ~isempty(ver('fixedpoint'))
 %     set(Hmd,'arithmetic','fixed');
 %     Hmd.InputWordLength = 16;
@@ -377,7 +377,7 @@ Hmd_new = dsp.FIRDecimator(input.FIR_interp,h);
 %     Hmd.OutputFracLength = 10;
 %     Hmd.CoeffWordLength = 16;
 % end
-addStage(Filter1,Hmd_new);
+addStage(Filter1,Hmd);
 rxFilters=Filter1;
 gd2 = grpdelay(Hmd,omega1,clkRFIR).*(1/clkRFIR);
 if input.phEQ == -1

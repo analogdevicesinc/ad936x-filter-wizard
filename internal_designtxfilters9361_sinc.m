@@ -337,7 +337,8 @@ while (1)
 %         Hmd.OutputFracLength = 10;
 %         Hmd.CoeffWordLength = 16;
 %     end
-    addStage(Filter1,Hmd);
+ 
+addStage(Filter1, Hmd, 1);
     
     % quantitative values about actual passband and stopband
     rg_pass = abs(freqz(Filter1,omega(1:Gpass+1),input.converter_rate).*analogresp('Tx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));
@@ -349,24 +350,24 @@ while (1)
         h = tap_store(1,1:M);
         dBripple_actual = dBripple_actual_vector(1);
         dBstop_actual = dBstop_actual_vector(1);
-        removeStage(Filter1);
+        removeStage(Filter1,1);
         break
     elseif dBripple_actual_vector(1) > input.dBripple || dBstop_actual_vector(1) < input.dBstop
         h = tap_store(1,1:N);
         dBripple_actual = dBripple_actual_vector(1);
         dBstop_actual = dBstop_actual_vector(1);
-        removeStage(Filter1);
+        removeStage(Filter1,1);
         break
     elseif dBripple_actual_vector(i) > input.dBripple || dBstop_actual_vector(i) < input.dBstop
         h = tap_store(i-1,1:N+16);
         dBripple_actual = dBripple_actual_vector(i-1);
         dBstop_actual = dBstop_actual_vector(i-1);
-        removeStage(Filter1);
+        removeStage(Filter1,1);
         break
     else
         N = N-16;
         i = i+1;
-        removeStage(Filter1);
+        removeStage(Filter1,1);
     end
 end
 
@@ -385,7 +386,7 @@ elseif input.int_FIR == 1 && input.FIR_interp == 4
 end
 
 %Hmd = mfilt.firinterp(input.FIR_interp,h);
-Hmd_new = dsp.FIRInterpolator(input.FIR_interp,h);
+Hmd = dsp.FIRInterpolator(input.FIR_interp,h);
 % if ~isempty(ver('fixedpoint'))
 %     set(Hmd,'arithmetic','fixed');
 %     Hmd.InputWordLength = 16;
@@ -395,7 +396,9 @@ Hmd_new = dsp.FIRInterpolator(input.FIR_interp,h);
 %     Hmd.OutputFracLength = 10;
 %     Hmd.CoeffWordLength = 16;
 % end
-addStage(Filter1,Hmd_new);
+
+addStage(Filter1, Hmd, 1);
+
 txFilters=Filter1;
 gd2 = grpdelay(Hmd,omega1,clkTFIR).*(1/clkTFIR);
 if input.phEQ == -1
