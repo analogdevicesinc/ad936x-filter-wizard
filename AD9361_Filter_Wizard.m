@@ -1030,10 +1030,7 @@ if (get(handles.filter_type, 'Value') == 1)
     handles.filters = filter_result.rxFilters;
     handles.rfirtaps = int32(filter_result.rfirtaps);
     handles.analogfilter = filter_result.Hanalog;
-    %handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.rxFilters);
-    addStage(filter_result.rxFilters,filter_result.Hd1);
-    addStage(filter_result.rxFilters,filter_result.Hd2);
-    handles.grpdelaycal = filter_result.rxFilters;
+    handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.rxFilters);
     handles.grpdelayvar = filter_result.grpdelayvar;
 
     % values used for saving to a filter file or pushing to the target directly
@@ -1056,9 +1053,7 @@ else
     handles.filters = filter_result.txFilters;
     handles.tfirtaps = int32(filter_result.tfirtaps);
     handles.analogfilter = filter_result.Hanalog;
-    %handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
-    addStage(filter_result.txFilters,filter_result.Hd1);
-    addStage(filter_result.txFilters,filter_result.Hd2);
+    handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
     handles.grpdelayvar = filter_result.grpdelayvar;
 
     % values used for saving to a filter file or pushing to the target directly
@@ -1156,7 +1151,7 @@ else
     i = 1;
 end
 
-if strcmp(handles.filters.Stage1.FullPrecisionOverride, 'true')
+if strcmp(handles.filters.Stage(i).Arithmetic, 'double')
     set(handles.results_fixed, 'String', 'Floating point approx');
 else
     set(handles.results_fixed, 'String', 'Fixed Point');
