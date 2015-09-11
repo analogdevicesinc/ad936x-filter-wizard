@@ -879,13 +879,11 @@ Fs = converter_rate; % sampling frequency
 F = linspace(0,converter_rate/2,2048);
 
 if (get(handles.filter_type, 'Value') == 1)
-    Hmiddle = handles.filters.Stage(1);
-    Hmiddle = cascade(handles.analogfilter,Hmiddle);
+    Hmiddle = handles.Hmiddle;
     tmp = 'Rx';
     A = sinc(F/Fs).^3;
 else
-    Hmiddle = handles.filters.Stage(2);
-    Hmiddle = cascade(Hmiddle,handles.analogfilter);
+    Hmiddle = handles.Hmiddle;
     tmp = 'Tx';
     A = sinc(F/Fs);
 end
@@ -1028,10 +1026,12 @@ if (get(handles.filter_type, 'Value') == 1)
     filter_result = internal_designrxfilters9361_sinc(filter_input);
     
     handles.filters = filter_result.rxFilters;
+    handles.Hmd = filter_result.Hmd;
+    handles.Hmiddle = filter_result.Hmiddle;
     handles.rfirtaps = int32(filter_result.rfirtaps);
     handles.analogfilter = filter_result.Hanalog;
     addStage(filter_result.rxFilters,filter_result.Hd2,1);
-    addStage(filter_result.rxFilters,filter_result.Hd2,2);
+    addStage(filter_result.rxFilters,filter_result.Hd1,2);
     handles.grpdelaycal = filter_result.rxFilters;
     handles.grpdelayvar = filter_result.grpdelayvar;
     
@@ -2415,17 +2415,13 @@ apass = sel.dBripple;
 astop = sel.dBstop;
 
 if (get(handles.filter_type, 'Value') == 1)
-    Hmiddle = handles.filters.Stage(1);
-    Hmiddle = cascade(handles.analogfilter,Hmiddle);
-    Hmd = handles.filters.Stage(2);
+    Hmiddle = handles.Hmiddle;
     tmp = 'Rx';
 else
-    Hmiddle = handles.filters.Stage(2);
-    Hmiddle = cascade(Hmiddle,handles.analogfilter);
-    Hmd = handles.filters.Stage(1);
+    Hmiddle = handles.Hmiddle;
     tmp = 'Tx';
 end
-
+Hmd = handles.Hmd;
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', tmp, fpass/1e6, fstop/1e6, apass, astop);
 
 hfvt3 = fvtool(handles.analogfilter,Hmiddle,handles.grpdelaycal,...

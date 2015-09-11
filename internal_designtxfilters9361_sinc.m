@@ -474,6 +474,7 @@ result.txFilters = txFilters;
 result.Hanalog = Hanalog;
 result.Hd1 = Hd1;
 result.Hd2 = Hd2;
+result.Hmd = Hmd;
 result.dBripple_actual = dBripple_actual;
 result.dBstop_actual = dBstop_actual;
 result.delay = delay;
