@@ -76,12 +76,10 @@ wreal = wc*(5.0/1.6);
 % Digital representation of the analog filters (It is an approximation for group delay calculation only)
 [z1,p1,k1] = butter(3,coerce_cutoff(wc/(input.converter_rate/2)),'low');
 [sos1,g1] = zp2sos(z1,p1,k1);
-Hd1 = dfilt.df2tsos(sos1,g1);
-Hd1 = sysobj(Hd1);
+Hd1=dsp.BiquadFilter('SOSMatrix',sos1,'ScaleValues',g1);
 [z2,p2,k2] = butter(1,coerce_cutoff(wreal/(input.converter_rate/2)),'low');
 [sos2,g2] = zp2sos(z2,p2,k2);
-Hd2 = dfilt.df2tsos(sos2,g2);
-Hd2 = sysobj(Hd2);
+Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
 Hanalog = cascade(Hd1,Hd2);
 
 % Define the digital filters with fixed coefficients

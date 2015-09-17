@@ -75,14 +75,11 @@ wTIA = wc*(2.5/1.4);
 % Digital representation of the analog filters (It is an approximation for group delay calculation only)
 [z1,p1,k1] = butter(3,coerce_cutoff(wc/(input.converter_rate/2)),'low');
 [sos1,g1] = zp2sos(z1,p1,k1);
-Hd1 = dfilt.df2tsos(sos1,g1);
-Hd1 = sysobj(Hd1);
+Hd1=dsp.BiquadFilter('SOSMatrix',sos1,'ScaleValues',g1);
 [z2,p2,k2] = butter(1,coerce_cutoff(wTIA/(input.converter_rate/2)),'low');
 [sos2,g2] = zp2sos(z2,p2,k2);
-Hd2 = dfilt.df2tsos(sos2,g2);
-Hd2 = sysobj(Hd2);
+Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
 Hanalog = cascade(Hd2,Hd1);
-
 
 % Define the digital filters with fixed coefficients
 hb1 = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
@@ -104,15 +101,16 @@ Hm4 = dsp.FIRDecimator(3, dec3);
 %     set(Hm2,'FullPrecisionOverride',false);
 %     set(Hm3,'FullPrecisionOverride',false);
 %     set(Hm4,'FullPrecisionOverride',false);
-%     
+%
 %     %Hm1.InputWordLength = 16;
 %     %Hm1.InputFracLength = 14;
 %     %Hm1.FilterInternals = 'SpecifyPrecision';
 %     set(Hm1,'OutputDataType','Custom');
 %     set(Hm1,'CoefficientsDataType','Custom');
-%     set(Hm1,'CustomOutputDataType',numerictype([],16,14));
+%
+
 %     set(Hm1,'CustomCoefficientsDataType',numerictype([],16,14));
-%     
+%
 %     %     Hm2.InputWordLength = 16;
 %     %     Hm2.InputFracLength = 14;
 %     %Hm2.FilterInternals = 'SpecifyPrecision';
@@ -120,7 +118,7 @@ Hm4 = dsp.FIRDecimator(3, dec3);
 %     set(Hm2,'CoefficientsDataType','Custom');
 %     set(Hm2,'CustomOutputDataType',numerictype([],16,14));
 %     set(Hm2,'CustomCoefficientsDataType',numerictype([],16,14));
-%     
+%
 %     %     Hm3.InputWordLength = 4;
 %     %     Hm3.InputFracLength = 2;
 %     %     Hm3.FilterInternals = 'SpecifyPrecision';
@@ -128,7 +126,7 @@ Hm4 = dsp.FIRDecimator(3, dec3);
 %     set(Hm3,'CoefficientsDataType','Custom');
 %     set(Hm3,'CustomOutputDataType',numerictype([],8,6))
 %     set(Hm3,'CustomCoefficientsDataType',numerictype([],16,14));
-%     
+%
 %     %     Hm4.InputWordLength = 4;
 %     %     Hm4.InputFracLength = 2;
 %     %     Hm4.FilterInternals = 'SpecifyPrecision';
@@ -334,7 +332,7 @@ while (1)
     %         Hmd.OutputFracLength = 10;
     %         Hmd.CoeffWordLength = 16;
     %     end
-    %Filter1 = dsp.FilterCascade; 
+    %Filter1 = dsp.FilterCascade;
     addStage(Filter1,Hmd);
     
     % quantitative values about actual passband and stopband
