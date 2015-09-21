@@ -88,10 +88,6 @@ hb2 = 2^(-8)*[-9 0 73 128 73 0 -9];
 hb3 = 2^(-2)*[1 2 1];
 int3 = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
 
-% Hm1 = mfilt.firinterp(2,hb1);
-% Hm2 = mfilt.firinterp(2,hb2);
-% Hm3 = mfilt.firinterp(2,hb3);
-% Hm4 = mfilt.firinterp(3,int3);
 Hm1 = dsp.FIRInterpolator(2,hb1);
 Hm2 = dsp.FIRInterpolator(2,hb2);
 Hm3 = dsp.FIRInterpolator(2,hb3);
@@ -326,17 +322,17 @@ while (1)
     
     %Hmd = mfilt.firinterp(input.FIR_interp,tap_store(i,1:M));
     Hmd = dsp.FIRInterpolator(input.FIR_interp,tap_store(i,1:M));
-%     if ~isempty(ver('fixedpoint'))
-%         set(Hmd,'arithmetic','fixed');
-%         Hmd.InputWordLength = 16;
-%         Hmd.InputFracLength = 14;
-%         Hmd.FilterInternals = 'SpecifyPrecision';
-%         Hmd.OutputWordLength = 12;
-%         Hmd.OutputFracLength = 10;
-%         Hmd.CoeffWordLength = 16;
-%     end
- 
-addStage(Filter1, Hmd, 1);
+    %     if ~isempty(ver('fixedpoint'))
+    %         set(Hmd,'arithmetic','fixed');
+    %         Hmd.InputWordLength = 16;
+    %         Hmd.InputFracLength = 14;
+    %         Hmd.FilterInternals = 'SpecifyPrecision';
+    %         Hmd.OutputWordLength = 12;
+    %         Hmd.OutputFracLength = 10;
+    %         Hmd.CoeffWordLength = 16;
+    %     end
+    
+    addStage(Filter1, Hmd, 1);
     
     % quantitative values about actual passband and stopband
     rg_pass = abs(freqz(Filter1,omega(1:Gpass+1),input.converter_rate).*analogresp('Tx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));

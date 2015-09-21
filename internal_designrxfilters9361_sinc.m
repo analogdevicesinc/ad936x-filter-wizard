@@ -87,13 +87,9 @@ hb2 = 2^(-8)*[-9 0 73 128 73 0 -9];
 hb3 = 2^(-4)*[1 4 6 4 1];
 dec3 = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 4041 1914 0 -580 -393 0 83 55];
 
-%Hm1 = mfilt.firdecim(2,hb1);
 Hm1 = dsp.FIRDecimator(2, hb1);
-%Hm2 = mfilt.firdecim(2,hb2);
 Hm2 = dsp.FIRDecimator(2, hb2);
-%Hm3 = mfilt.firdecim(2,hb3);
 Hm3 = dsp.FIRDecimator(2, hb3);
-%Hm4 = mfilt.firdecim(3,dec3);
 Hm4 = dsp.FIRDecimator(3, dec3);
 
 % if ~isempty(ver('fixedpoint'))
@@ -102,14 +98,20 @@ Hm4 = dsp.FIRDecimator(3, dec3);
 %     set(Hm3,'FullPrecisionOverride',false);
 %     set(Hm4,'FullPrecisionOverride',false);
 %
-%     %Hm1.InputWordLength = 16;
-%     %Hm1.InputFracLength = 14;
-%     %Hm1.FilterInternals = 'SpecifyPrecision';
-%     set(Hm1,'OutputDataType','Custom');
-%     set(Hm1,'CoefficientsDataType','Custom');
+
+% set(Hm1,'CoefficientsDataType','Custom');
+% set(Hm1,'CustomCoefficientsDataType',numerictype([],16,14));
+% set(Hm1,'OutputDataType','Custom');
+% set(Hm1,'CustomOutputDataType',numerictype([],16,14));
+% set(Hm1,'ProductDataType','Custom');
+% set(Hm1,'CustomProductDataType',numerictype([],31,30));
+% set(Hm1,'AccumulatorDataType','Custom');
+% set(Hm1,'CustomAccumulatorDataType',numerictype([],33,30));
+% set(Hm1,'RoundingMethod','convergent');
+% set(Hm1,'OverflowAction','wrap');
 %
 
-%     set(Hm1,'CustomCoefficientsDataType',numerictype([],16,14));
+%     
 %
 %     %     Hm2.InputWordLength = 16;
 %     %     Hm2.InputFracLength = 14;
