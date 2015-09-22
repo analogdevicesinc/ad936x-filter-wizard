@@ -339,7 +339,6 @@ else
     handles.input_tx.Fpass = Fpass;
 end
 
-handles = reset_caldiv(handles);
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
@@ -374,7 +373,6 @@ else
     handles.input_tx.Fstop = Fstop;
 end
 
-handles = reset_caldiv(handles);
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
@@ -454,7 +452,7 @@ if isfield(handles, 'input_tx') && isfield(handles, 'input_rx')
                 handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
                 filter_type = get(handles.filter_type, 'Value');
                 set(handles.filter_type, 'Value', 0);
-                handles.input_tx.caldiv = get_caldiv(handles);
+                handles.input_tx.caldiv = default_caldiv(handles);
                 set(handles.filter_type, 'Value', filter_type);
             end
         end
@@ -482,7 +480,7 @@ if isfield(handles, 'input_tx') && isfield(handles, 'input_rx')
                 handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
                 filter_type = get(handles.filter_type, 'Value');
                 set(handles.filter_type, 'Value', 0);
-                handles.input_tx.caldiv = get_caldiv(handles);
+                handles.input_tx.caldiv = default_caldiv(handles);
                 set(handles.filter_type, 'Value', filter_type);
             end
         end
@@ -496,22 +494,6 @@ if (get(handles.filter_type, 'Value') == 1)
 else
     % transmit
     sel = handles.input_tx;
-end
-
-function handles = reset_caldiv(handles)
-% reset caldiv for Rx/Tx to defaults, forces advanced state to be respected for
-% both channels when data2gui is run
-if isstruct(get_current_rxtx(handles))
-    filter_type = get(handles.filter_type, 'Value');
-
-    set(handles.filter_type, 'Value', 1);
-    caldiv = get_caldiv(handles);
-    handles.input_rx.caldiv = caldiv;
-    set(handles.filter_type, 'Value', 2);
-    caldiv = get_caldiv(handles);
-    handles.input_tx.caldiv = caldiv;
-
-    set(handles.filter_type, 'Value', filter_type);
 end
 
 function data_clk_Callback(hObject, eventdata, handles)
@@ -530,7 +512,6 @@ handles.input_rx = cook_input(input);
 input.RxTx = 'Tx';
 handles.input_tx = cook_input(input);
 handles = autoselect_rates(handles);
-handles = reset_caldiv(handles);
 
 data2gui(hObject, handles);
 handles = guidata(hObject);
@@ -1294,12 +1275,6 @@ end
 handles.input_rx = cook_input(getfield(options.ad9361_settings.rx, Rx{matchRx}));
 handles.input_tx = cook_input(getfield(options.ad9361_settings.tx, Tx{matchTx}));
 
-% disabled advanced option for simple filters
-sel = get_current_rxtx(handles);
-if sel.caldiv && sel.caldiv == get_caldiv(handles)
-    hide_advanced(handles);
-end
-
 set(handles.store_filter, 'Visible', 'off');
 guidata(hObject, handles);
 data2gui(hObject, handles);
@@ -1330,8 +1305,9 @@ else
     set(handles.target_delay, 'Value', sel.phEQ);
 end
 
-if sel.caldiv && sel.caldiv ~= get_caldiv(handles)
+if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
     show_advanced(handles);
+    set_caldiv(handles, sel.caldiv);
 end
 
 set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
@@ -2038,7 +2014,6 @@ else
 end
 
 % Update handles structure
-handles = set_caldiv(handles);
 data2gui(hObject, handles);
 guidata(hObject, handles);
 
@@ -2095,7 +2070,6 @@ else
 end
 
 % Update handles structure
-handles = reset_caldiv(handles);
 data2gui(hObject, handles);
 guidata(hObject, handles);
 
@@ -2126,7 +2100,6 @@ HB = str2double(HB(1:2));
 
 handles.input_tx.PLL_mult = HB;
 handles.input_rx.PLL_mult = HB;
-handles = reset_caldiv(handles);
 
 data2gui(hObject, handles);
 handles = guidata(hObject);
@@ -2226,6 +2199,17 @@ function put_data_clk(handles, data_clk)
 data_clk = Hz2value(handles, handles.freq_units, data_clk);
 set(handles.data_clk, 'String', num2str(data_clk, 10));
 
+function caldiv = default_caldiv(handles)
+if (get(handles.filter_type, 'Value') == 1)
+    wnom = 1.4 * handles.input_rx.Fstop;  % Rx
+else
+    wnom = 1.6 * handles.input_tx.Fstop;  % Tx
+end
+
+pll = get_pll_rate(handles);
+div = ceil((pll/wnom)*(log(2)/(2*pi)));
+caldiv = min(max(div,1),511);
+
 function caldiv = get_caldiv(handles)
 if (get(handles.filter_type, 'Value') == 1)
     wnom = 1.4 * handles.input_rx.Fstop;  % Rx
@@ -2243,15 +2227,8 @@ pll = get_pll_rate(handles);
 div = ceil((pll/wnom)*(log(2)/(2*pi)));
 caldiv = min(max(div,1),511);
 
-function handles = set_caldiv(handles)
-caldiv = get_caldiv(handles);
-if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
-else
-    handles.input_tx.caldiv = caldiv;
-end
-
-wc = (get_pll_rate(handles) / caldiv)*(log(2)/(2*pi));
+function set_caldiv(handles, value)
+wc = (get_pll_rate(handles) / value)*(log(2)/(2*pi));
 set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, wc)));
 
 function pll = get_pll_rate(handles)
@@ -2346,7 +2323,15 @@ function Fcutoff_Callback(hObject, eventdata, handles)
 dirty(hObject, handles);
 handles = guidata(hObject);
 
-handles = set_caldiv(handles);
+caldiv = get_caldiv(handles);
+if get(handles.filter_type, 'Value') == 1
+    handles.input_rx.caldiv = caldiv;
+else
+    handles.input_tx.caldiv = caldiv;
+end
+
+set_caldiv(handles, caldiv);
+
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
@@ -2540,7 +2525,20 @@ else
     hide_advanced(handles);
 end
 
-handles = reset_caldiv(handles);
+% reset caldiv for Rx/Tx to defaults, forces advanced state to be respected for
+% both channels when data2gui is run
+if isstruct(get_current_rxtx(handles))
+    filter_type = get(handles.filter_type, 'Value');
+
+    set(handles.filter_type, 'Value', 1);
+    caldiv = default_caldiv(handles);
+    handles.input_rx.caldiv = caldiv;
+    set(handles.filter_type, 'Value', 0);
+    caldiv = default_caldiv(handles);
+    handles.input_tx.caldiv = caldiv;
+
+    set(handles.filter_type, 'Value', filter_type);
+end
 
 % remove generated filter taps if they exist, forces both Rx/Tx filters to be
 % redesigned when advanced is toggled
@@ -2680,7 +2678,6 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 handles.input_tx.DAC_div = HB;
-handles = reset_caldiv(handles);
 
 data2gui(hObject, handles);
 handles = guidata(hObject);
@@ -2719,7 +2716,6 @@ else
     handles.input_tx.FIR = HB;
 end
 
-handles = reset_caldiv(handles);
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
@@ -2873,7 +2869,6 @@ else
     handles.input_tx.HBs = handles.input_tx.HB1 * HB * handles.input_tx.HB3;
 end
 
-handles = set_caldiv(handles);
 guidata(hObject, handles);
 data2gui(hObject, handles);
 
@@ -2911,7 +2906,6 @@ else
     handles.input_tx.HBs = handles.input_tx.HB1 * handles.input_tx.HB2 * HB;
 end
 
-handles = set_caldiv(handles);
 data2gui(hObject, handles);
 guidata(hObject, handles);
 
