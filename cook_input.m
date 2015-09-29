@@ -105,12 +105,6 @@ if ~isfield(input, 'RxTx')
     input.RxTx = 'Rx';
 end
 
-if strcmp(input.RxTx, 'Rx')
-    max_HB = max.MAX_RX;
-else
-    max_HB = max.MAX_TX;
-end
-
 % Make sure all the clock settings are there.
 %   struct.Rdata    = The output datarate.
 %   struct.FIR      = FIR interpolation/decimation rates [1 2 4]
@@ -140,21 +134,10 @@ if input.Rdata < max.MIN_DATA_RATE
     input.Rdata = max.MIN_DATA_RATE;
 end
 
-if ~isfield(input, 'FIR')
-    if ~isfield(input, 'HB1') && ~isfield(input, 'HB2') && ~isfield(input, 'HB3') && ~isfield(input, 'PLL_mult') && ~isfield(input, 'PLL_rate')
-        % Everything is blank, run as fast as possible
-        input.FIR = fastest_FIR([4 2 1], max.MAX_FIR, 0, input.Rdata);
-        input.HB1 = fastest_FIR([2 1], max_HB.HB1, 0, input.Rdata * input.FIR);
-        input.HB2 = fastest_FIR([2 1], max_HB.HB2, 0, input.Rdata * input.FIR * input.HB1);
-        input.HB3 = fastest_FIR([3 2 1], max_HB.HB3, 0, input.Rdata * input.FIR * input.HB1 * input.HB2);
-        if strcmp(input.RxTx, 'Rx')
-            input.DAC_div = 1;
-        else
-            input.DAC_div = 2;
-        end
-        input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], max.MAX_BBPLL_FREQ, max.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
-        input.PLL_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div * input.PLL_mult;
-    end
+input = autoselect_rates(input, max, false);
+% If PLL rate bounds aren't met, enable 3x dec/int for HB3.
+if ((input.PLL_rate > max.MAX_BBPLL_FREQ) || (input.PLL_rate < max.MIN_BBPLL_FREQ))
+    input = autoselect_rates(input, max, true);
 end
 
 if strcmp(input.Type, 'Lowpass')
@@ -222,3 +205,33 @@ end
 
 div = ceil((pll/input.wnom)*(log(2)/(2*pi)));
 caldiv = min(max(div,1),511);
+
+function input = autoselect_rates(input, max, dec3)
+if strcmp(input.RxTx, 'Rx')
+    max_HB = max.MAX_RX;
+else
+    max_HB = max.MAX_TX;
+end
+
+if ~isfield(input, 'DAC_div')
+    if strcmp(input.RxTx, 'Rx')
+        input.DAC_div = 1;
+    else
+        input.DAC_div = 2;
+    end
+end
+
+if dec3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(input, 'HB2') && ~isfield(input, 'HB3') && ~isfield(input, 'PLL_mult'))
+    % Everything is blank, run as fast as possible
+    if dec3
+        input.HB3 = fastest_FIR([3 2 1], max_HB.HB3, 0, input.Rdata);
+    else
+        input.HB3 = fastest_FIR([2 1], max_HB.HB3, 0, input.Rdata);
+    end
+    input.HB2 = fastest_FIR([2 1], max_HB.HB2, 0, input.Rdata * input.HB3);
+    input.HB1 = fastest_FIR([2 1], max_HB.HB1, 0, input.Rdata * input.HB3 * input.HB2);
+    input.FIR = fastest_FIR([4 2 1], max.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
+    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], max.MAX_BBPLL_FREQ, max.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
+end
+
+input.PLL_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div * input.PLL_mult;

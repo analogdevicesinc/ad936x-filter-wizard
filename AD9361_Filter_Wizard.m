@@ -428,18 +428,12 @@ function handles = autoselect_rates(handles)
 % sanity check the PLL rate and DAC divider values and alter them if necessary
 if isfield(handles, 'input_tx') && isfield(handles, 'input_rx')
     if (handles.input_rx.PLL_rate ~= handles.input_tx.PLL_rate)
-        hb1 = handles.input_tx.HB1;
-        hb2 = handles.input_tx.HB2;
-        if handles.input_tx.HB3 == 3
-            hb3 = 3;
-        elseif handles.input_tx.HB3 == 2
-            hb3 = 2;
-        else
-            hb3 = 1;
+        % If dec3 is used by Rx or Tx, both must use it in order for the
+        % PLL rates to match.
+        if handles.input_tx.HB3 == 3 || handles.input_rx.HB3 == 3
+            handles.input_rx.HB3 = 3;
+            handles.input_tx.HB3 = 3;
         end
-        handles.input_rx.HB1 = hb1;
-        handles.input_rx.HB2 = hb2;
-        handles.input_rx.HB3 = hb3;
 
         ADC_rate = handles.input_rx.Rdata * handles.input_rx.FIR * ...
             handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3;
