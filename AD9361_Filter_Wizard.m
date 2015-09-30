@@ -702,38 +702,38 @@ end
 
 % write FIR filter to target
 ret = writeAttributeString(handles.libiio_ctrl_dev, 'filter_fir_config', fir_filter_str);
-if(ret < 0)
+if (ret < 0)
     msgbox('Could not write FIR filter to target!', 'Error', 'error');
     return;
 end
 
 % write Rx/Tx data rates to target
 ret = writeAttributeString(handles.libiio_ctrl_dev, 'in_voltage_sampling_frequency', num2str(handles.input_rx.Rdata));
-if(ret < 0)
+if (ret < 0)
     msgbox('Could not write Rx data rate to target!', 'Error', 'error');
     return;
 end
 ret = writeAttributeString(handles.libiio_ctrl_dev, 'out_voltage_sampling_frequency', num2str(handles.input_tx.Rdata));
-if(ret < 0)
+if (ret < 0)
     msgbox('Could not write Tx data rate to target!', 'Error', 'error');
     return;
 end
 
 % explicitly write Rx/Tx RF bandwidth to target
 ret = writeAttributeString(handles.libiio_ctrl_dev, 'in_voltage_rf_bandwidth', num2str(handles.rx.RFbw));
-if(ret < 0)
+if (ret < 0)
     msgbox('Could not write Rx RF bandwidth to target!', 'Error', 'error');
     return;
 end
 ret = writeAttributeString(handles.libiio_ctrl_dev, 'out_voltage_rf_bandwidth', num2str(handles.tx.RFbw));
-if(ret < 0)
+if (ret < 0)
     msgbox('Could not write Tx RF bandwidth to target!', 'Error', 'error');
     return;
 end
 
 % enable both Rx/Tx FIR filters on the target
 ret = writeAttributeString(handles.libiio_ctrl_dev, 'in_out_voltage_filter_fir_en', '1');
-if(ret < 0)
+if (ret < 0)
     msgbox('Could not enable Rx/Tx FIR filters on target!', 'Error', 'error');
     return;
 end
@@ -798,14 +798,14 @@ function [data_clk, bbpll, converter_rate] = get_path_rates(libiio, path)
 
     % Read the data clock
     [ret, data_clk] = readAttributeDouble(libiio, sampling_freq);
-    if(ret < 0)
+    if (ret < 0)
         msgbox('Could not read clocks!', 'Error', 'error');
         return;
     end
 
     % Read clocks
     [ret, rbuf] = readAttributeString(libiio, path);
-    if(ret < 0)
+    if (ret < 0)
         msgbox('Could not read clocks!', 'Error', 'error');
         return;
     end
@@ -829,7 +829,7 @@ if ~ isempty(handles.libiio_ctrl_dev)
     div = num2str(converter_rate / data_clk);
     decimate = cellstr(get(handles.HB1, 'String'))';
     idx = find(strncmp(decimate, div, length(div)) == 1);
-    if(~isempty(idx))
+    if (~isempty(idx))
         set(handles.HB1, 'Value', idx(1));
     end
 
@@ -1988,7 +1988,7 @@ function save2workspace_Callback(hObject, eventdata, handles)
 set(handles.save2workspace, 'Enable', 'off');
 drawnow;
 
-if(~isempty(handles.applycallback))
+if (~isempty(handles.applycallback))
     handles.applycallback(handles.callbackObj, handles.supportpack);
 else
     if get(handles.filter_type, 'Value') == 1
@@ -2569,13 +2569,13 @@ function connect2target_Callback(hObject, eventdata, handles)
 % hObject    handle to connect2target (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-ip_address = get(handles.IP_num,'String');
+ip_address = get(handles.IP_num, 'String');
 set(handles.connect2target, 'Enable', 'off');
 set(handles.connect2target, 'String', 'Connecting to Target');
 drawnow;
 
 % If the libiio is already initialized delete the libiio_if object
-if(~isempty(handles.libiio_ctrl_dev))
+if (~isempty(handles.libiio_ctrl_dev))
     delete(handles.libiio_ctrl_dev);
 end
 
@@ -2600,11 +2600,11 @@ else
     ret = -1;
 end
 
-if(ret < 0)
+if (ret < 0)
     set(handles.target_get_clock, 'Enable', 'off');
     set(handles.connect2target, 'Enable', 'on');
     set(handles.connect2target, 'String', 'Connect to Target');
-    if(~isempty(handles.libiio_ctrl_dev))
+    if (~isempty(handles.libiio_ctrl_dev))
         delete(handles.libiio_ctrl_dev);
     end
     handles.libiio_ctrl_dev = {};
