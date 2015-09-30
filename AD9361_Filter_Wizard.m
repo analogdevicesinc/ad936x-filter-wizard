@@ -659,8 +659,8 @@ if get(handles.phase_eq, 'Value')
     fprintf(fid, '# RX Phase equalization = %f ns\r\n', handles.rx.phEQ);
     fprintf(fid, '# TX Phase equalization = %f ns\r\n', handles.tx.phEQ);
 end
-fprintf(fid, 'TX 3 GAIN %d INT %d\r\n', handles.tx.gain, handles.tx.FIR);
-fprintf(fid, 'RX 3 GAIN %d DEC %d\r\n', handles.rx.gain, handles.rx.FIR);
+fprintf(fid, 'TX 3 GAIN %d INT %d\r\n', handles.tx.gain, handles.tx.int);
+fprintf(fid, 'RX 3 GAIN %d DEC %d\r\n', handles.rx.gain, handles.rx.int);
 fprintf(fid, 'RTX %d %d %d %d %d %d\r\n', PLL_rate, handles.tx.HB3, handles.tx.HB2, handles.tx.HB1, handles.tx.FIR, handles.tx.Rdata);
 fprintf(fid, 'RRX %d %d %d %d %d %d\r\n', PLL_rate, handles.rx.HB3, handles.rx.HB2, handles.rx.HB1, handles.rx.FIR, handles.rx.Rdata);
 fprintf(fid, 'BWTX %d\r\n', handles.tx.RFbw);
@@ -685,8 +685,8 @@ function save2target_Callback(hObject, eventdata, handles)
 
 PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
 
-fir_filter_str = sprintf('TX 3 GAIN %d INT %d', handles.tx.gain, handles.tx.FIR);
-fir_filter_str = strcat(fir_filter_str, sprintf('\nRX 3 GAIN %d DEC %d', handles.rx.gain, handles.rx.FIR));
+fir_filter_str = sprintf('TX 3 GAIN %d INT %d', handles.tx.gain, handles.tx.int);
+fir_filter_str = strcat(fir_filter_str, sprintf('\nRX 3 GAIN %d DEC %d', handles.rx.gain, handles.rx.int));
 fir_filter_str = strcat(fir_filter_str, sprintf('\nRTX %d %d %d %d %d %d', PLL_rate, handles.tx.HB3, handles.tx.HB2, handles.tx.HB1, handles.tx.FIR, handles.tx.Rdata));
 fir_filter_str = strcat(fir_filter_str, sprintf('\nRRX %d %d %d %d %d %d', PLL_rate, handles.rx.HB3, handles.rx.HB2, handles.rx.HB1, handles.rx.FIR, handles.rx.Rdata));
 fir_filter_str = strcat(fir_filter_str, sprintf('\nBWTX %d', handles.tx.RFbw));
@@ -1044,6 +1044,7 @@ if get(handles.filter_type, 'Value') == 1
     handles.rx.dBstop = sel.dBstop;
     handles.rx.PLL_mult = sel.PLL_mult;
     handles.rx.gain = filter_result.tohw.Gain;
+    handles.rx.int = sel.FIR;
 else
     handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
     handles.filters = filter_result.txFilters;
@@ -1066,6 +1067,7 @@ else
     handles.tx.dBstop = sel.dBstop;
     handles.tx.PLL_mult = sel.PLL_mult;
     handles.tx.gain = filter_result.tohw.Gain;
+    handles.tx.int = sel.FIR;
 end
 
 set(gcf, 'Pointer', oldpointer);
