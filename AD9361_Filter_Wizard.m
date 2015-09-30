@@ -144,13 +144,13 @@ for i = 1:2:length(varargin)
     elseif strcmpi(varargin{i}, 'PathConfig')
         % 'PathConfig'     'rx' | 'tx' | 'either'
         if (strcmpi(varargin{i + 1}, 'rx'))
-            set(handles.filter_type, 'Value', 1.0);
+            set(handles.filter_type, 'Value', 1);
             set(handles.filter_type, 'Enable', 'off');
         elseif (strcmpi(varargin{i + 1}, 'tx'))
-            set(handles.filter_type, 'Value', 2.0);
+            set(handles.filter_type, 'Value', 2);
             set(handles.filter_type, 'Enable', 'off');
         elseif (strcmpi(varargin{i + 1}, 'either'))
-            set(handles.filter_type, 'Value', 1.0);
+            set(handles.filter_type, 'Value', 1);
             set(handles.filter_type, 'Enable', 'on');
         else
             error('Unknown value to "PathConfig"');
