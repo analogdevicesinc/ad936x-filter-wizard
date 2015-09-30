@@ -625,6 +625,65 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
+% --- Executes on button press in save2noos.
+function save2noos_Callback(hObject, eventdata, handles)
+% hObject    handle to save2noos (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[filename,path] = uiputfile('*.c', 'Save coefficients as');
+if filename == 0
+    return;
+else
+    newpath = strcat(path, filename);
+end
+
+fid = fopen(newpath,'w');
+
+fprintf(fid, '// Generated with the MATLAB AD9361 Filter Design Wizard\r\n');
+fprintf(fid, '%s\r\n', strcat('// Generated', 32, datestr(now())));
+fprintf(fid, '// Inputs:\r\n');
+
+sel = get_current_rxtx(handles);
+data_rate = sel.Rdata;
+PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+
+fprintf(fid, '// Data Sample Frequency = %f Hz\r\n', data_rate);
+if get(handles.phase_eq, 'Value')
+    fprintf(fid, '// RX Phase equalization = %f ns\r\n', handles.rx.phEQ);
+    fprintf(fid, '// TX Phase equalization = %f ns\r\n', handles.tx.phEQ);
+end
+
+% Rx
+fprintf(fid, '\r\nAD9361_RXFIRConfig rx_fir_config = {\r\n');
+fprintf(fid, '\t3, // rx\r\n');
+fprintf(fid, '\t%d, // rx_gain\r\n', handles.rx.gain);
+fprintf(fid, '\t%d, // rx_dec\r\n', handles.rx.int);
+coefficients = sprintf('%.0f,', flip(rot90(handles.rfirtaps)));
+coefficients = coefficients(1:end-1); % strip final comma
+fprintf(fid, '\t{%s}, // rx_coef[128]\r\n', coefficients);
+fprintf(fid, '\t%d, // rx_coef_size\r\n', handles.taps_length);
+fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // rx_path_clks[6]\r\n', ...
+    PLL_rate, handles.rx.HB3, handles.rx.HB2, handles.rx.HB1, handles.rx.FIR, handles.rx.Rdata);
+fprintf(fid, '\t%d // rx_bandwidth\r\n', handles.rx.RFbw);
+fprintf(fid, '};\r\n\r\n');
+
+% Tx
+fprintf(fid, 'AD9361_TXFIRConfig tx_fir_config = {\r\n');
+fprintf(fid, '\t3, // tx\r\n');
+fprintf(fid, '\t%d, // tx_gain\r\n', handles.tx.gain);
+fprintf(fid, '\t%d, // tx_int\r\n', handles.tx.int);
+coefficients = sprintf('%.0f,', flip(rot90(handles.tfirtaps)));
+coefficients = coefficients(1:end-1); % strip final comma
+fprintf(fid, '\t{%s}, // tx_coef[128]\r\n', coefficients);
+fprintf(fid, '\t%d, // tx_coef_size\r\n', handles.taps_length);
+fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // tx_path_clks[6]\r\n', ...
+    PLL_rate, handles.tx.HB3, handles.tx.HB2, handles.tx.HB1, handles.tx.FIR, handles.tx.Rdata);
+fprintf(fid, '\t%d // tx_bandwidth\r\n', handles.tx.RFbw);
+fprintf(fid, '};\r\n');
+
+fclose(fid);
+
+
 % --- Executes on button press in save2coefficients.
 function save2coefficients_Callback(hObject, eventdata, handles)
 % hObject    handle to save2coefficients (see GCBO)
@@ -915,8 +974,9 @@ set(handles.save2workspace, 'Visible', 'on');
 set(handles.save2workspace, 'Enable', 'off')
 set(handles.save2coefficients, 'Visible', 'on');
 set(handles.save2coefficients, 'Enable', 'off');
+set(handles.save2noos, 'Visible', 'on');
+set(handles.save2noos, 'Enable', 'off');
 set(handles.save2target, 'Visible', 'on');
-set(handles.save2coefficients, 'Enable', 'off');
 set(handles.save2HDL, 'Visible', 'off');
 
 set(handles.results_Apass, 'Visible', 'off');
@@ -1086,6 +1146,7 @@ set(handles.FVTool_datarate, 'Visible', 'on');
 set(handles.save2workspace, 'Enable', 'on')
 if isfield(handles, 'rfirtaps') && isfield(handles, 'tfirtaps')
     set(handles.save2coefficients, 'Enable', 'on');
+    set(handles.save2noos, 'Enable', 'on');
     if ~ isempty(handles.libiio_ctrl_dev)
         set(handles.save2target, 'Enable', 'on');
     end
@@ -1506,6 +1567,7 @@ set(handles.save2HDL, 'Visible', 'off');
 
 set(handles.save2workspace, 'Enable', 'off');
 set(handles.save2coefficients, 'Enable', 'off');
+set(handles.save2noos, 'Enable', 'off');
 set(handles.save2target, 'Enable', 'off');
 
 % disable connect to target button if libiio bindings are missing
