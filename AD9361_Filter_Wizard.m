@@ -1018,6 +1018,7 @@ if (get(handles.filter_type, 'Value') == 1)
     handles.rx.HB1 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     handles.rx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.rx.Rdata = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
+    handles.rx.RxTx = 'Rx';
 else
     filter_input.DAC_mult = get(handles.DAC_by2, 'Value');
     filter_input.clkPLL = filter_input.converter_rate * filter_input.DAC_mult * filter_input.PLL_mult;
@@ -1040,6 +1041,7 @@ else
     handles.tx.HB1 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     handles.tx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.tx.Rdata = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
+    handles.tx.RxTx = 'Tx';
 end
 handles.taps_length = filter_result.taps_length;
 
