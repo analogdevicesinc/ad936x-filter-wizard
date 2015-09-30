@@ -2883,6 +2883,10 @@ if ~ exist(filename, 'file')
 end
 
 answer = char(inputdlg('Save As?'));
+% exit if the cancel button is hit
+if isempty(answer)
+    return;
+end
 
 options = load(filename);
 
