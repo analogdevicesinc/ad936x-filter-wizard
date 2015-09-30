@@ -1036,6 +1036,13 @@ if get(handles.filter_type, 'Value') == 1
     handles.rx.HB1 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     handles.rx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.rx.Rdata = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
+    handles.rx.Fpass = sel.Fpass;
+    handles.rx.Fstop = sel.Fstop;
+    handles.rx.caldiv = sel.caldiv;
+    handles.rx.DAC_div = sel.DAC_div;
+    handles.rx.dBripple = sel.dBripple;
+    handles.rx.dBstop = sel.dBstop;
+    handles.rx.PLL_mult = sel.PLL_mult;
     handles.rx.gain = filter_result.tohw.Gain;
 else
     handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
@@ -1051,6 +1058,13 @@ else
     handles.tx.HB1 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     handles.tx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.tx.Rdata = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
+    handles.tx.Fpass = sel.Fpass;
+    handles.tx.Fstop = sel.Fstop;
+    handles.tx.caldiv = sel.caldiv;
+    handles.tx.DAC_div = sel.DAC_div;
+    handles.tx.dBripple = sel.dBripple;
+    handles.tx.dBstop = sel.dBstop;
+    handles.tx.PLL_mult = sel.PLL_mult;
     handles.tx.gain = filter_result.tohw.Gain;
 end
 
