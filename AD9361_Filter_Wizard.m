@@ -1007,18 +1007,28 @@ drawnow;
 
 if (get(handles.filter_type, 'Value') == 1)
     filter_input.clkPLL = filter_input.converter_rate * filter_input.PLL_mult;
-    if (filter_input.phEQ == 0)
-        filter_input.phEQ = minimize_group_delay(handles, @internal_designrxfilters9361_sinc, filter_input);
-    end
-    filter_result = internal_designrxfilters9361_sinc(filter_input);
+    design_filter = @internal_designrxfilters9361_sinc;
+else
+    filter_input.DAC_mult = get(handles.DAC_by2, 'Value');
+    filter_input.clkPLL = filter_input.converter_rate * filter_input.DAC_mult * filter_input.PLL_mult;
+    design_filter = @internal_designtxfilters9361_sinc;
+end
 
+if (filter_input.phEQ == 0)
+    filter_input.phEQ = minimize_group_delay(handles, design_filter, filter_input);
+end
+filter_result = design_filter(filter_input);
+
+handles.analogfilter = filter_result.Hanalog;
+handles.grpdelayvar = filter_result.grpdelayvar;
+
+if get(handles.filter_type, 'Value') == 1
+    handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.rxFilters);
     handles.filters = filter_result.rxFilters;
     handles.rfirtaps = int32(filter_result.rfirtaps);
-    handles.analogfilter = filter_result.Hanalog;
-    handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.rxFilters);
-    handles.grpdelayvar = filter_result.grpdelayvar;
 
     % values used for saving to a filter file or pushing to the target directly
+    handles.rx.RxTx = 'Rx';
     handles.rx.phEQ = filter_input.phEQ;
     handles.rx.RFbw = RFbw_hw;
     handles.rx.HB3 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB3_rate, 'String')));
@@ -1026,22 +1036,14 @@ if (get(handles.filter_type, 'Value') == 1)
     handles.rx.HB1 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     handles.rx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.rx.Rdata = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
-    handles.rx.RxTx = 'Rx';
+    handles.rx.gain = filter_result.tohw.Gain;
 else
-    filter_input.DAC_mult = get(handles.DAC_by2, 'Value');
-    filter_input.clkPLL = filter_input.converter_rate * filter_input.DAC_mult * filter_input.PLL_mult;
-    if (filter_input.phEQ == 0)
-        filter_input.phEQ = minimize_group_delay(handles, @internal_designtxfilters9361_sinc, filter_input);
-    end
-    filter_result = internal_designtxfilters9361_sinc(filter_input);
-
+    handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
     handles.filters = filter_result.txFilters;
     handles.tfirtaps = int32(filter_result.tfirtaps);
-    handles.analogfilter = filter_result.Hanalog;
-    handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
-    handles.grpdelayvar = filter_result.grpdelayvar;
 
     % values used for saving to a filter file or pushing to the target directly
+    handles.tx.RxTx = 'Tx';
     handles.tx.phEQ = filter_input.phEQ;
     handles.tx.RFbw = RFbw_hw;
     handles.tx.HB3 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB3_rate, 'String')));
@@ -1049,22 +1051,16 @@ else
     handles.tx.HB1 = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     handles.tx.FIR = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
     handles.tx.Rdata = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
-    handles.tx.RxTx = 'Tx';
-end
-handles.taps_length = filter_result.taps_length;
-
-set(gcf, 'Pointer', oldpointer);
-
-if get(handles.filter_type, 'Value') == 1
-    handles.rx.gain = filter_result.tohw.Gain;
-else
     handles.tx.gain = filter_result.tohw.Gain;
 end
+
+set(gcf, 'Pointer', oldpointer);
 
 if get(handles.phase_eq, 'Value')
     set(handles.target_delay, 'String', num2str(filter_input.phEQ, 8));
 end
 
+handles.taps_length = filter_result.taps_length;
 handles.simrfmodel = filter_result.webinar;
 handles.supportpack = filter_result.tohw;
 
