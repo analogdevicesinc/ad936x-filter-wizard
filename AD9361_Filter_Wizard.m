@@ -2289,7 +2289,7 @@ function caldiv = get_caldiv(handles)
 if (get(handles.filter_type, 'Value') == 1)
     wnom = 1.4 * handles.input_rx.Fstop;  % Rx
 else
-    wnom = 1.6 * handles.input_rx.Fstop;  % Tx
+    wnom = 1.6 * handles.input_tx.Fstop;  % Tx
 end
 
 Fcutoff = str2double(get(handles.Fcutoff, 'String'));
