@@ -366,7 +366,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-
 function Fstop_Callback(hObject, eventdata, handles)
 % hObject    handle to Fstop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -379,6 +378,14 @@ if get(handles.filter_type, 'Value') == 1
     handles.input_rx.Fstop = Fstop;
 else
     handles.input_tx.Fstop = Fstop;
+end
+
+% reset caldiv so the advanced mode setting is respected
+caldiv = get_caldiv(handles);
+if get(handles.filter_type, 'Value') == 1
+    handles.input_rx.caldiv = caldiv;
+else
+    handles.input_tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -398,7 +405,6 @@ function Fstop_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 
 function Pll_rate_Callback(hObject, eventdata, handles)
@@ -2144,6 +2150,14 @@ else
     handles.input_tx.HB3 = HB3;
 end
 
+% reset caldiv so the advanced mode setting is respected
+caldiv = get_caldiv(handles);
+if get(handles.filter_type, 'Value') == 1
+    handles.input_rx.caldiv = caldiv;
+else
+    handles.input_tx.caldiv = caldiv;
+end
+
 % Update handles structure
 data2gui(hObject, handles);
 guidata(hObject, handles);
@@ -2175,6 +2189,14 @@ HB = str2double(HB(1:2));
 
 handles.input_tx.PLL_mult = HB;
 handles.input_rx.PLL_mult = HB;
+
+% reset caldiv so the advanced mode setting is respected
+caldiv = get_caldiv(handles);
+if get(handles.filter_type, 'Value') == 1
+    handles.input_rx.caldiv = caldiv;
+else
+    handles.input_tx.caldiv = caldiv;
+end
 
 data2gui(hObject, handles);
 handles = guidata(hObject);
@@ -2754,6 +2776,14 @@ HB = str2double(HB(1:2));
 
 handles.input_tx.DAC_div = HB;
 
+% reset caldiv so the advanced mode setting is respected
+caldiv = get_caldiv(handles);
+if get(handles.filter_type, 'Value') == 1
+    handles.input_rx.caldiv = caldiv;
+else
+    handles.input_tx.caldiv = caldiv;
+end
+
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
@@ -2789,6 +2819,14 @@ if get(handles.filter_type, 'Value') == 1
     handles.input_rx.FIR = HB;
 else
     handles.input_tx.FIR = HB;
+end
+
+% reset caldiv so the advanced mode setting is respected
+caldiv = get_caldiv(handles);
+if get(handles.filter_type, 'Value') == 1
+    handles.input_rx.caldiv = caldiv;
+else
+    handles.input_tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
