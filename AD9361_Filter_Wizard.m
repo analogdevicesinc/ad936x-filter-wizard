@@ -639,47 +639,47 @@ end
 
 fid = fopen(newpath,'w');
 
-fprintf(fid, '// Generated with the MATLAB AD9361 Filter Design Wizard\r\n');
-fprintf(fid, '%s\r\n', strcat('// Generated', 32, datestr(now())));
-fprintf(fid, '// Inputs:\r\n');
+fprintf(fid, '// Generated with the MATLAB AD9361 Filter Design Wizard\n');
+fprintf(fid, '%s\n', strcat('// Generated', 32, datestr(now())));
+fprintf(fid, '// Inputs:\n');
 
 sel = get_current_rxtx(handles);
 data_rate = sel.Rdata;
 PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
 
-fprintf(fid, '// Data Sample Frequency = %f Hz\r\n', data_rate);
+fprintf(fid, '// Data Sample Frequency = %f Hz\n', data_rate);
 if get(handles.phase_eq, 'Value')
-    fprintf(fid, '// RX Phase equalization = %f ns\r\n', handles.rx.phEQ);
-    fprintf(fid, '// TX Phase equalization = %f ns\r\n', handles.tx.phEQ);
+    fprintf(fid, '// RX Phase equalization = %f ns\n', handles.rx.phEQ);
+    fprintf(fid, '// TX Phase equalization = %f ns\n', handles.tx.phEQ);
 end
 
 % Rx
-fprintf(fid, '\r\nAD9361_RXFIRConfig rx_fir_config = {\r\n');
-fprintf(fid, '\t3, // rx\r\n');
-fprintf(fid, '\t%d, // rx_gain\r\n', handles.rx.gain);
-fprintf(fid, '\t%d, // rx_dec\r\n', handles.rx.int);
+fprintf(fid, '\nAD9361_RXFIRConfig rx_fir_config = {\n');
+fprintf(fid, '\t3, // rx\n');
+fprintf(fid, '\t%d, // rx_gain\n', handles.rx.gain);
+fprintf(fid, '\t%d, // rx_dec\n', handles.rx.int);
 coefficients = sprintf('%.0f,', flip(rot90(handles.rfirtaps)));
 coefficients = coefficients(1:end-1); % strip final comma
-fprintf(fid, '\t{%s}, // rx_coef[128]\r\n', coefficients);
-fprintf(fid, '\t%d, // rx_coef_size\r\n', handles.taps_length);
-fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // rx_path_clks[6]\r\n', ...
+fprintf(fid, '\t{%s}, // rx_coef[128]\n', coefficients);
+fprintf(fid, '\t%d, // rx_coef_size\n', handles.taps_length);
+fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // rx_path_clks[6]\n', ...
     PLL_rate, handles.rx.HB3, handles.rx.HB2, handles.rx.HB1, handles.rx.FIR, handles.rx.Rdata);
-fprintf(fid, '\t%d // rx_bandwidth\r\n', handles.rx.RFbw);
-fprintf(fid, '};\r\n\r\n');
+fprintf(fid, '\t%d // rx_bandwidth\n', handles.rx.RFbw);
+fprintf(fid, '};\n\n');
 
 % Tx
-fprintf(fid, 'AD9361_TXFIRConfig tx_fir_config = {\r\n');
-fprintf(fid, '\t3, // tx\r\n');
-fprintf(fid, '\t%d, // tx_gain\r\n', handles.tx.gain);
-fprintf(fid, '\t%d, // tx_int\r\n', handles.tx.int);
+fprintf(fid, 'AD9361_TXFIRConfig tx_fir_config = {\n');
+fprintf(fid, '\t3, // tx\n');
+fprintf(fid, '\t%d, // tx_gain\n', handles.tx.gain);
+fprintf(fid, '\t%d, // tx_int\n', handles.tx.int);
 coefficients = sprintf('%.0f,', flip(rot90(handles.tfirtaps)));
 coefficients = coefficients(1:end-1); % strip final comma
-fprintf(fid, '\t{%s}, // tx_coef[128]\r\n', coefficients);
-fprintf(fid, '\t%d, // tx_coef_size\r\n', handles.taps_length);
-fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // tx_path_clks[6]\r\n', ...
+fprintf(fid, '\t{%s}, // tx_coef[128]\n', coefficients);
+fprintf(fid, '\t%d, // tx_coef_size\n', handles.taps_length);
+fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // tx_path_clks[6]\n', ...
     PLL_rate, handles.tx.HB3, handles.tx.HB2, handles.tx.HB1, handles.tx.FIR, handles.tx.Rdata);
-fprintf(fid, '\t%d // tx_bandwidth\r\n', handles.tx.RFbw);
-fprintf(fid, '};\r\n');
+fprintf(fid, '\t%d // tx_bandwidth\n', handles.tx.RFbw);
+fprintf(fid, '};\n');
 
 fclose(fid);
 
