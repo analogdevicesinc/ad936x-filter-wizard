@@ -263,13 +263,13 @@ function varargout = AD9361_Filter_Wizard_OutputFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if isfield(handles, 'rx') && isfield(handles, 'tx')
-    varargout{1} = handles.rx;
-    varargout{2} = handles.tx;
-elseif isfield(handles, 'rx')
-    varargout{1} = handles.rx;
-elseif isfield(handles, 'tx')
-    varargout{1} = handles.tx;
+channels = cellstr(['rx'; 'tx']);
+numarg = 1;
+for i = 1:length(channels)
+    if isfield(handles, channels(i))
+        varargout{numarg} = getfield(handles, char(channels(i)));
+        numarg = numarg + 1;
+    end
 end
 
 % The main figure can be deleted now
