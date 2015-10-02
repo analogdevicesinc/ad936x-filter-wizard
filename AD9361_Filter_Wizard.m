@@ -2640,7 +2640,7 @@ if isstruct(get_current_rxtx(handles))
     set(handles.filter_type, 'Value', 1);
     caldiv = default_caldiv(handles);
     handles.input_rx.caldiv = caldiv;
-    set(handles.filter_type, 'Value', 0);
+    set(handles.filter_type, 'Value', 2);
     caldiv = default_caldiv(handles);
     handles.input_tx.caldiv = caldiv;
 
