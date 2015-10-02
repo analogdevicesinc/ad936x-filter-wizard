@@ -108,7 +108,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hm1,'CustomAccumulatorDataType',numerictype([],33,30));
     set(Hm1,'RoundingMethod','convergent');
     set(Hm1,'OverflowAction','wrap');
-    step(Hm1,fi(pi));
+    step(Hm1,fi(pi*ones(2,1)));
     
     set(Hm2,'CoefficientsDataType','Custom');
     set(Hm2,'CustomCoefficientsDataType',numerictype([],16));
@@ -120,7 +120,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hm2,'CustomAccumulatorDataType',numerictype([],32,29));
     set(Hm2,'RoundingMethod','convergent');
     set(Hm2,'OverflowAction','wrap');
-    step(Hm2,fi(pi));
+    step(Hm2,fi(pi*ones(2,1)));
     
     set(Hm3,'CoefficientsDataType','Custom');
     set(Hm3,'CustomCoefficientsDataType',numerictype([],16));
@@ -132,7 +132,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hm3,'CustomAccumulatorDataType',numerictype([],21,18));
     set(Hm3,'RoundingMethod','convergent');
     set(Hm3,'OverflowAction','wrap');
-    step(Hm3,fi(pi));
+    step(Hm3,fi(pi*ones(2,1)));
     
     set(Hm4,'CoefficientsDataType','Custom');
     set(Hm4,'CustomCoefficientsDataType',numerictype([],16));
@@ -144,7 +144,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hm4,'CustomAccumulatorDataType',numerictype([],21,18));
     set(Hm4,'RoundingMethod','convergent');
     set(Hm4,'OverflowAction','wrap');
-    step(Hm4,fi(pi));
+    step(Hm4,fi(pi*ones(3,1)));
 end
 
 hb1 = input.HB1;
