@@ -664,7 +664,7 @@ fprintf(fid, '// Generated with the MATLAB AD9361 Filter Design Wizard\n');
 fprintf(fid, '%s\n', strcat('// Generated', 32, datestr(now())));
 fprintf(fid, '// Inputs:\n');
 
-fprintf(fid, '// Data Sample Frequency = %f Hz\n', handles.rx.Rdata);
+fprintf(fid, '// Data Sample Frequency = %d Hz\n', handles.rx.Rdata);
 if get(handles.phase_eq, 'Value')
     fprintf(fid, '// RX Phase equalization = %f ns\n', handles.rx.phEQ);
     fprintf(fid, '// TX Phase equalization = %f ns\n', handles.tx.phEQ);
@@ -729,7 +729,7 @@ PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate
 
 %fprintf(fid, '# PLL CLK Frequency = %f Hz\r\n', pll_rate);
 %fprintf(fid, '# Converter Sample Frequency = %f Hz\r\n', converter_rate);
-fprintf(fid, '# Data Sample Frequency = %f Hz\r\n', handles.rx.Rdata);
+fprintf(fid, '# Data Sample Frequency = %d Hz\r\n', handles.rx.Rdata);
 if get(handles.phase_eq, 'Value')
     fprintf(fid, '# RX Phase equalization = %f ns\r\n', handles.rx.phEQ);
     fprintf(fid, '# TX Phase equalization = %f ns\r\n', handles.tx.phEQ);
