@@ -345,6 +345,7 @@ while (1)
         set(Hmd,'CustomAccumulatorDataType',numerictype([],34,30));
         set(Hmd,'RoundingMethod','convergent');
         set(Hmd,'OverflowAction','wrap');
+        step(Hmd,fi(pi*ones(input.FIR_interp,1)));
     end
     
     addStage(Filter1,Hmd);
@@ -393,6 +394,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hmd,'CustomAccumulatorDataType',numerictype([],34,30));
     set(Hmd,'RoundingMethod','convergent');
     set(Hmd,'OverflowAction','wrap');
+    step(Hmd,fi(pi*ones(input.FIR_interp,1)));
 end
 addStage(Filter1,Hmd);
 rxFilters=Filter1;
