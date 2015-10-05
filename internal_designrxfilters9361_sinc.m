@@ -108,7 +108,8 @@ if ~isempty(ver('fixedpoint'))
     set(Hm1,'CustomAccumulatorDataType',numerictype([],33,30));
     set(Hm1,'RoundingMethod','convergent');
     set(Hm1,'OverflowAction','wrap');
-    step(Hm1,fi(pi*ones(2,1)));
+    aa = fi(pi,1,16,14);
+    step(Hm1,aa*ones(2,1));
     
     set(Hm2,'CoefficientsDataType','Custom');
     set(Hm2,'CustomCoefficientsDataType',numerictype([],16));
@@ -120,7 +121,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hm2,'CustomAccumulatorDataType',numerictype([],32,29));
     set(Hm2,'RoundingMethod','convergent');
     set(Hm2,'OverflowAction','wrap');
-    step(Hm2,fi(pi*ones(2,1)));
+    step(Hm2,aa*ones(2,1));
     
     set(Hm3,'CoefficientsDataType','Custom');
     set(Hm3,'CustomCoefficientsDataType',numerictype([],16));
@@ -132,7 +133,8 @@ if ~isempty(ver('fixedpoint'))
     set(Hm3,'CustomAccumulatorDataType',numerictype([],21,18));
     set(Hm3,'RoundingMethod','convergent');
     set(Hm3,'OverflowAction','wrap');
-    step(Hm3,fi(pi*ones(2,1)));
+    bb = fi(pi,1,4,2);
+    step(Hm3,bb*ones(2,1));
     
     set(Hm4,'CoefficientsDataType','Custom');
     set(Hm4,'CustomCoefficientsDataType',numerictype([],16));
@@ -144,7 +146,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hm4,'CustomAccumulatorDataType',numerictype([],21,18));
     set(Hm4,'RoundingMethod','convergent');
     set(Hm4,'OverflowAction','wrap');
-    step(Hm4,fi(pi*ones(3,1)));
+    step(Hm4,bb*ones(3,1));
 end
 
 hb1 = input.HB1;
@@ -336,7 +338,7 @@ while (1)
     if ~isempty(ver('fixedpoint'))
         set(Hmd,'FullPrecisionOverride',false);
         set(Hmd,'CoefficientsDataType','Custom');
-        set(Hmd,'CustomCoefficientsDataType',numerictype([],16,14));
+        set(Hmd,'CustomCoefficientsDataType',numerictype([],16));
         set(Hmd,'OutputDataType','Custom');
         set(Hmd,'CustomOutputDataType',numerictype([],12,10));
         set(Hmd,'ProductDataType','Custom');
@@ -345,7 +347,7 @@ while (1)
         set(Hmd,'CustomAccumulatorDataType',numerictype([],34,30));
         set(Hmd,'RoundingMethod','convergent');
         set(Hmd,'OverflowAction','wrap');
-        step(Hmd,fi(pi*ones(input.FIR_interp,1)));
+        step(Hmd,aa*ones(input.FIR_interp,1));
     end
     
     addStage(Filter1,Hmd);
@@ -385,7 +387,7 @@ Hmd = dsp.FIRDecimator(input.FIR_interp,h);
 if ~isempty(ver('fixedpoint'))
     set(Hmd,'FullPrecisionOverride',false);
     set(Hmd,'CoefficientsDataType','Custom');
-    set(Hmd,'CustomCoefficientsDataType',numerictype([],16,14));
+    set(Hmd,'CustomCoefficientsDataType',numerictype([],16));
     set(Hmd,'OutputDataType','Custom');
     set(Hmd,'CustomOutputDataType',numerictype([],12,10));
     set(Hmd,'ProductDataType','Custom');
@@ -394,7 +396,7 @@ if ~isempty(ver('fixedpoint'))
     set(Hmd,'CustomAccumulatorDataType',numerictype([],34,30));
     set(Hmd,'RoundingMethod','convergent');
     set(Hmd,'OverflowAction','wrap');
-    step(Hmd,fi(pi*ones(input.FIR_interp,1)));
+    step(Hmd,aa*ones(input.FIR_interp,1));
 end
 addStage(Filter1,Hmd);
 rxFilters=Filter1;
