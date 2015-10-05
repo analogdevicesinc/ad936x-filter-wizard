@@ -747,8 +747,8 @@ fprintf(fid, 'TX 3 GAIN %d INT %d\r\n', handles.tx.gain, handles.tx.FIR);
 fprintf(fid, 'RX 3 GAIN %d DEC %d\r\n', handles.rx.gain, handles.rx.FIR);
 fprintf(fid, 'RTX %d %d %d %d %d %d\r\n', PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata);
 fprintf(fid, 'RRX %d %d %d %d %d %d\r\n', PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata);
-fprintf(fid, 'BWTX %d\r\n', tx_RFbw_rate);
-fprintf(fid, 'BWRX %d\r\n', rx_RFbw_rate);
+fprintf(fid, 'BWTX %d\r\n', tx_RFbw_hw);
+fprintf(fid, 'BWRX %d\r\n', rx_RFbw_hw);
 
 % concat and transform Rx and Tx coefficient matrices for output
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
@@ -775,8 +775,8 @@ fir_filter_str = sprintf('TX 3 GAIN %d INT %d', handles.tx.gain, handles.tx.FIR)
 fir_filter_str = strcat(fir_filter_str, sprintf('\nRX 3 GAIN %d DEC %d', handles.rx.gain, handles.rx.FIR));
 fir_filter_str = strcat(fir_filter_str, sprintf('\nRTX %d %d %d %d %d %d', PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata));
 fir_filter_str = strcat(fir_filter_str, sprintf('\nRRX %d %d %d %d %d %d', PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata));
-fir_filter_str = strcat(fir_filter_str, sprintf('\nBWTX %d', tx_RFbw_rate));
-fir_filter_str = strcat(fir_filter_str, sprintf('\nBWRX %d', rx_RFbw_rate));
+fir_filter_str = strcat(fir_filter_str, sprintf('\nBWTX %d', tx_RFbw_hw));
+fir_filter_str = strcat(fir_filter_str, sprintf('\nBWRX %d', rx_RFbw_hw));
 
 % concat and transform Rx and Tx coefficient matrices for outputting
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
