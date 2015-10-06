@@ -83,15 +83,15 @@ Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
 Hanalog = cascade(Hd1,Hd2);
 
 % Define the digital filters with fixed coefficients
-hb1 = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
-hb2 = 2^(-8)*[-9 0 73 128 73 0 -9];
-hb3 = 2^(-2)*[1 2 1];
-int3 = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
+hb1_coeff = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
+hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
+hb3_coeff = 2^(-2)*[1 2 1];
+int3_coeff = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
 
-Hm1 = dsp.FIRInterpolator(2,hb1);
-Hm2 = dsp.FIRInterpolator(2,hb2);
-Hm3 = dsp.FIRInterpolator(2,hb3);
-Hm4 = dsp.FIRInterpolator(3,int3);
+Hm1 = dsp.FIRInterpolator(2,hb1_coeff);
+Hm2 = dsp.FIRInterpolator(2,hb2_coeff);
+Hm3 = dsp.FIRInterpolator(2,hb3_coeff);
+Hm4 = dsp.FIRInterpolator(3,int3_coeff);
 
 hb1 = input.HB1;
 hb2 = input.HB2;
