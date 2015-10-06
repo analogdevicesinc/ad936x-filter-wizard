@@ -92,63 +92,6 @@ Hm2 = dsp.FIRDecimator(2, hb2);
 Hm3 = dsp.FIRDecimator(2, hb3);
 Hm4 = dsp.FIRDecimator(3, dec3);
 
-if ~isempty(ver('fixedpoint'))
-    set(Hm1,'FullPrecisionOverride',false);
-    set(Hm2,'FullPrecisionOverride',false);
-    set(Hm3,'FullPrecisionOverride',false);
-    set(Hm4,'FullPrecisionOverride',false);
-    
-    set(Hm1,'CoefficientsDataType','Custom');
-    set(Hm1,'CustomCoefficientsDataType',numerictype([],16));
-    set(Hm1,'OutputDataType','Custom');
-    set(Hm1,'CustomOutputDataType',numerictype([],16,14));
-    set(Hm1,'ProductDataType','Custom');
-    set(Hm1,'CustomProductDataType',numerictype([],31,30));
-    set(Hm1,'AccumulatorDataType','Custom');
-    set(Hm1,'CustomAccumulatorDataType',numerictype([],33,30));
-    set(Hm1,'RoundingMethod','convergent');
-    set(Hm1,'OverflowAction','wrap');
-    aa = fi(pi,1,16,14);
-    step(Hm1,aa*ones(2,1));
-    
-    set(Hm2,'CoefficientsDataType','Custom');
-    set(Hm2,'CustomCoefficientsDataType',numerictype([],16));
-    set(Hm2,'OutputDataType','Custom');
-    set(Hm2,'CustomOutputDataType',numerictype([],16,14));
-    set(Hm2,'ProductDataType','Custom');
-    set(Hm2,'CustomProductDataType',numerictype([],31,29));
-    set(Hm2,'AccumulatorDataType','Custom');
-    set(Hm2,'CustomAccumulatorDataType',numerictype([],32,29));
-    set(Hm2,'RoundingMethod','convergent');
-    set(Hm2,'OverflowAction','wrap');
-    step(Hm2,aa*ones(2,1));
-    
-    set(Hm3,'CoefficientsDataType','Custom');
-    set(Hm3,'CustomCoefficientsDataType',numerictype([],16));
-    set(Hm3,'OutputDataType','Custom');
-    set(Hm3,'CustomOutputDataType',numerictype([],8,6));
-    set(Hm3,'ProductDataType','Custom');
-    set(Hm3,'CustomProductDataType',numerictype([],19,18));
-    set(Hm3,'AccumulatorDataType','Custom');
-    set(Hm3,'CustomAccumulatorDataType',numerictype([],21,18));
-    set(Hm3,'RoundingMethod','convergent');
-    set(Hm3,'OverflowAction','wrap');
-    bb = fi(pi,1,4,2);
-    step(Hm3,bb*ones(2,1));
-    
-    set(Hm4,'CoefficientsDataType','Custom');
-    set(Hm4,'CustomCoefficientsDataType',numerictype([],16));
-    set(Hm4,'OutputDataType','Custom');
-    set(Hm4,'CustomOutputDataType',numerictype([],16,14));
-    set(Hm4,'ProductDataType','Custom');
-    set(Hm4,'CustomProductDataType',numerictype([],19,18));
-    set(Hm4,'AccumulatorDataType','Custom');
-    set(Hm4,'CustomAccumulatorDataType',numerictype([],21,18));
-    set(Hm4,'RoundingMethod','convergent');
-    set(Hm4,'OverflowAction','wrap');
-    step(Hm4,bb*ones(3,1));
-end
-
 hb1 = input.HB1;
 hb2 = input.HB2;
 if input.HB3 == 2
@@ -336,18 +279,7 @@ while (1)
     
     Hmd = dsp.FIRDecimator(input.FIR_interp,tap_store(i,1:M));
     if ~isempty(ver('fixedpoint'))
-        set(Hmd,'FullPrecisionOverride',false);
-        set(Hmd,'CoefficientsDataType','Custom');
-        set(Hmd,'CustomCoefficientsDataType',numerictype([],16));
-        set(Hmd,'OutputDataType','Custom');
-        set(Hmd,'CustomOutputDataType',numerictype([],12,10));
-        set(Hmd,'ProductDataType','Custom');
-        set(Hmd,'CustomProductDataType',numerictype([],31,30));
-        set(Hmd,'AccumulatorDataType','Custom');
-        set(Hmd,'CustomAccumulatorDataType',numerictype([],34,30));
-        set(Hmd,'RoundingMethod','convergent');
-        set(Hmd,'OverflowAction','wrap');
-        step(Hmd,aa*ones(input.FIR_interp,1));
+        Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
     end
     
     addStage(Filter1,Hmd);
@@ -385,18 +317,7 @@ end
 
 Hmd = dsp.FIRDecimator(input.FIR_interp,h);
 if ~isempty(ver('fixedpoint'))
-    set(Hmd,'FullPrecisionOverride',false);
-    set(Hmd,'CoefficientsDataType','Custom');
-    set(Hmd,'CustomCoefficientsDataType',numerictype([],16));
-    set(Hmd,'OutputDataType','Custom');
-    set(Hmd,'CustomOutputDataType',numerictype([],12,10));
-    set(Hmd,'ProductDataType','Custom');
-    set(Hmd,'CustomProductDataType',numerictype([],31,30));
-    set(Hmd,'AccumulatorDataType','Custom');
-    set(Hmd,'CustomAccumulatorDataType',numerictype([],34,30));
-    set(Hmd,'RoundingMethod','convergent');
-    set(Hmd,'OverflowAction','wrap');
-    step(Hmd,aa*ones(input.FIR_interp,1));
+    Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
 end
 addStage(Filter1,Hmd);
 rxFilters=Filter1;
