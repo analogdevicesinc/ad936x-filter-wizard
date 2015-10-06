@@ -1051,6 +1051,10 @@ set(handles.design_filter, 'Enable', 'off');
 
 sel = get_current_rxtx(handles);
 converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
+FIR_rate = sel.Rdata * sel.FIR;
+HB1_rate = FIR_rate * sel.HB1;
+HB2_rate = HB1_rate * sel.HB2;
+HB3_rate = HB2_rate * sel.HB3;
 
 % determine the RF bandwidth from the current caldiv
 RFbw = get_rfbw(handles, sel.caldiv);
@@ -1235,6 +1239,26 @@ if strcmp(handles.filters.Stage(i).Arithmetic, 'double')
 else
     set(handles.results_fixed, 'String', 'Fixed Point');
 end
+
+% check if the filter isn't compatible with 2Rx2Tx or 1Rx1Tx mode
+RxTx2 = 4 * sel.Rdata;
+RxTx1 = 2 * sel.Rdata;
+mode = '';
+if (RxTx2 ~= FIR_rate && RxTx2 ~= HB1_rate && RxTx2 ~= HB2_rate && RxTx2 ~= HB3_rate)
+    mode = '2Rx2Tx';
+    rate = RxTx2;
+end
+if (RxTx1 ~= FIR_rate && RxTx1 ~= HB1_rate && RxTx1 ~= HB2_rate && RxTx1 ~= HB3_rate)
+    mode = '1Rx1Tx';
+    rate = RxTx1;
+end
+if ~isempty(mode)
+    warning = sprintf(['This filter is not compatible with %s mode. ', ...
+        'At least one of the clock rates (FIR, HB1, HB2, or HB3) must be equal ', ...
+        'to the data clock rate (LVDS) of %2.4f MHz.'], mode, rate / 1e6);
+    warndlg(warning, 'Filter compatibility');
+end
+
 set(handles.design_filter, 'Visible', 'on');
 guidata(hObject, handles);
 
