@@ -1408,6 +1408,11 @@ if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
     set_caldiv(handles, sel.caldiv);
 end
 
+FIR_rate = sel.Rdata * sel.FIR;
+HB1_rate = FIR_rate * sel.HB1;
+HB2_rate = HB1_rate * sel.HB2;
+HB3_rate = HB2_rate * sel.HB3;
+
 set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
 set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop)));
 set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, get_rfbw(handles, sel.caldiv))));
@@ -1448,8 +1453,8 @@ for i = 1:length(opts)
         break;
     end
 end
-set(handles.FIR_rate, 'String', num2str(sel.Rdata / 1e6 * sel.FIR));
-if (sel.Rdata * sel.FIR) > handles.MAX_FIR
+set(handles.FIR_rate, 'String', num2str(FIR_rate / 1e6));
+if FIR_rate > handles.MAX_FIR
     set(handles.FIR_rate, 'ForegroundColor', [1 0 0]);
     if OK
         warn = 'FIR rate too high';
@@ -1469,8 +1474,8 @@ for i = 1:length(opts)
     end
 end
 
-set(handles.HB1_rate, 'String', num2str(sel.Rdata / 1e6 * sel.FIR * sel.HB1))
-if (sel.Rdata * sel.FIR * sel.HB1) > max_HB.HB1
+set(handles.HB1_rate, 'String', num2str(HB1_rate / 1e6))
+if HB1_rate > max_HB.HB1
     set(handles.HB1_rate, 'ForegroundColor', [1 0 0]);
     if OK
         warn = 'HB1 rate too high';
@@ -1489,8 +1494,8 @@ for i = 1:length(opts)
         break;
     end
 end
-set(handles.HB2_rate, 'String', num2str(sel.Rdata / 1e6 * sel.FIR * sel.HB1 * sel.HB2));
-if (sel.Rdata * sel.FIR * sel.HB1 * sel.HB2) > max_HB.HB2
+set(handles.HB2_rate, 'String', num2str(HB2_rate / 1e6));
+if HB2_rate > max_HB.HB2
     set(handles.HB2_rate, 'ForegroundColor', [1 0 0]);
     if OK
         warn = 'HB2 rate too high';
@@ -1509,8 +1514,8 @@ for i = 1:length(opts)
         break;
     end
 end
-set(handles.HB3_rate, 'String', num2str(sel.Rdata / 1e6 * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3));
-if (sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3) > max_HB.HB3
+set(handles.HB3_rate, 'String', num2str(HB3_rate / 1e6));
+if HB3_rate > max_HB.HB3
     set(handles.HB3_rate, 'ForegroundColor', [1 0 0]);
     if OK
         warn = 'HB3 rate too high';
