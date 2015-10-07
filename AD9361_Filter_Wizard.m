@@ -2492,15 +2492,13 @@ if (get(handles.filter_type, 'Value') == 1)
     Hmiddle = handles.filters.Stage(1);
     Hmiddle = cascade(handles.analogfilter,Hmiddle);
     Hmd = handles.filters.Stage(2);
-    tmp = 'Rx';
 else
     Hmiddle = handles.filters.Stage(2);
     Hmiddle = cascade(Hmiddle,handles.analogfilter);
     Hmd = handles.filters.Stage(1);
-    tmp = 'Tx';
 end
 
-str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', tmp, sel.Fpass/1e6, sel.Fstop/1e6, sel.Apass, sel.Astop);
+str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, sel.Apass, sel.Astop);
 
 hfvt3 = fvtool(handles.analogfilter,Hmiddle,handles.grpdelaycal,...
     'FrequencyRange','Specify freq. vector', ...
