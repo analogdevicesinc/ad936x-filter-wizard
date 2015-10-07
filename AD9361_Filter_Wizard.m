@@ -1085,15 +1085,13 @@ drawnow;
 
 if (get(handles.filter_type, 'Value') == 1)
     filter_input.clkPLL = filter_input.converter_rate * filter_input.PLL_mult;
-    design_filter = @internal_designrxfilters9361_sinc;
 else
     filter_input.DAC_mult = get(handles.DAC_by2, 'Value');
     filter_input.clkPLL = filter_input.converter_rate * filter_input.DAC_mult * filter_input.PLL_mult;
-    design_filter = @internal_designtxfilters9361_sinc;
 end
 
 if (filter_input.phEQ == 0)
-    filter_input.phEQ = minimize_group_delay(handles, design_filter, filter_input);
+    filter_input.phEQ = minimize_group_delay(handles, filter_input);
 end
 filter_result = design_filter(filter_input);
 
@@ -1221,7 +1219,7 @@ end
 set(handles.design_filter, 'Visible', 'on');
 guidata(hObject, handles);
 
-function phEQ = minimize_group_delay(handles, design_filter, filter_input)
+function phEQ = minimize_group_delay(handles, filter_input)
 set(handles.results_group_delay, 'Visible', 'on');
 filter_input.phEQ = 0;
 
