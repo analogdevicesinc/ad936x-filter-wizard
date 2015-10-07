@@ -61,8 +61,8 @@
 %   struct.Fstop    = Stopband Frequency in Hz
 %   struct.Fcenter  = Center Frequency in Hz (only used for Bandpass),
 %                     otherwise 0
-%   struct.dBripple = Passband ripple (Apass) in dB (peak to peak)
-%   struct.dBstop   = Cascaded (FIR + HB + Analog) stop band attenuation (in dB)
+%   struct.Apass    = Passband ripple in dB (peak to peak)
+%   struct.Astop    = Cascaded (FIR + HB + Analog) stop band attenuation (in dB)
 %   struct.FIRdBmin = Minimum stop band attentuation of the FIR (in dB)
 %                     un-cascaded. 0 if not used.
 %
@@ -159,14 +159,14 @@ elseif strcmp(input.Type, 'Bandpass')
     error('Bandpass is not done yet');
 end
 
-% struct.dBripple = Passband ripple (Apass) in dB (peak to peak)
-% struct.dBstop   = Cascaded (FIR + HB + Analog) stop band attenuation (in dB)
-if ~isfield(input, 'dBripple')
-    input.dBripple = .5;
+% struct.Apass = Passband ripple (Apass) in dB (peak to peak)
+% struct.Astop   = Cascaded (FIR + HB + Analog) stop band attenuation (in dB)
+if ~isfield(input, 'Apass')
+    input.Apass = .5;
 end
 
-if ~isfield(input, 'dBstop')
-    input.dBstop = 80;
+if ~isfield(input, 'Astop')
+    input.Astop = 80;
 end
 
 % Assume no phase equalization

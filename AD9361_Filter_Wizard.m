@@ -548,9 +548,9 @@ handles = guidata(hObject);
 
 Astop = str2double(get(hObject, 'String'));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.dBstop = Astop;
+    handles.input_rx.Astop = Astop;
 else
-    handles.input_tx.dBstop = Astop;
+    handles.input_tx.Astop = Astop;
 end
 
 if get(handles.FIR_Astop, 'Value') >= str2double(get(hObject,'String'))
@@ -587,9 +587,9 @@ handles = guidata(hObject);
 
 Apass = str2double(get(hObject, 'String'));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.dBripple = Apass;
+    handles.input_rx.Apass = Apass;
 else
-    handles.input_tx.dBripple = Apass;
+    handles.input_tx.Apass = Apass;
 end
 
 data2gui(hObject, handles);
@@ -1216,16 +1216,15 @@ xlabel('Frequency (MHz)');
 ylabel('Magnitude (dB)');
 
 % plot the mask that we are interested in
-line([sel.Fpass sel.Fpass], [-(sel.dBripple/2) -100], 'Color', 'Red');
-line([0 sel.Fpass], [-(sel.dBripple/2) -(sel.dBripple/2)], 'Color', 'Red');
-line([0 sel.Fstop], [sel.dBripple/2 sel.dBripple/2], 'Color', 'Red');
-line([sel.Fstop sel.Fstop], [sel.dBripple/2 -sel.dBstop], 'Color', 'Red');
-line([sel.Fstop sel.Rdata], [-sel.dBstop -sel.dBstop], 'Color', 'Red');
+line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
+line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
+line([0 sel.Fstop], [sel.Apass/2 sel.Apass/2], 'Color', 'Red');
+line([sel.Fstop sel.Fstop], [sel.Apass/2 -sel.Astop], 'Color', 'Red');
+line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
 
-% add the quantitative values about actual passband, stopband, and group
-% delay
-set(handles.results_Astop, 'String', [num2str(filter_result.dBstop_actual) ' dB ']);
-set(handles.results_Apass, 'String', [num2str(filter_result.dBripple_actual) ' dB ']);
+% add the quantitative values about actual passband, stopband, and group delay
+set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB ']);
+set(handles.results_Apass, 'String', [num2str(filter_result.Apass_actual) ' dB ']);
 set(handles.results_group_delay, 'String', [num2str(filter_result.grpdelayvar * 1e9, 3) ' ns ']);
 
 if get(handles.filter_type, 'Value') == 1
@@ -1443,8 +1442,8 @@ set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, get_rf
 
 set(handles.Fcenter, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fcenter)));
 
-set(handles.Apass, 'String', num2str(sel.dBripple));
-set(handles.Astop, 'String', num2str(sel.dBstop));
+set(handles.Apass, 'String', num2str(sel.Apass));
+set(handles.Astop, 'String', num2str(sel.Astop));
 
 set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Rdata)));
 
@@ -2529,13 +2528,7 @@ function FVTool_datarate_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 sel = get_current_rxtx(handles);
-
-data_rate = sel.Rdata;
 converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
-fstop = sel.Fstop;
-fpass = sel.Fpass;
-apass = sel.dBripple;
-astop = sel.dBstop;
 
 if (get(handles.filter_type, 'Value') == 1)
     Hmiddle = handles.filters.Stage(1);
@@ -2549,11 +2542,11 @@ else
     tmp = 'Tx';
 end
 
-str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', tmp, fpass/1e6, fstop/1e6, apass, astop);
+str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', tmp, sel.Fpass/1e6, sel.Fstop/1e6, sel.Apass, sel.Astop);
 
 hfvt3 = fvtool(handles.analogfilter,Hmiddle,handles.grpdelaycal,...
     'FrequencyRange','Specify freq. vector', ...
-    'FrequencyVector',linspace(0,data_rate/2,2048),'Fs',...
+    'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
     converter_rate, ...
     'ShowReference','off','Color','White');
 set(hfvt3, 'Color', [1 1 1]);
@@ -2567,8 +2560,8 @@ text(0.5, 10,...
 hfvt4 = fvtool(...
     Hmd,...
     'FrequencyRange','Specify freq. vector', ...
-    'FrequencyVector',linspace(0,data_rate/2,2048),'Fs',...
-    data_rate*sel.FIR, ...
+    'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
+    sel.Rdata*sel.FIR, ...
     'ShowReference','off','Color','White');
 set(hfvt4.CurrentAxes, 'YLim', [-100 20]);
 legend(hfvt4, 'FIR Filter');
@@ -2578,13 +2571,13 @@ legend(hfvt4, 'FIR Filter');
 maxmag = max(20*log10(abs(h)));
 
 [gd,~] = grpdelay(handles.grpdelaycal,2048);
-I = round(fpass/(converter_rate/2)*2048);
+I = round(sel.Fpass/(converter_rate/2)*2048);
 gd2 = gd(1:I).*(1/converter_rate);
 str2 = sprintf('Delay Variance = %g ns', handles.grpdelayvar*1e9);
 
 hfvt0 = fvtool(handles.grpdelaycal,...
     'FrequencyRange','Specify freq. vector', ...
-    'FrequencyVector',linspace(0,fpass,2048),...
+    'FrequencyVector',linspace(0,sel.Fpass,2048),...
     'Fs',converter_rate,'Analysis','grpdelay');
 hfvt0.GroupDelayUnits = 'Time';
 text(0.1,(mean(gd2))*1e6,...
