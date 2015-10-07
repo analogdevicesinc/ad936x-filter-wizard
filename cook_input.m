@@ -125,6 +125,10 @@ if ~isfield(input, 'Rdata')
         % Assume LTE5
         input.Rdata = 7680000;
     end
+else
+	if ~isfloat(input.Rdata)
+		error('Rdata must be a floating point value!');
+	end
 end
 
 if input.Rdata > max.MAX_DATA_RATE
