@@ -1065,7 +1065,6 @@ filter_input.dBstop_FIR = sel.FIRdBmin;
 filter_input.wnom = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
 filter_input.int_FIR = get(handles.Use_FIR, 'Value');
 filter_input.RFbw = RFbw;
-filter_input.converter_rate = converter_rate;
 
 plot_buttons_off(handles);
 
@@ -1082,13 +1081,6 @@ end
 oldpointer = get(gcf, 'pointer');
 set(gcf,'Pointer','watch');
 drawnow;
-
-if (get(handles.filter_type, 'Value') == 1)
-    filter_input.clkPLL = filter_input.converter_rate * filter_input.PLL_mult;
-else
-    filter_input.DAC_mult = get(handles.DAC_by2, 'Value');
-    filter_input.clkPLL = filter_input.converter_rate * filter_input.DAC_mult * filter_input.PLL_mult;
-end
 
 if (filter_input.phEQ == 0)
     filter_input.phEQ = minimize_group_delay(handles, filter_input);
