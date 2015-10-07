@@ -571,9 +571,18 @@ classdef libiio_if < handle
                     % The attribute to find can contain wildcard '*' characters,
                     % search for all the substrings in the attribute name
                     str_find = strsplit(attr_name, '*');
+                    str_find = str_find(find(~strcmp(str_find, '')));
+                    has_wildcard = ~isempty(strfind(attr_name, '*'));
                     attr_found = 1;
                     for i = 1 : length(str_find)
-                        ret = strfind(name, str_find{i});
+                        if(has_wildcard == 0)
+                            ret = strcmp(name, str_find{i});
+                            if(ret == 0)
+                                ret = [];
+                            end
+                        else
+                            ret = strfind(name, str_find{i});
+                        end
                         if(isempty(ret))
                             attr_found = 0;
                             break;
