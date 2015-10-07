@@ -1060,21 +1060,9 @@ HB3_rate = HB2_rate * sel.HB3;
 RFbw = get_rfbw(handles, sel.caldiv);
 
 % filter design input structure
-filter_input.Fstop = sel.Fstop;
-filter_input.Fpass = sel.Fpass;
-filter_input.dBripple = sel.dBripple;
-filter_input.dBstop = sel.dBstop;
+filter_input = sel;
 filter_input.dBstop_FIR = sel.FIRdBmin;
-filter_input.data_rate = sel.Rdata;
-filter_input.FIR_interp = sel.FIR;
-filter_input.HB_interp = sel.HB1 * sel.HB2 * sel.HB3;
-filter_input.HB1 = sel.HB1;
-filter_input.HB2 = sel.HB2;
-filter_input.HB3 = sel.HB3;
-filter_input.PLL_mult = sel.PLL_mult;
-filter_input.phEQ = sel.phEQ;
 filter_input.wnom = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
-filter_input.caldiv = sel.caldiv;
 filter_input.int_FIR = get(handles.Use_FIR, 'Value');
 filter_input.RFbw = RFbw;
 filter_input.converter_rate = converter_rate;
@@ -1113,50 +1101,22 @@ handles.analogfilter = filter_result.Hanalog;
 handles.grpdelayvar = filter_result.grpdelayvar;
 
 if get(handles.filter_type, 'Value') == 1
-    handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.rxFilters);
-    handles.filters = filter_result.rxFilters;
-    handles.rfirtaps = int32(filter_result.rfirtaps);
+    handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.filters);
+    handles.rfirtaps = int32(filter_result.firtaps);
 
     % values used for saving to a filter file or pushing to the target directly
-    handles.rx.RxTx = 'Rx';
-    handles.rx.phEQ = filter_input.phEQ;
+    handles.rx = filter_result;
     handles.rx.RFbw = RFbw;
-    handles.rx.HB3 = sel.HB3;
-    handles.rx.HB2 = sel.HB2;
-    handles.rx.HB1 = sel.HB1;
-    handles.rx.FIR = sel.FIR;
-    handles.rx.Rdata = sel.Rdata;
-    handles.rx.Fpass = sel.Fpass;
-    handles.rx.Fstop = sel.Fstop;
-    handles.rx.caldiv = sel.caldiv;
-    handles.rx.DAC_div = sel.DAC_div;
-    handles.rx.dBripple = sel.dBripple;
-    handles.rx.dBstop = sel.dBstop;
-    handles.rx.PLL_mult = sel.PLL_mult;
-    handles.rx.gain = filter_result.tohw.Gain;
 else
-    handles.grpdelaycal = cascade(filter_result.txFilters, filter_result.Hanalog);
-    handles.filters = filter_result.txFilters;
-    handles.tfirtaps = int32(filter_result.tfirtaps);
+    handles.grpdelaycal = cascade(filter_result.filters, filter_result.Hanalog);
+    handles.tfirtaps = int32(filter_result.firtaps);
 
     % values used for saving to a filter file or pushing to the target directly
-    handles.tx.RxTx = 'Tx';
-    handles.tx.phEQ = filter_input.phEQ;
+    handles.tx = filter_result;
     handles.tx.RFbw = RFbw;
-    handles.tx.HB3 = sel.HB3;
-    handles.tx.HB2 = sel.HB2;
-    handles.tx.HB1 = sel.HB1;
-    handles.tx.FIR = sel.FIR;
-    handles.tx.Rdata = sel.Rdata;
-    handles.tx.Fpass = sel.Fpass;
-    handles.tx.Fstop = sel.Fstop;
-    handles.tx.caldiv = sel.caldiv;
-    handles.tx.DAC_div = sel.DAC_div;
-    handles.tx.dBripple = sel.dBripple;
-    handles.tx.dBstop = sel.dBstop;
-    handles.tx.PLL_mult = sel.PLL_mult;
-    handles.tx.gain = filter_result.tohw.Gain;
 end
+
+handles.filters = filter_result.filters;
 
 set(gcf, 'Pointer', oldpointer);
 
