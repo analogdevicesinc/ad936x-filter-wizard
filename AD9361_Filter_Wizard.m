@@ -1113,8 +1113,6 @@ end
 handles.taps_length = filter_result.taps_length;
 handles.Hmd = filter_result.Hmd;
 handles.Hmiddle = filter_result.Hmiddle;
-%handles.simrfmodel = filter_result.webinar;
-%handles.supportpack = filter_result.tohw;
 
 set(handles.FVTool_deeper, 'Visible', 'on');
 set(handles.FVTool_datarate, 'Visible', 'on');
@@ -2054,17 +2052,14 @@ function save2workspace_Callback(hObject, eventdata, handles)
 set(handles.save2workspace, 'Enable', 'off');
 drawnow;
 
+% TODO
 if (~isempty(handles.applycallback))
-    handles.applycallback(handles.callbackObj, handles.supportpack);
+    handles.applycallback(handles.callbackObj, handles.filter);
 else
     if get(handles.filter_type, 'Value') == 1
         assignin('base', 'AD9361_Rx_Filter_object', handles.filter);
-        assignin('base', 'FMCOMMS2_RX_Model_init', handles.simrfmodel);
-        assignin('base', 'FMCOMMS2_RX_Hardware', handles.supportpack);
     else
         assignin('base', 'AD9361_Tx_Filter_object', handles.filter);
-        assignin('base', 'FMCOMMS2_TX_Model_init', handles.simrfmodel);
-        assignin('base', 'FMCOMMS2_TX_Hardware', handles.supportpack);
     end
 end
 
