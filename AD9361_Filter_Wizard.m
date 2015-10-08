@@ -1084,18 +1084,19 @@ filter_result = design_filter(filter_input);
 handles.filter = filter_result.filter;
 handles.analogfilter = filter_result.Hanalog;
 handles.grpdelayvar = filter_result.grpdelayvar;
+handles.grpdelaycal = clone(filter_result.filter);
 
 if get(handles.filter_type, 'Value') == 1
-    addStage(filter_result.filter,filter_result.Hd2,1);
-    addStage(filter_result.filter,filter_result.Hd1,2);
+    addStage(handles.grpdelaycal,filter_result.Hd2,1);
+    addStage(handles.grpdelaycal,filter_result.Hd1,2);
     handles.rfirtaps = int32(filter_result.firtaps);
 
     % values used for saving to a filter file or pushing to the target directly
     handles.rx = filter_result;
     handles.rx.RFbw = RFbw;
 else
-    addStage(filter_result.filter,filter_result.Hd1);
-    addStage(filter_result.filter,filter_result.Hd2);
+    addStage(handles.grpdelaycal,filter_result.Hd1);
+    addStage(handles.grpdelaycal,filter_result.Hd2);
     handles.tfirtaps = int32(filter_result.firtaps);
 
     % values used for saving to a filter file or pushing to the target directly
@@ -1103,7 +1104,6 @@ else
     handles.tx.RFbw = RFbw;
 end
 
-handles.grpdelaycal = filter_result.filter;
 set(gcf, 'Pointer', oldpointer);
 
 if get(handles.phase_eq, 'Value')
