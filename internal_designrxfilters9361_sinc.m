@@ -113,9 +113,9 @@ switch enables
     case '2111' % Hb1
         Filter1 = Hm1;
     case '1211' % Hb2
-        Filter1 = Hm1;
+        Filter1 = Hm2;
     case '1121' % Hb3
-        Filter1 = Hm1;
+        Filter1 = Hm3;
     case '2211' % Hb2,Hb1
         Filter1 = cascade(Hm2,Hm1);
     case '2121' % Hb3,Hb1
@@ -138,7 +138,11 @@ end
 
 % Hmiddle is analog + half band
 Hmiddle=clone(Filter1);
-addStage(Hmiddle,Hd1,1);
+if strcmp(enables,'1111')||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+    Hmiddle = cascade(Hd1,Hmiddle);
+else
+    addStage(Hmiddle,Hd1,1);
+end
 addStage(Hmiddle,Hd2,1);
 
 % Find out the best fit delay on passband
@@ -285,7 +289,11 @@ while (1)
         Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
     end
     
-    addStage(Filter1,Hmd);
+    if strcmp(enables,'1111')||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+        Filter1 = cascade(Filter1,Hmd);
+    else
+        addStage(Filter1,Hmd);
+    end
     
     % quantitative values about actual passband and stopband
     rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2).*freqz(Filter1,omega(1:Gpass+1),input.converter_rate));

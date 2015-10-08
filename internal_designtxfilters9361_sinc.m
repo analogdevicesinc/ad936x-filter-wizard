@@ -137,9 +137,13 @@ switch enables
         error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
 end
 
-% Hmiddle is analog + half band
+% Hmiddle is half band + analog
 Hmiddle=clone(Filter1);
-addStage(Hmiddle,Hd1);
+if strcmp(enables,'1111')||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+    Hmiddle = cascade(Hmiddle,Hd1);
+else
+    addStage(Hmiddle,Hd1);
+end
 addStage(Hmiddle,Hd2);
 
 % Find out the best fit delay on passband
@@ -291,7 +295,13 @@ while (1)
         Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
     end
     
-    addStage(Filter1, Hmd, 1);
+    if strcmp(enables,'1111')||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+        Filter1 = cascade(Hmd,Filter1);
+    else
+        addStage(Filter1, Hmd, 1);
+    end
+    
+    
     
     % quantitative values about actual passband and stopband
     rg_pass = abs(freqz(Filter1,omega(1:Gpass+1),input.converter_rate).*analogresp('Tx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));
