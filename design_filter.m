@@ -45,7 +45,6 @@
 % phEQ       = phase equalization on (not -1)/off (-1)
 % int_FIR    = use AD9361 FIR on (1)/off (0)
 % wnom       = analog cutoff frequency (in Hz)
-% clkPLL     = PLL frequency (in HZ)
 %
 % Outputs (structure containing the following fields)
 % ===============================================
@@ -59,10 +58,16 @@ function output = designfilter(input)
 
 input = cook_input(input);
 converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;
+clkPLL = converter_rate * input.PLL_mult;
 
 % use the internal FIR if unspecified
 if ~isfield(input, 'int_FIR')
     input.int_FIR = 1;
+end
+
+% nominal frequency can't be zero
+if ~input.wnom
+    input.wnom = (clkPLL/input.caldiv)*(log(2)/(2*pi));
 end
 
 if strcmp(input.RxTx, 'Rx')
