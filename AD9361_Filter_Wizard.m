@@ -521,6 +521,13 @@ input.RxTx = 'Tx';
 handles.input_tx = cook_input(input);
 handles = autoselect_rates(handles);
 
+% reset fcutoff to the default value for advanced mode
+if get(handles.Advanced_options, 'Value')
+    set(handles.Fcutoff, 'String', '0');
+    caldiv = get_caldiv(handles);
+    set_caldiv(handles, caldiv);
+end
+
 data2gui(hObject, handles);
 handles = guidata(hObject);
 guidata(hObject, handles);
