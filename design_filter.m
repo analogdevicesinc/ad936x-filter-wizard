@@ -50,7 +50,7 @@
 % Outputs (structure containing the following fields)
 % ===============================================
 % firtaps          = fixed point FIR coefficients
-% filters          = system object for visualization (does not include analog filters)
+% filter           = system object for visualization (does not include analog filters)
 % Apass_actual     = actual passband ripple
 % Astop_actual     = actual stopband attentuation
 % delay            = actual delay used in phase equalization
@@ -65,7 +65,7 @@ if ~isfield(input, 'int_FIR')
     input.int_FIR = 1;
 end
 
-if input.RxTx == 'Rx'
+if strcmp(input.RxTx, 'Rx')
     wTIA = input.wnom*(2.5/1.4);
 
     % Define the analog filters (for design purpose)
@@ -75,19 +75,19 @@ if input.RxTx == 'Rx'
     % Digital representation of the analog filters (It is an approximation for group delay calculation only)
     [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(converter_rate/2)),'low');
     [sos1,g1] = zp2sos(z1,p1,k1);
-    Hd1 = dfilt.df2tsos(sos1,g1);
+    Hd1=dsp.BiquadFilter('SOSMatrix',sos1,'ScaleValues',g1);
     [z2,p2,k2] = butter(1,coerce_cutoff(wTIA/(converter_rate/2)),'low');
     [sos2,g2] = zp2sos(z2,p2,k2);
-    Hd2 = dfilt.df2tsos(sos2,g2);
+    Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd2,Hd1);
 
     % Define the digital filters with fixed coefficients
-    hb1 = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
-    hb2 = 2^(-8)*[-9 0 73 128 73 0 -9];
-    hb3 = 2^(-4)*[1 4 6 4 1];
-    dec_int3 = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 4041 1914 0 -580 -393 0 83 55];
+    hb1_coeff = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
+    hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
+    hb3_coeff = 2^(-4)*[1 4 6 4 1];
+    dec_int3_coeff = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 4041 1914 0 -580 -393 0 83 55];
 
-    dec_int_func = @mfilt.firdecim;
+    dec_int_func = @dsp.FIRDecimator;
 else
     wreal = input.wnom*(5.0/1.6);
 
@@ -98,60 +98,25 @@ else
     % Digital representation of the analog filters (It is an approximation for group delay calculation only)
     [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(converter_rate/2)),'low');
     [sos1,g1] = zp2sos(z1,p1,k1);
-    Hd1 = dfilt.df2tsos(sos1,g1);
+    Hd1=dsp.BiquadFilter('SOSMatrix',sos1,'ScaleValues',g1);
     [z2,p2,k2] = butter(1,coerce_cutoff(wreal/(converter_rate/2)),'low');
     [sos2,g2] = zp2sos(z2,p2,k2);
-    Hd2 = dfilt.df2tsos(sos2,g2);
+    Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd1,Hd2);
 
     % Define the digital filters with fixed coefficients
-    hb1 = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
-    hb2 = 2^(-8)*[-9 0 73 128 73 0 -9];
-    hb3 = 2^(-2)*[1 2 1];
-    dec_int3 = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
+    hb1_coeff = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
+    hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
+    hb3_coeff = 2^(-2)*[1 2 1];
+    dec_int3_coeff = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
 
-    dec_int_func = @mfilt.firinterp;
+    dec_int_func = @dsp.FIRInterpolator;
 end
 
-Hm1 = dec_int_func(2,hb1);
-Hm2 = dec_int_func(2,hb2);
-Hm3 = dec_int_func(2,hb3);
-Hm4 = dec_int_func(3,dec_int3);
-
-if ~isempty(ver('fixedpoint'))
-    set(Hm1,'arithmetic','fixed');
-    set(Hm2,'arithmetic','fixed');
-    set(Hm3,'arithmetic','fixed');
-    set(Hm4,'arithmetic','fixed');
-
-    Hm1.InputWordLength = 16;
-    Hm1.InputFracLength = 14;
-    Hm1.FilterInternals = 'SpecifyPrecision';
-    Hm1.OutputWordLength = 16;
-    Hm1.OutputFracLength = 14;
-    Hm1.CoeffWordLength = 16;
-
-    Hm2.InputWordLength = 16;
-    Hm2.InputFracLength = 14;
-    Hm2.FilterInternals = 'SpecifyPrecision';
-    Hm2.OutputWordLength = 16;
-    Hm2.OutputFracLength = 14;
-    Hm2.CoeffWordLength = 16;
-
-    Hm3.InputWordLength = 4;
-    Hm3.InputFracLength = 2;
-    Hm3.FilterInternals = 'SpecifyPrecision';
-    Hm3.OutputWordLength = 8;
-    Hm3.OutputFracLength = 6;
-    Hm3.CoeffWordLength = 16;
-
-    Hm4.InputWordLength = 4;
-    Hm4.InputFracLength = 2;
-    Hm4.FilterInternals = 'SpecifyPrecision';
-    Hm4.OutputWordLength = 16;
-    Hm4.OutputFracLength = 14;
-    Hm4.CoeffWordLength = 16;
-end
+Hm1 = dec_int_func(2, hb1_coeff);
+Hm2 = dec_int_func(2, hb2_coeff);
+Hm3 = dec_int_func(2, hb3_coeff);
+Hm4 = dec_int_func(3, dec_int3_coeff);
 
 hb1 = input.HB1;
 hb2 = input.HB2;
@@ -168,64 +133,81 @@ end
 
 % convert the enables into a string
 enables = strrep(num2str([hb1 hb2 hb3 dec_int3]), ' ', '');
-if input.RxTx == 'Rx'
+if strcmp(input.RxTx, 'Rx')
     switch enables
         case '1111' % only FIR
-            Filter1 = 1;
+            filter = 1;
         case '2111' % Hb1
-            Filter1 = Hm1;
+            filter = Hm1;
         case '1211' % Hb2
-            Filter1 = Hm1;
+            filter = Hm2;
         case '1121' % Hb3
-            Filter1 = Hm1;
+            filter = Hm3;
         case '2211' % Hb2,Hb1
-            Filter1 = cascade(Hm2,Hm1);
+            filter = cascade(Hm2,Hm1);
         case '2121' % Hb3,Hb1
-            Filter1 = cascade(Hm3,Hm1);
+            filter = cascade(Hm3,Hm1);
         case '2221' % Hb3,Hb2,Hb1
-            Filter1 = cascade(Hm3,Hm2,Hm1);
+            filter = cascade(Hm3,Hm2,Hm1);
         case '1113' % Dec3
-            Filter1 = Hm4;
+            filter = Hm4;
         case '2113' % Dec3,Hb1
-            Filter1 = cascade(Hm4,Hm1);
+            filter = cascade(Hm4,Hm1);
         case '2213' % Dec3,Hb2,Hb1
-            Filter1 = cascade(Hm4,Hm2,Hm1);
+            filter = cascade(Hm4,Hm2,Hm1);
         case '1221' % Hb3,Hb2
-            Filter1 = cascade(Hm3,Hm2);
+            filter = cascade(Hm3,Hm2);
         case '1213' % Dec3,Hb2
-            Filter1 = cascade(Hm4,Hm2);
+            filter = cascade(Hm4,Hm2);
         otherwise
             error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
     end
 else
     switch enables
         case '1111' % only TFIR
-            Filter1 = 1;
+            filter = 1;
         case '2111' % Hb1
-            Filter1 = Hm1;
+            filter = Hm1;
         case '1211' % Hb2
-            Filter1 = Hm2;
+            filter = Hm2;
         case '1213' % Hb2,Int3
-            Filter1 = cascade(Hm2,Hm4);
+            filter = cascade(Hm2,Hm4);
         case '1121' % Hb3
-            Filter1 = Hm3;
+            filter = Hm3;
         case '1221' % Hb2,Hb3
-            Filter1 = cascade(Hm2,Hm3);
+            filter = cascade(Hm2,Hm3);
         case '2211' % Hb1,Hb2
-            Filter1 = cascade(Hm1,Hm2);
+            filter = cascade(Hm1,Hm2);
         case '2121' % Hb1,Hb3
-            Filter1 = cascade(Hm1,Hm3);
+            filter = cascade(Hm1,Hm3);
         case '2221' % Hb1,Hb2,Hb3
-            Filter1 = cascade(Hm1,Hm2,Hm3);
+            filter = cascade(Hm1,Hm2,Hm3);
         case '1113' % Int3
-            Filter1 = Hm4;
+            filter = Hm4;
         case '2113' % Hb1,Int3
-            Filter1 = cascade(Hm1,Hm4);
+            filter = cascade(Hm1,Hm4);
         case '2213' % Hb1,Hb2,Int3
-            Filter1 = cascade(Hm1,Hm2,Hm4);
+            filter = cascade(Hm1,Hm2,Hm4);
         otherwise
             error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
     end
+end
+
+Hmiddle = clone(filter);
+if strcmp(input.RxTx, 'Rx')
+    if strcmp(enables,'1111') ||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+        Hmiddle = cascade(Hd1,Hmiddle);
+    else
+        addStage(Hmiddle,Hd1,1);
+    end
+    addStage(Hmiddle,Hd2,1);
+else
+    if strcmp(enables,'1111') ||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+        Hmiddle = cascade(Hmiddle,Hd1);
+    else
+        addStage(Hmiddle,Hd1);
+    end
+    addStage(Hmiddle,Hd2);
 end
 
 % Find out the best fit delay on passband
@@ -239,10 +221,10 @@ for i = 2:(Nw)
     w(i) = w(1)-2*w(1)*i/(Nw);
 end
 
-if input.RxTx == 'Rx'
-    response = analogresp('Rx',w,converter_rate,b1,a1,b2,a2).*freqz(Filter1,w,converter_rate);
+if strcmp(input.RxTx, 'Rx')
+    response = analogresp('Rx',w,converter_rate,b1,a1,b2,a2).*freqz(filter,w,converter_rate);
 else
-    response = freqz(Filter1,w,converter_rate).*analogresp('Tx',w,converter_rate,b1,a1,b2,a2);
+    response = freqz(filter,w,converter_rate).*analogresp('Tx',w,converter_rate,b1,a1,b2,a2);
 end
 for i = 1:(Nw)
     invariance(i) = real(response(i))^2+imag(response(i))^2;
@@ -280,10 +262,10 @@ for i = 1:(Gpass+1)
     fg(i) = (i-1)/G;
     omega(i) = fg(i)*clkFIR;
 end
-if input.RxTx == 'Rx'
-    rg1 = analogresp('Rx',omega,converter_rate,b1,a1,b2,a2).*freqz(Filter1,omega,converter_rate);
+if strcmp(input.RxTx, 'Rx')
+    rg1 = analogresp('Rx',omega,converter_rate,b1,a1,b2,a2).*freqz(filter,omega,converter_rate);
 else
-    rg1 = freqz(Filter1,omega,converter_rate).*analogresp('Tx',omega,converter_rate,b1,a1,b2,a2);
+    rg1 = freqz(filter,omega,converter_rate).*analogresp('Tx',omega,converter_rate,b1,a1,b2,a2);
 end
 phase = unwrap(angle(rg1));
 gd1 = GroupDelay(omega,phase); % group delay on passband for Analog + Converter + HB
@@ -300,11 +282,11 @@ for m = Gstop:(G/2)
     omega(g) = fg(g)*clkFIR;
     rg(g) = 0;
 end
-if input.RxTx == 'Rx'
-    wg1 = abs(analogresp('Rx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2).*freqz(Filter1,omega(Gpass+2:end),converter_rate));
+if strcmp(input.RxTx, 'Rx')
+    wg1 = abs(analogresp('Rx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),converter_rate));
     wg2 = (wg1)/(dBinv(-input.Astop));
 else
-    wg1 = abs(freqz(Filter1,omega(Gpass+2:end),converter_rate).*analogresp('Tx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2));
+    wg1 = abs(freqz(filter,omega(Gpass+2:end),converter_rate).*analogresp('Tx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2));
     wg2 = (sqrt(input.FIR)*wg1)/(dBinv(-input.Astop));
 end
 wg3 = dBinv(input.FIRdBmin);
@@ -328,8 +310,12 @@ W1 = weight(1:Gpass+1);
 W2 = weight(Gpass+2:end);
 
 % Determine the number of taps for FIR
-if input.RxTx == 'Rx'
-    N = min(16*floor(converter_rate/(2*input.Rdata)),128);
+if strcmp(input.RxTx, 'Rx')
+    if hb3 == 1
+        N = min(16*floor(converter_rate/(input.Rdata)),128);
+    else
+        N = min(16*floor(converter_rate/(2*input.Rdata)),128);
+    end
 else
     switch input.FIR
         case 1
@@ -391,22 +377,24 @@ while (1)
 
     Hmd = dec_int_func(input.FIR,tap_store(i,1:M));
     if ~isempty(ver('fixedpoint'))
-        set(Hmd,'arithmetic','fixed');
-        Hmd.InputWordLength = 16;
-        Hmd.InputFracLength = 14;
-        Hmd.FilterInternals = 'SpecifyPrecision';
-        Hmd.OutputWordLength = 12;
-        Hmd.OutputFracLength = 10;
-        Hmd.CoeffWordLength = 16;
+        Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
     end
-    if input.RxTx == 'Rx'
-        filters=cascade(Filter1,Hmd);
-        rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),converter_rate,b1,a1,b2,a2).*freqz(filters,omega(1:Gpass+1),converter_rate));
-        rg_stop = abs(analogresp('Rx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2).*freqz(filters,omega(Gpass+2:end),converter_rate));
+    if strcmp(input.RxTx, 'Rx')
+        if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+            filter = cascade(filter,Hmd);
+        else
+            addStage(filter,Hmd);
+        end
+        rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),converter_rate,b1,a1,b2,a2).*freqz(filter,omega(1:Gpass+1),converter_rate));
+        rg_stop = abs(analogresp('Rx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),converter_rate));
     else
-        filters=cascade(Hmd,Filter1);
-        rg_pass = abs(freqz(filters,omega(1:Gpass+1),converter_rate).*analogresp('Tx',omega(1:Gpass+1),converter_rate,b1,a1,b2,a2));
-        rg_stop = abs(freqz(filters,omega(Gpass+2:end),converter_rate).*analogresp('Tx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2));
+        if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
+            filter = cascade(Hmd,filter);
+        else
+            addStage(filter, Hmd, 1);
+        end
+        rg_pass = abs(freqz(filter,omega(1:Gpass+1),converter_rate).*analogresp('Tx',omega(1:Gpass+1),converter_rate,b1,a1,b2,a2));
+        rg_stop = abs(freqz(filter,omega(Gpass+2:end),converter_rate).*analogresp('Tx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2));
     end
 
     % quantitative values about actual passband and stopband
@@ -417,20 +405,40 @@ while (1)
         h = tap_store(1,1:M);
         Apass_actual = Apass_actual_vector(1);
         Astop_actual = Astop_actual_vector(1);
+        if strcmp(input.RxTx, 'Rx')
+            removeStage(filter);
+        else
+            removeStage(filter, 1);
+        end
         break
     elseif Apass_actual_vector(1) > input.Apass || Astop_actual_vector(1) < input.Astop
         h = tap_store(1,1:N);
         Apass_actual = Apass_actual_vector(1);
         Astop_actual = Astop_actual_vector(1);
+        if strcmp(input.RxTx, 'Rx')
+            removeStage(filter);
+        else
+            removeStage(filter, 1);
+        end
         break
     elseif Apass_actual_vector(i) > input.Apass || Astop_actual_vector(i) < input.Astop
         h = tap_store(i-1,1:N+16);
         Apass_actual = Apass_actual_vector(i-1);
         Astop_actual = Astop_actual_vector(i-1);
+        if strcmp(input.RxTx, 'Rx')
+            removeStage(filter);
+        else
+            removeStage(filter, 1);
+        end
         break
     else
         N = N-16;
         i = i+1;
+        if strcmp(input.RxTx, 'Rx')
+            removeStage(filter);
+        else
+            removeStage(filter, 1);
+        end
     end
 end
 
@@ -452,18 +460,12 @@ end
 
 Hmd = dec_int_func(input.FIR,h);
 if ~isempty(ver('fixedpoint'))
-    set(Hmd,'arithmetic','fixed');
-    Hmd.InputWordLength = 16;
-    Hmd.InputFracLength = 14;
-    Hmd.FilterInternals = 'SpecifyPrecision';
-    Hmd.OutputWordLength = 12;
-    Hmd.OutputFracLength = 10;
-    Hmd.CoeffWordLength = 16;
+    Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
 end
-if input.RxTx == 'Rx'
-    filters=cascade(Filter1,Hmd);
+if strcmp(input.RxTx, 'Rx')
+    addStage(filter, Hmd);
 else
-    filters=cascade(Hmd,Filter1);
+    addStage(filter, Hmd, 1);
 end
 gd2 = grpdelay(Hmd,omega1,clkFIR).*(1/clkFIR);
 if input.phEQ == -1
@@ -476,7 +478,7 @@ grpdelayvar = max(groupdelay)-min(groupdelay);
 aTFIR = 1 + ceil(log2(max(Hmd.Numerator)));
 switch aTFIR
     case 2
-        gain = +6;
+        gain = 6;
     case 1
         gain = 0;
     case 0
@@ -485,9 +487,9 @@ switch aTFIR
         gain = -12;
 end
 
-if input.RxTx == 'Rx'
+if strcmp(input.RxTx, 'Rx')
     if aTFIR > 2
-        gain = +6;
+        gain = 6;
     end
 else
     if input.FIR == 2
@@ -526,13 +528,17 @@ output = input;
 
 output.firtaps = firtaps;
 output.taps_length = length(h);
-output.filters = filters;
+output.filter = filter;
 output.Hanalog = Hanalog;
 output.Apass_actual = Apass_actual;
 output.Astop_actual = Astop_actual;
 output.delay = delay;
 output.grpdelayvar = grpdelayvar;
 output.gain = gain;
+output.Hd1 = Hd1;
+output.Hd2 = Hd2;
+output.Hmd = Hmd;
+output.Hmiddle = Hmiddle;
 output.a1 = a1;
 output.b1 = b1;
 output.a2 = a2;

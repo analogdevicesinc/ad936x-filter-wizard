@@ -950,14 +950,8 @@ Fs = converter_rate; % sampling frequency
 F = linspace(0,converter_rate/2,2048);
 
 if (get(handles.filter_type, 'Value') == 1)
-    Hmiddle = handles.filters.Stage(1);
-    Hmiddle = cascade(handles.analogfilter,Hmiddle);
-    tmp = 'Rx';
     A = sinc(F/Fs).^3;
 else
-    Hmiddle = handles.filters.Stage(2);
-    Hmiddle = cascade(Hmiddle,handles.analogfilter);
-    tmp = 'Tx';
     A = sinc(F/Fs);
 end
 
@@ -967,9 +961,9 @@ Hcon = design(d,'SystemObject',false);
 apass = str2double(get(handles.Apass, 'String'));
 astop = str2double(get(handles.Astop, 'String'));
 
-str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', tmp, sel.Fpass/1e6, sel.Fstop/1e6, apass, astop);
+str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, apass, astop);
 
-hfvt1 = fvtool(Hcon,handles.analogfilter,Hmiddle,handles.grpdelaycal,...
+hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
     'FrequencyRange','Specify freq. vector', ...
     'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
     converter_rate, ...
@@ -1087,18 +1081,21 @@ if (filter_input.phEQ == 0)
 end
 filter_result = design_filter(filter_input);
 
+handles.filter = filter_result.filter;
 handles.analogfilter = filter_result.Hanalog;
 handles.grpdelayvar = filter_result.grpdelayvar;
 
 if get(handles.filter_type, 'Value') == 1
-    handles.grpdelaycal = cascade(filter_result.Hanalog, filter_result.filters);
+    addStage(filter_result.filter,filter_result.Hd2,1);
+    addStage(filter_result.filter,filter_result.Hd1,2);
     handles.rfirtaps = int32(filter_result.firtaps);
 
     % values used for saving to a filter file or pushing to the target directly
     handles.rx = filter_result;
     handles.rx.RFbw = RFbw;
 else
-    handles.grpdelaycal = cascade(filter_result.filters, filter_result.Hanalog);
+    addStage(filter_result.filter,filter_result.Hd1);
+    addStage(filter_result.filter,filter_result.Hd2);
     handles.tfirtaps = int32(filter_result.firtaps);
 
     % values used for saving to a filter file or pushing to the target directly
@@ -1106,8 +1103,7 @@ else
     handles.tx.RFbw = RFbw;
 end
 
-handles.filters = filter_result.filters;
-
+handles.grpdelaycal = filter_result.filter;
 set(gcf, 'Pointer', oldpointer);
 
 if get(handles.phase_eq, 'Value')
@@ -1115,8 +1111,10 @@ if get(handles.phase_eq, 'Value')
 end
 
 handles.taps_length = filter_result.taps_length;
-handles.simrfmodel = filter_result.webinar;
-handles.supportpack = filter_result.tohw;
+handles.Hmd = filter_result.Hmd;
+handles.Hmiddle = filter_result.Hmiddle;
+%handles.simrfmodel = filter_result.webinar;
+%handles.supportpack = filter_result.tohw;
 
 set(handles.FVTool_deeper, 'Visible', 'on');
 set(handles.FVTool_datarate, 'Visible', 'on');
@@ -1157,7 +1155,7 @@ else
 end
 handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
     abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
-    handles.filters,linspace(0,sel.Rdata/2,G),converter_rate))));
+    handles.filter,linspace(0,sel.Rdata/2,G),converter_rate))));
 
 xlim([0 sel.Rdata/2]);
 ylim([-100 10]);
@@ -1178,15 +1176,17 @@ set(handles.results_Apass, 'String', [num2str(filter_result.Apass_actual) ' dB '
 set(handles.results_group_delay, 'String', [num2str(filter_result.grpdelayvar * 1e9, 3) ' ns ']);
 
 if get(handles.filter_type, 'Value') == 1
-    i = 2;
+    if handles.filter.Stage3.FullPrecisionOverride == 1
+        set(handles.results_fixed, 'String', 'Floating point approx');
+    else
+        set(handles.results_fixed, 'String', 'Fixed Point');
+    end
 else
-    i = 1;
-end
-
-if strcmp(handles.filters.Stage(i).Arithmetic, 'double')
-    set(handles.results_fixed, 'String', 'Floating point approx');
-else
-    set(handles.results_fixed, 'String', 'Fixed Point');
+    if handles.filter.Stage1.FullPrecisionOverride == 1
+        set(handles.results_fixed, 'String', 'Floating point approx');
+    else
+        set(handles.results_fixed, 'String', 'Fixed Point');
+    end
 end
 
 % check if the filter isn't compatible with 2Rx2Tx or 1Rx1Tx mode
@@ -2058,11 +2058,11 @@ if (~isempty(handles.applycallback))
     handles.applycallback(handles.callbackObj, handles.supportpack);
 else
     if get(handles.filter_type, 'Value') == 1
-        assignin('base', 'AD9361_Rx_Filter_object', handles.filters);
+        assignin('base', 'AD9361_Rx_Filter_object', handles.filter);
         assignin('base', 'FMCOMMS2_RX_Model_init', handles.simrfmodel);
         assignin('base', 'FMCOMMS2_RX_Hardware', handles.supportpack);
     else
-        assignin('base', 'AD9361_Tx_Filter_object', handles.filters);
+        assignin('base', 'AD9361_Tx_Filter_object', handles.filter);
         assignin('base', 'FMCOMMS2_TX_Model_init', handles.simrfmodel);
         assignin('base', 'FMCOMMS2_TX_Hardware', handles.supportpack);
     end
@@ -2249,9 +2249,9 @@ if error_msg
 end
 
 if get(handles.filter_type, 'Value') == 1
-    Hd = handles.filters.Stage(2);
+    Hd = handles.filter.Stage(2);
 else
-    Hd = handles.filters.Stage(1);
+    Hd = handles.filter.Stage(1);
 end
 Hd.arithmetic = 'fixed';
 fdhdltool(Hd);
@@ -2480,19 +2480,9 @@ function FVTool_datarate_Callback(hObject, eventdata, handles)
 sel = get_current_rxtx(handles);
 converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
 
-if (get(handles.filter_type, 'Value') == 1)
-    Hmiddle = handles.filters.Stage(1);
-    Hmiddle = cascade(handles.analogfilter,Hmiddle);
-    Hmd = handles.filters.Stage(2);
-else
-    Hmiddle = handles.filters.Stage(2);
-    Hmiddle = cascade(Hmiddle,handles.analogfilter);
-    Hmd = handles.filters.Stage(1);
-end
-
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, sel.Apass, sel.Astop);
 
-hfvt3 = fvtool(handles.analogfilter,Hmiddle,handles.grpdelaycal,...
+hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
     'FrequencyRange','Specify freq. vector', ...
     'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
     converter_rate, ...
@@ -2506,7 +2496,7 @@ text(0.5, 10,...
     'EdgeColor','red');
 
 hfvt4 = fvtool(...
-    Hmd,...
+    handles.Hmd,...
     'FrequencyRange','Specify freq. vector', ...
     'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
     sel.Rdata*sel.FIR, ...
@@ -2515,7 +2505,7 @@ set(hfvt4.CurrentAxes, 'YLim', [-100 20]);
 legend(hfvt4, 'FIR Filter');
 
 % add the quantitative values about FIR magnitude
-[h,~] = freqz(Hmd,1024);
+[h,~] = freqz(handles.Hmd,1024);
 maxmag = max(20*log10(abs(h)));
 
 [gd,~] = grpdelay(handles.grpdelaycal,2048);
