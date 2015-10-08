@@ -137,6 +137,11 @@ switch enables
         error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
 end
 
+% Hmiddle is analog + half band
+Hmiddle=clone(Filter1);
+addStage(Hmiddle,Hd1);
+addStage(Hmiddle,Hd2);
+
 % Find out the best fit delay on passband
 Nw = 2048;
 w = zeros(1,Nw);
@@ -416,6 +421,7 @@ result.Hanalog = Hanalog;
 result.Hd1 = Hd1;
 result.Hd2 = Hd2;
 result.Hmd = Hmd;
+result.Hmiddle = Hmiddle;
 result.dBripple_actual = dBripple_actual;
 result.dBstop_actual = dBstop_actual;
 result.delay = delay;

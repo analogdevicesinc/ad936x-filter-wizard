@@ -1026,8 +1026,6 @@ if (get(handles.filter_type, 'Value') == 1)
     filter_result = internal_designrxfilters9361_sinc(filter_input);
     
     handles.filters = filter_result.rxFilters;
-    handles.Hmd = filter_result.Hmd;
-    handles.Hmiddle = filter_result.Hmiddle;
     handles.rfirtaps = int32(filter_result.rfirtaps);
     handles.analogfilter = filter_result.Hanalog;
     addStage(filter_result.rxFilters,filter_result.Hd2,1);
@@ -1070,6 +1068,8 @@ else
     handles.tx.DATA = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
 end
 handles.taps_length = filter_result.taps_length;
+handles.Hmd = filter_result.Hmd;
+handles.Hmiddle = filter_result.Hmiddle;
 
 set(gcf, 'Pointer', oldpointer);
 
