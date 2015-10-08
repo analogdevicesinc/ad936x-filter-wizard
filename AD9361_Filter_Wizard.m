@@ -1055,6 +1055,7 @@ else
     handles.analogfilter = filter_result.Hanalog;
     addStage(filter_result.txFilters,filter_result.Hd1);
     addStage(filter_result.txFilters,filter_result.Hd2);
+    handles.grpdelaycal = filter_result.txFilters;
     handles.grpdelayvar = filter_result.grpdelayvar;
     
     % values used for saving to a filter file or pushing to the target directly
