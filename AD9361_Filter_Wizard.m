@@ -872,32 +872,32 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
 end
 
 function [data_clk, bbpll, converter_rate] = get_target_path_rates(libiio, path)
-    if strcmp(path, 'rx')
-        path = 'rx_path_rates';
-        sampling_freq = 'in_voltage_sampling_frequency';
-        scan_str = 'BBPLL:%d ADC:%d';
-    else
-        path = 'tx_path_rates';
-        sampling_freq = 'out_voltage_sampling_frequency';
-        scan_str = 'BBPLL:%d DAC:%d';
-    end
+if strcmp(path, 'rx')
+    path = 'rx_path_rates';
+    sampling_freq = 'in_voltage_sampling_frequency';
+    scan_str = 'BBPLL:%d ADC:%d';
+else
+    path = 'tx_path_rates';
+    sampling_freq = 'out_voltage_sampling_frequency';
+    scan_str = 'BBPLL:%d DAC:%d';
+end
 
-    % Read the data clock
-    [ret, data_clk] = readAttributeDouble(libiio, sampling_freq);
-    if (ret < 0)
-        msgbox('Could not read clocks!', 'Error', 'error');
-        return;
-    end
+% Read the data clock
+[ret, data_clk] = readAttributeDouble(libiio, sampling_freq);
+if (ret < 0)
+    msgbox('Could not read clocks!', 'Error', 'error');
+    return;
+end
 
-    % Read clocks
-    [ret, rbuf] = readAttributeString(libiio, path);
-    if (ret < 0)
-        msgbox('Could not read clocks!', 'Error', 'error');
-        return;
-    end
+% Read clocks
+[ret, rbuf] = readAttributeString(libiio, path);
+if (ret < 0)
+    msgbox('Could not read clocks!', 'Error', 'error');
+    return;
+end
 
-    clocks = num2cell(sscanf(rbuf, scan_str));
-    [bbpll, converter_rate] = clocks{:};
+clocks = num2cell(sscanf(rbuf, scan_str));
+[bbpll, converter_rate] = clocks{:};
 
 % --- Executes on button press in target_get_clock.
 function target_get_clock_Callback(hObject, eventdata, handles)
@@ -1283,14 +1283,14 @@ for j = initial_step:10
     nom = round(results(minidx) * (2^j)) / (2^j);
 
     if (j > initial_step )
-            sub = results(minidx - (span * initial_step):minidx + i_end,:);
-            [sub_minval, sub_minidx] = min(sub(:,2));
-            [sub_maxval, sub_maxidx] = max(sub(:,2));
-            x = std(sub(find(sub(:,2) <= (sub_maxval + sub_minval)/2),2));
-            y = std(sub(find(sub(:,2) >= (sub_maxval + sub_minval)/2),2));
-            if (x < 0.05) && (y < 0.05)
-                break;
-            end
+        sub = results(minidx - (span * initial_step):minidx + i_end,:);
+        [sub_minval, sub_minidx] = min(sub(:,2));
+        [sub_maxval, sub_maxidx] = max(sub(:,2));
+        x = std(sub(find(sub(:,2) <= (sub_maxval + sub_minval)/2),2));
+        y = std(sub(find(sub(:,2) >= (sub_maxval + sub_minval)/2),2));
+        if (x < 0.05) && (y < 0.05)
+            break;
+        end
     end
 end
 
@@ -2403,11 +2403,11 @@ end
 % calculate a channel's complex bandwidth that matches 32 bit integer precision
 % on the driver
 function rfbw_hw = get_rfbw_hw(handles, caldiv)
-    rfbw_hw = calculate_rfbw(handles, caldiv, true);
+rfbw_hw = calculate_rfbw(handles, caldiv, true);
 
 % calculate a channel's full precision complex bandwidth
 function rfbw = get_rfbw(handles, caldiv)
-    rfbw = calculate_rfbw(handles, caldiv, false);
+rfbw = calculate_rfbw(handles, caldiv, false);
 
 function Fcutoff_Callback(hObject, eventdata, handles)
 % hObject    handle to Fcutoff (see GCBO)
