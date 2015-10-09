@@ -1114,7 +1114,6 @@ if get(handles.filter_type, 'Value') == 1
 
     % values used for saving to a filter file or pushing to the target directly
     handles.rx = filter_result;
-    handles.rx.RFbw = RFbw;
 else
     addStage(handles.grpdelaycal,filter_result.Hd1);
     addStage(handles.grpdelaycal,filter_result.Hd2);
@@ -1122,7 +1121,6 @@ else
 
     % values used for saving to a filter file or pushing to the target directly
     handles.tx = filter_result;
-    handles.tx.RFbw = RFbw;
 end
 
 set(gcf, 'Pointer', oldpointer);
