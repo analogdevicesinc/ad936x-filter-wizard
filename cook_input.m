@@ -210,7 +210,7 @@ end
 div = ceil((pll/input.wnom)*(log(2)/(2*pi)));
 caldiv = min(max(div,1),511);
 
-function input = autoselect_rates(input, max, dec3)
+function input = autoselect_rates(input, max, dec_int3)
 if strcmp(input.RxTx, 'Rx')
     max_HB = max.MAX_RX;
 else
@@ -225,9 +225,9 @@ if ~isfield(input, 'DAC_div')
     end
 end
 
-if dec3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(input, 'HB2') && ~isfield(input, 'HB3') && ~isfield(input, 'PLL_mult'))
+if dec_int3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(input, 'HB2') && ~isfield(input, 'HB3') && ~isfield(input, 'PLL_mult'))
     % Everything is blank, run as fast as possible
-    if dec3
+    if dec_int3
         input.HB3 = fastest_FIR([3 2 1], max_HB.HB3, 0, input.Rdata);
     else
         input.HB3 = fastest_FIR([2 1], max_HB.HB3, 0, input.Rdata);
