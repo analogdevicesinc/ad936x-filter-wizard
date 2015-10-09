@@ -2061,14 +2061,19 @@ function save2workspace_Callback(hObject, eventdata, handles)
 set(handles.save2workspace, 'Enable', 'off');
 drawnow;
 
-% TODO
+if get(handles.filter_type, 'Value') == 1
+    filter = handles.rx;
+else
+    filter = handles.tx;
+end
+
 if (~isempty(handles.applycallback))
-    handles.applycallback(handles.callbackObj, handles.filter);
+    handles.applycallback(handles.callbackObj, filter);
 else
     if get(handles.filter_type, 'Value') == 1
-        assignin('base', 'AD9361_Rx_Filter_object', handles.filter);
+        assignin('base', 'AD9361_Rx_Filter_object', filter);
     else
-        assignin('base', 'AD9361_Tx_Filter_object', handles.filter);
+        assignin('base', 'AD9361_Tx_Filter_object', filter);
     end
 end
 
