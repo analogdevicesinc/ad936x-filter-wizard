@@ -58,9 +58,7 @@ function output = internal_design_filter(input)
 
 % support a simple data rate input otherwise it must be a structure
 if isfloat(input)
-    Rdata = input;
-    input = struct;
-    input.Rdata = Rdata;
+    input = struct('Rdata', input);
 end
 
 input = cook_input(input);
