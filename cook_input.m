@@ -188,7 +188,8 @@ if ~isfield(input, 'wnom')
 end
 
 if ~isfield(input, 'caldiv')
-    input.caldiv = default_caldiv(input);
+    div = ceil((input.PLL_rate/input.wnom)*(log(2)/(2*pi)));
+    input.caldiv = min(max(div,1),511);
 end
 
 % Assume no dBmin
@@ -197,18 +198,6 @@ if ~isfield(input, 'FIRdBmin')
 end
 
 cooked = input;
-
-function caldiv = default_caldiv(input)
-if strcmp(input.RxTx, 'Rx')
-    pll = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * ...
-        input.PLL_mult;
-else
-    pll = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * ...
-        input.DAC_div * input.PLL_mult;
-end
-
-div = ceil((pll/input.wnom)*(log(2)/(2*pi)));
-caldiv = min(max(div,1),511);
 
 function input = autoselect_rates(input, max, dec_int3)
 if strcmp(input.RxTx, 'Rx')
