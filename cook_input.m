@@ -238,4 +238,5 @@ if dec_int3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(inp
     input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], max.MAX_BBPLL_FREQ, max.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
 end
 
-input.PLL_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div * input.PLL_mult;
+input.converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;
+input.PLL_rate = input.converter_rate * input.DAC_div * input.PLL_mult;

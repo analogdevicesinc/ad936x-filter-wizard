@@ -1052,6 +1052,7 @@ set(handles.design_filter, 'Enable', 'off');
 
 sel = get_current_rxtx(handles);
 converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
+PLL_rate = converter_rate * input.DAC_div * input.PLL_mult;
 FIR_rate = sel.Rdata * sel.FIR;
 HB1_rate = FIR_rate * sel.HB1;
 HB2_rate = HB1_rate * sel.HB2;
@@ -1062,6 +1063,8 @@ RFbw = get_rfbw(handles, sel.caldiv);
 
 % filter design input structure
 filter_input = sel;
+filter_input.converter_rate = converter_rate;
+filter_input.PLL_rate = PLL_rate;
 filter_input.dBstop_FIR = sel.FIRdBmin;
 filter_input.wnom = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
 filter_input.int_FIR = get(handles.Use_FIR, 'Value');

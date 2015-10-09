@@ -64,8 +64,6 @@ if isfloat(input)
 end
 
 input = cook_input(input);
-converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;
-clkPLL = converter_rate * input.PLL_mult;
 
 % use the internal FIR if unspecified
 if ~isfield(input, 'int_FIR')
@@ -74,7 +72,7 @@ end
 
 % nominal frequency can't be zero
 if ~input.wnom
-    input.wnom = (clkPLL/input.caldiv)*(log(2)/(2*pi));
+    input.wnom = (input.PLL_rate/input.caldiv)*(log(2)/(2*pi));
 end
 
 if strcmp(input.RxTx, 'Rx')
@@ -85,10 +83,10 @@ if strcmp(input.RxTx, 'Rx')
     [b2,a2] = butter(3,2*pi*input.wnom,'s');    % 3rd order
 
     % Digital representation of the analog filters (It is an approximation for group delay calculation only)
-    [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(converter_rate/2)),'low');
+    [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(input.converter_rate/2)),'low');
     [sos1,g1] = zp2sos(z1,p1,k1);
     Hd1=dsp.BiquadFilter('SOSMatrix',sos1,'ScaleValues',g1);
-    [z2,p2,k2] = butter(1,coerce_cutoff(wTIA/(converter_rate/2)),'low');
+    [z2,p2,k2] = butter(1,coerce_cutoff(wTIA/(input.converter_rate/2)),'low');
     [sos2,g2] = zp2sos(z2,p2,k2);
     Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd2,Hd1);
@@ -108,10 +106,10 @@ else
     [b2,a2] = butter(1,2*pi*wreal,'s');  % 1st order
 
     % Digital representation of the analog filters (It is an approximation for group delay calculation only)
-    [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(converter_rate/2)),'low');
+    [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(input.converter_rate/2)),'low');
     [sos1,g1] = zp2sos(z1,p1,k1);
     Hd1=dsp.BiquadFilter('SOSMatrix',sos1,'ScaleValues',g1);
-    [z2,p2,k2] = butter(1,coerce_cutoff(wreal/(converter_rate/2)),'low');
+    [z2,p2,k2] = butter(1,coerce_cutoff(wreal/(input.converter_rate/2)),'low');
     [sos2,g2] = zp2sos(z2,p2,k2);
     Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd1,Hd2);
@@ -209,9 +207,9 @@ for i = 2:(Nw)
 end
 
 if strcmp(input.RxTx, 'Rx')
-    response = analogresp('Rx',w,converter_rate,b1,a1,b2,a2).*freqz(filter,w,converter_rate);
+    response = analogresp('Rx',w,input.converter_rate,b1,a1,b2,a2).*freqz(filter,w,input.converter_rate);
 else
-    response = freqz(filter,w,converter_rate).*analogresp('Tx',w,converter_rate,b1,a1,b2,a2);
+    response = freqz(filter,w,input.converter_rate).*analogresp('Tx',w,input.converter_rate,b1,a1,b2,a2);
 end
 for i = 1:(Nw)
     invariance(i) = real(response(i))^2+imag(response(i))^2;
@@ -250,9 +248,9 @@ for i = 1:(Gpass+1)
     omega(i) = fg(i)*clkFIR;
 end
 if strcmp(input.RxTx, 'Rx')
-    rg1 = analogresp('Rx',omega,converter_rate,b1,a1,b2,a2).*freqz(filter,omega,converter_rate);
+    rg1 = analogresp('Rx',omega,input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega,input.converter_rate);
 else
-    rg1 = freqz(filter,omega,converter_rate).*analogresp('Tx',omega,converter_rate,b1,a1,b2,a2);
+    rg1 = freqz(filter,omega,input.converter_rate).*analogresp('Tx',omega,input.converter_rate,b1,a1,b2,a2);
 end
 phase = unwrap(angle(rg1));
 gd1 = GroupDelay(omega,phase); % group delay on passband for Analog + Converter + HB
@@ -270,10 +268,10 @@ for m = Gstop:(G/2)
     rg(g) = 0;
 end
 if strcmp(input.RxTx, 'Rx')
-    wg1 = abs(analogresp('Rx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),converter_rate));
+    wg1 = abs(analogresp('Rx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),input.converter_rate));
     wg2 = (wg1)/(dBinv(-input.Astop));
 else
-    wg1 = abs(freqz(filter,omega(Gpass+2:end),converter_rate).*analogresp('Tx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2));
+    wg1 = abs(freqz(filter,omega(Gpass+2:end),input.converter_rate).*analogresp('Tx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
     wg2 = (sqrt(input.FIR)*wg1)/(dBinv(-input.Astop));
 end
 wg3 = dBinv(input.FIRdBmin);
@@ -299,9 +297,9 @@ W2 = weight(Gpass+2:end);
 % Determine the number of taps for FIR
 if strcmp(input.RxTx, 'Rx')
     if hb3 == 1
-        N = min(16*floor(converter_rate/(input.Rdata)),128);
+        N = min(16*floor(input.converter_rate/(input.Rdata)),128);
     else
-        N = min(16*floor(converter_rate/(2*input.Rdata)),128);
+        N = min(16*floor(input.converter_rate/(2*input.Rdata)),128);
     end
 else
     switch input.FIR
@@ -312,7 +310,7 @@ else
         case 4
             Nmax = 128;
     end
-    N = min(16*floor(converter_rate*input.DAC_div/(2*input.Rdata)),Nmax);
+    N = min(16*floor(input.converter_rate*input.DAC_div/(2*input.Rdata)),Nmax);
 end
 
 tap_store = zeros(N/16,N);
@@ -372,16 +370,16 @@ while (1)
         else
             addStage(filter,Hmd);
         end
-        rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),converter_rate,b1,a1,b2,a2).*freqz(filter,omega(1:Gpass+1),converter_rate));
-        rg_stop = abs(analogresp('Rx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),converter_rate));
+        rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega(1:Gpass+1),input.converter_rate));
+        rg_stop = abs(analogresp('Rx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),input.converter_rate));
     else
         if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
             filter = cascade(Hmd,filter);
         else
             addStage(filter, Hmd, 1);
         end
-        rg_pass = abs(freqz(filter,omega(1:Gpass+1),converter_rate).*analogresp('Tx',omega(1:Gpass+1),converter_rate,b1,a1,b2,a2));
-        rg_stop = abs(freqz(filter,omega(Gpass+2:end),converter_rate).*analogresp('Tx',omega(Gpass+2:end),converter_rate,b1,a1,b2,a2));
+        rg_pass = abs(freqz(filter,omega(1:Gpass+1),input.converter_rate).*analogresp('Tx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));
+        rg_stop = abs(freqz(filter,omega(Gpass+2:end),input.converter_rate).*analogresp('Tx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
     end
 
     % quantitative values about actual passband and stopband
