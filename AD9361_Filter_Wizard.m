@@ -2349,78 +2349,24 @@ else
         handles.input_tx.PLL_mult;
 end
 
-% calculate a channel's complex bandwidth related to the calibration divider value
-function rfbw = calculate_rfbw(handles, caldiv, hw)
-if (get(handles.filter_type, 'Value') == 1)
-    % Rx
-    channel_factor = 1.4;
-    % (1.4 * 2 * pi)/log(2) rounded to the same precision the driver uses
-    rounded_factor = 12.6906;
-else
-    % Tx
-    channel_factor = 1.6;
-    % (1.6 * 2 * pi)/log(2) rounded to the same precision the driver uses
-    rounded_factor = 14.5036;
-end
-
-sel = get_current_rxtx(handles);
-pll_rate = get_pll_rate(handles);
-
-if hw
-    % avoid divide by zero on boundary case
-    if caldiv == 1
-        caldiv = 1 + eps;
-    end
-    % used to reproduce the divider value (caldiv) we expect on the driver
-    rfbw = uint32(fix(((pll_rate - 1)/(caldiv - 1))*(2/rounded_factor)));
-else
-    % full precision RF bandwidth
-    rfbw = round((pll_rate/caldiv)*(2/(channel_factor*(2*pi)/log(2))));
-end
-
-% min/max possible values for the RF bandwidth (2x baseband bandwidth) from the
-% reference manual (values are in Hz since RFbw is in Hz)
-if (get(handles.filter_type, 'Value') == 1)
-    % Rx: 0.4 MHz <= RF bandwidth <= 56 MHz
-    min_rfbw = 400000;
-    max_rfbw = 56000000;
-else
-    % Tx: 1.25 MHz <= RF bandwidth <= 40 MHz
-    min_rfbw = 1250000;
-    max_rfbw = 40000000;
-end
-
-% If the RF bandwidth is outside the range of acceptable values we modify
-% the divider value until it falls into an acceptable range.
-while (rfbw < min_rfbw) || (rfbw > max_rfbw)
-    if (rfbw < min_rfbw)
-        caldiv = caldiv - 1;
-    else
-        caldiv = caldiv + 1;
-    end
-
-    if (caldiv < 1) || (caldiv > 511)
-        msgbox(sprintf('Calibration divider out of bounds (1 - 511): %i', caldiv), 'Error', 'error');
-        return;
-    end
-
-    if get(handles.filter_type, 'Value') == 1
-        handles.input_rx.caldiv = caldiv;
-    else
-        handles.input_tx.caldiv = caldiv;
-    end
-
-    rfbw = calculate_rfbw(handles, caldiv, hw);
-end
-
 % calculate a channel's complex bandwidth that matches 32 bit integer precision
 % on the driver
 function rfbw_hw = get_rfbw_hw(handles, caldiv)
-rfbw_hw = calculate_rfbw(handles, caldiv, true);
+sel = get_current_rxtx(handles);
+pll_rate = get_pll_rate(handles);
+[rfbw_hw, caldiv] = calculate_rfbw(pll_rate, caldiv, sel.RxTx, true);
 
 % calculate a channel's full precision complex bandwidth
 function rfbw = get_rfbw(handles, caldiv)
-rfbw = calculate_rfbw(handles, caldiv, false);
+sel = get_current_rxtx(handles);
+pll_rate = get_pll_rate(handles);
+[rfbw, caldiv] = calculate_rfbw(pll_rate, caldiv, sel.RxTx, false);
+
+if get(handles.filter_type, 'Value') == 1
+    handles.input_rx.caldiv = caldiv;
+else
+    handles.input_tx.caldiv = caldiv;
+end
 
 function Fcutoff_Callback(hObject, eventdata, handles)
 % hObject    handle to Fcutoff (see GCBO)

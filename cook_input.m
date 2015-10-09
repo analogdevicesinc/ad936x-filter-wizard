@@ -192,6 +192,10 @@ if ~isfield(input, 'caldiv')
     input.caldiv = min(max(div,1),511);
 end
 
+if ~isfield(input, 'RFbw')
+    [input.RFbw, input.caldiv] = calculate_rfbw(input.PLL_rate, input.caldiv, input.RxTx, false);
+end
+
 % Assume no dBmin
 if ~isfield(input, 'FIRdBmin')
     input.FIRdBmin = 0;
