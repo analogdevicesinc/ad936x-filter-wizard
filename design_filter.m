@@ -54,7 +54,7 @@
 % Astop_actual     = actual stopband attentuation
 % delay            = actual delay used in phase equalization
 
-function output = designfilter(input)
+function output = design_filter(input)
 
 input = cook_input(input);
 converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;
