@@ -56,6 +56,13 @@
 
 function output = design_filter(input)
 
+% support a simple data rate input otherwise it must be a structure
+if isfloat(input)
+    Rdata = input;
+    input = struct;
+    input.Rdata = Rdata;
+end
+
 input = cook_input(input);
 converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;
 clkPLL = converter_rate * input.PLL_mult;
