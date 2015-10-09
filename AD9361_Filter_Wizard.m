@@ -263,11 +263,22 @@ function varargout = AD9361_Filter_Wizard_OutputFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-channels = cellstr(['rx'; 'tx']);
+fields_to_remove = {...
+    'Hanalog' 'Apass_actual' 'Astop_actual' 'delay' 'grpdelayvar'...
+    'Hd1' 'Hd2' 'Hmiddle' 'a1' 'b1' 'a2' 'b2'};
+channels = {'rx' 'tx'};
 numarg = 1;
+
 for i = 1:length(channels)
     if isfield(handles, channels(i))
-        varargout{numarg} = getfield(handles, char(channels(i)));
+        output = getfield(handles, char(channels(i)));
+
+        % remove internal fields irrelevant to external usage
+        for i = 1:length(fields_to_remove)
+            output = rmfield(output, char(fields_to_remove(i)));
+        end
+
+        varargout{numarg} = output;
         numarg = numarg + 1;
     end
 end
@@ -1089,7 +1100,7 @@ drawnow;
 if (filter_input.phEQ == 0)
     filter_input.phEQ = minimize_group_delay(handles, filter_input);
 end
-filter_result = design_filter(filter_input);
+filter_result = internal_design_filter(filter_input);
 
 handles.filter = filter_result.filter;
 handles.analogfilter = filter_result.Hanalog;
@@ -1226,7 +1237,7 @@ filter_input.phEQ = 0;
 set(handles.target_delay, 'String', num2str(filter_input.phEQ, 4));
 drawnow;
 
-filter_result = design_filter(filter_input);
+filter_result = internal_design_filter(filter_input);
 nom = filter_result.delay * 1e9;
 
 results = [nom (filter_result.grpdelayvar * 1e9);];
@@ -1258,7 +1269,7 @@ for j = initial_step:10
             set(handles.target_delay, 'String', num2str(filter_input.phEQ, 8));
             drawnow;
 
-            filter_result = design_filter(filter_input);
+            filter_result = internal_design_filter(filter_input);
             results = [results ; (filter_result.delay * 1e9) (filter_result.grpdelayvar * 1e9);];
             results = sortrows(results, 1);
 
