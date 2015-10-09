@@ -1130,7 +1130,6 @@ if get(handles.phase_eq, 'Value')
 end
 
 handles.taps_length = filter_result.taps_length;
-handles.Hmd = filter_result.Hmd;
 handles.Hmiddle = filter_result.Hmiddle;
 
 set(handles.FVTool_deeper, 'Visible', 'on');
@@ -2510,7 +2509,7 @@ text(0.5, 10,...
     'EdgeColor','red');
 
 hfvt4 = fvtool(...
-    handles.Hmd,...
+    sel.Hmd,...
     'FrequencyRange','Specify freq. vector', ...
     'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
     sel.Rdata*sel.FIR, ...
@@ -2519,7 +2518,7 @@ set(hfvt4.CurrentAxes, 'YLim', [-100 20]);
 legend(hfvt4, 'FIR Filter');
 
 % add the quantitative values about FIR magnitude
-[h,~] = freqz(handles.Hmd,1024);
+[h,~] = freqz(sel.Hmd,1024);
 maxmag = max(20*log10(abs(h)));
 
 [gd,~] = grpdelay(handles.grpdelaycal,2048);
