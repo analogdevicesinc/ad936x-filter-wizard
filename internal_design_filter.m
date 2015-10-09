@@ -499,7 +499,7 @@ end
 output = input;
 
 output.firtaps = firtaps;
-output.taps_length = length(h);
+output.nfirtaps = length(h);
 output.filter = filter;
 output.gain = gain;
 output.Hm1 = Hm1;
