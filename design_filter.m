@@ -138,65 +138,40 @@ end
 
 % convert the enables into a string
 enables = strrep(num2str([hb1 hb2 hb3 dec_int3]), ' ', '');
-if strcmp(input.RxTx, 'Rx')
-    switch enables
-        case '1111' % only FIR
-            filter = 1;
-        case '2111' % Hb1
-            filter = Hm1;
-        case '1211' % Hb2
-            filter = Hm2;
-        case '1121' % Hb3
-            filter = Hm3;
-        case '2211' % Hb2,Hb1
-            filter = cascade(Hm2,Hm1);
-        case '2121' % Hb3,Hb1
-            filter = cascade(Hm3,Hm1);
-        case '2221' % Hb3,Hb2,Hb1
-            filter = cascade(Hm3,Hm2,Hm1);
-        case '1113' % Dec3
-            filter = Hm4;
-        case '2113' % Dec3,Hb1
-            filter = cascade(Hm4,Hm1);
-        case '2213' % Dec3,Hb2,Hb1
-            filter = cascade(Hm4,Hm2,Hm1);
-        case '1221' % Hb3,Hb2
-            filter = cascade(Hm3,Hm2);
-        case '1213' % Dec3,Hb2
-            filter = cascade(Hm4,Hm2);
-        otherwise
-            error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
-    end
-else
-    switch enables
-        case '1111' % only TFIR
-            filter = 1;
-        case '2111' % Hb1
-            filter = Hm1;
-        case '1211' % Hb2
-            filter = Hm2;
-        case '1213' % Hb2,Int3
-            filter = cascade(Hm2,Hm4);
-        case '1121' % Hb3
-            filter = Hm3;
-        case '1221' % Hb2,Hb3
-            filter = cascade(Hm2,Hm3);
-        case '2211' % Hb1,Hb2
-            filter = cascade(Hm1,Hm2);
-        case '2121' % Hb1,Hb3
-            filter = cascade(Hm1,Hm3);
-        case '2221' % Hb1,Hb2,Hb3
-            filter = cascade(Hm1,Hm2,Hm3);
-        case '1113' % Int3
-            filter = Hm4;
-        case '2113' % Hb1,Int3
-            filter = cascade(Hm1,Hm4);
-        case '2213' % Hb1,Hb2,Int3
-            filter = cascade(Hm1,Hm2,Hm4);
-        otherwise
-            error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
-    end
+switch enables
+    case '1111' % only FIR
+        filter_stages = {1};
+    case '2111' % Hb1
+        filter_stages = {Hm1};
+    case '1211' % Hb2
+        filter_stages = {Hm2};
+    case '1121' % Hb3
+        filter_stages = {Hm3};
+    case '2211' % Hb2,Hb1
+        filter_stages = {Hm2,Hm1};
+    case '2121' % Hb3,Hb1
+        filter_stages = {Hm3,Hm1};
+    case '1221' % Hb3,Hb2
+        filter_stages = {Hm3,Hm2};
+    case '2221' % Hb3,Hb2,Hb1
+        filter_stages = {Hm3,Hm2,Hm1};
+    case '1113' % Dec3
+        filter_stages = {Hm4};
+    case '2113' % Dec3,Hb1
+        filter_stages = {Hm4,Hm1};
+    case '1213' % Dec3,Hb2
+        filter_stages = {Hm4,Hm2};
+    case '2213' % Dec3,Hb2,Hb1
+        filter_stages = {Hm4,Hm2,Hm1};
+    otherwise
+        error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
 end
+
+% filter stages are reversed for Tx path
+if strcmp(input.RxTx, 'Tx')
+    filter_stages = fliplr(filter_stages);
+end
+filter = cascade(filter_stages{:});
 
 Hmiddle = clone(filter);
 if strcmp(input.RxTx, 'Rx')
