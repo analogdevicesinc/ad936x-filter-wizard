@@ -263,22 +263,13 @@ function varargout = AD9361_Filter_Wizard_OutputFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-fields_to_remove = {...
-    'Hanalog' 'Apass_actual' 'Astop_actual' 'delay' 'grpdelayvar'...
-    'Hd1' 'Hd2' 'Hmiddle' 'a1' 'b1' 'a2' 'b2'};
 channels = {'rx' 'tx'};
 numarg = 1;
 
 for i = 1:length(channels)
     if isfield(handles, channels(i))
         output = getfield(handles, char(channels(i)));
-
-        % remove internal fields irrelevant to external usage
-        for i = 1:length(fields_to_remove)
-            output = rmfield(output, char(fields_to_remove(i)));
-        end
-
-        varargout{numarg} = output;
+        varargout{numarg} = clean_filter_fields(output);
         numarg = numarg + 1;
     end
 end

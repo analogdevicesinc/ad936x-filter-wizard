@@ -1,4 +1,4 @@
-%  Copyright 2014-2015(c) Analog Devices, Inc.
+%  Copyright 2015(c) Analog Devices, Inc.
 %
 %  All rights reserved.
 %
@@ -32,25 +32,13 @@
 %  STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 %  THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-% Inputs (structure containing the following fields)
-% ============================================
-% Rdata      = input/output sample data rate (in Hz)
-% FIR        = FIR interpolation/decimation factor
-% PLL_mult   = PLL multiplication
-% Fpass      = passband frequency (in Hz)
-% Fstop      = stopband frequency (in Hz)
-% Apass      = max ripple allowed in passband (in dB)
-% Astop      = min attenuation in stopband (in dB)
-% FIRdBmin   = min rejection that FIR is required to have (in dB)
-% phEQ       = phase equalization on (not -1)/off (-1)
-% int_FIR    = use AD9361 FIR on (1)/off (0)
-% wnom       = analog cutoff frequency (in Hz)
-%
-% Outputs (structure containing the additional following fields)
-% ===============================================
-% firtaps          = fixed point FIR coefficients
-% filter           = system object for visualization (does not include analog filters)
-% delay            = actual delay used in phase equalization
+% remove internal fields irrelevant to external usage
+function output = clean_filter_fields(input)
+output = input;
+fields_to_remove = {...
+    'Hanalog' 'Apass_actual' 'Astop_actual' 'delay' 'grpdelayvar'...
+    'Hd1' 'Hd2' 'Hmiddle' 'a1' 'b1' 'a2' 'b2'};
 
-function output = design_filter(input)
-output = clean_filter_fields(internal_design_filter(input));
+for i = 1:length(fields_to_remove)
+    output = rmfield(output, char(fields_to_remove(i)));
+end
