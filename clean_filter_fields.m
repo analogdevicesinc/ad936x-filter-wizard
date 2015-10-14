@@ -40,5 +40,8 @@ fields_to_remove = {...
     'Hd1' 'Hd2' 'Hmiddle' 'a1' 'b1' 'a2' 'b2'};
 
 for i = 1:length(fields_to_remove)
-    output = rmfield(output, char(fields_to_remove(i)));
+    field = char(fields_to_remove(i));
+    if isfield(output, field)
+        output = rmfield(output, field);
+    end
 end
