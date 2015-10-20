@@ -110,11 +110,12 @@ handles.MAX_BBPLL_FREQ = 1430000000;                         % 1430.0 MHz
 handles.MIN_BBPLL_FREQ =  715000000;                         %  715.0 MHz
 
 handles.MAX_ADC_CLK    =  640000000;                         %  640.0 MHz
-handles.MIN_ADC_CLK    =  handles.MIN_BBPLL_FREQ / (2 ^ 6);  %   11.2 MHz
+handles.MIN_ADC_CLK    =   25000000;                         %   25.0 MHz
 handles.MAX_DAC_CLK    =  handles.MAX_ADC_CLK / 2;           % (MAX_ADC_CLK / 2)
+handles.MIN_DAC_CLK    =   25000000;                         %   25.0 MHz
 
 handles.MAX_DATA_RATE  =   61440000;                         %   61.44 MSPS
-handles.MIN_DATA_RATE  =  handles.MIN_BBPLL_FREQ / (48 * (2 ^ 6));
+handles.MIN_DATA_RATE  =  handles.MIN_DAC_CLK / 48;          %  520.83 kSPS
 handles.MAX_FIR        =  handles.MAX_DATA_RATE * 2;
 handles.MAX_RX.HB1     =  245760000;
 handles.MAX_RX.HB2     =  320000000;
@@ -1530,8 +1531,47 @@ end
 
 % PLL Settings
 set(handles.DAC_by2, 'Value', handles.input_tx.DAC_div);
-set(handles.ADC_clk, 'String', num2str(handles.input_rx.Rdata / 1e6 * handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3));
-set(handles.DAC_clk, 'String', num2str(handles.input_tx.Rdata / 1e6 * handles.input_tx.FIR * handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3));
+ADC_clk = handles.input_rx.Rdata / 1e6 * handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3;
+set(handles.ADC_clk, 'String', num2str(ADC_clk));
+DAC_clk = handles.input_tx.Rdata / 1e6 * handles.input_tx.FIR * handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3;
+set(handles.DAC_clk, 'String', num2str(DAC_clk));
+
+ADC_clk = round(value2Hz(handles, handles.freq_units, ADC_clk));
+DAC_clk = round(value2Hz(handles, handles.freq_units, DAC_clk));
+
+% Make sure ADC clocks are within bounds 
+if (ADC_clk <= handles.MAX_ADC_CLK) && (ADC_clk >= handles.MIN_ADC_CLK)
+    set(handles.ADC_clk, 'ForegroundColor', [0 0 0]);
+else
+    set(handles.ADC_clk, 'ForegroundColor', [1 0 0]);
+    if OK
+        if (ADC_clk > handles.MAX_ADC_CLK)
+            max_adc = num2str(Hz2value(handles, 3, handles.MAX_ADC_CLK));
+            warn = sprintf('ADC Clock above maximum (%s %s)', max_adc, 'MHz');
+        else
+            min_adc = num2str(Hz2value(handles, 3, handles.MIN_ADC_CLK));
+            warn = sprintf('ADC Clock below minimum (%s %s)', min_adc, 'MHz');
+        end
+        OK = 0;
+    end
+end
+
+% Make sure DAC clocks are within bounds 
+if (DAC_clk <= handles.MAX_DAC_CLK) && (DAC_clk >= handles.MIN_DAC_CLK)
+    set(handles.DAC_clk, 'ForegroundColor', [0 0 0]);
+else
+    set(handles.DAC_clk, 'ForegroundColor', [1 0 0]);
+    if OK
+        if (DAC_clk > handles.MAX_DAC_CLK)
+            max_dac = num2str(Hz2value(handles, 3, handles.MAX_DAC_CLK));
+            warn = sprintf('DAC Clock above maximum (%s %s)', max_dac, 'MHz');
+        else
+            min_dac = num2str(Hz2value(handles, 3, handles.MIN_DAC_CLK));
+            warn = sprintf('DAC Clock below minimum (%s %s)', min_dac, 'MHz');
+        end
+        OK = 0;
+    end
+end
 
 % Make sure Rx and Tx PLL rates are equal
 if (handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3) == ...
