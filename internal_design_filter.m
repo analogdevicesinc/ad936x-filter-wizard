@@ -75,11 +75,11 @@ end
 
 if strcmp(input.RxTx, 'Rx')
     wTIA = input.wnom*(2.5/1.4);
-
+    
     % Define the analog filters (for design purpose)
     [b1,a1] = butter(1,2*pi*wTIA,'s');  % 1st order
     [b2,a2] = butter(3,2*pi*input.wnom,'s');    % 3rd order
-
+    
     % Digital representation of the analog filters (It is an approximation for group delay calculation only)
     [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(input.converter_rate/2)),'low');
     [sos1,g1] = zp2sos(z1,p1,k1);
@@ -88,21 +88,21 @@ if strcmp(input.RxTx, 'Rx')
     [sos2,g2] = zp2sos(z2,p2,k2);
     Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd2,Hd1);
-
+    
     % Define the digital filters with fixed coefficients
     hb1_coeff = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
     hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
     hb3_coeff = 2^(-4)*[1 4 6 4 1];
     dec_int3_coeff = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 4041 1914 0 -580 -393 0 83 55];
-
+    
     dec_int_func = @dsp.FIRDecimator;
 else
     wreal = input.wnom*(5.0/1.6);
-
+    
     % Define the analog filters (for design purpose)
     [b1,a1] = butter(3,2*pi*input.wnom,'s');     % 3rd order
     [b2,a2] = butter(1,2*pi*wreal,'s');  % 1st order
-
+    
     % Digital representation of the analog filters (It is an approximation for group delay calculation only)
     [z1,p1,k1] = butter(3,coerce_cutoff(input.wnom/(input.converter_rate/2)),'low');
     [sos1,g1] = zp2sos(z1,p1,k1);
@@ -111,13 +111,13 @@ else
     [sos2,g2] = zp2sos(z2,p2,k2);
     Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd1,Hd2);
-
+    
     % Define the digital filters with fixed coefficients
     hb1_coeff = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
     hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
     hb3_coeff = 2^(-2)*[1 2 1];
     dec_int3_coeff = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
-
+    
     dec_int_func = @dsp.FIRInterpolator;
 end
 
@@ -332,7 +332,7 @@ while (1)
     Hd = design(d,'equiripple','B1Weights',W1,'B2Weights',W2,'SystemObject',false);
     ccoef = Hd.Numerator;
     M = length(ccoef);
-
+    
     if input.phEQ ~= -1
         sg = 0.5-grid(end:-1:1);
         sr = imag(resp(end:-1:1));
@@ -357,9 +357,9 @@ while (1)
         scoef = 0;
     end
     tap_store(i,1:M)=ccoef+scoef;
-
+    
     Hmd = dec_int_func(input.FIR,tap_store(i,1:M));
-    if ~isempty(ver('fixedpoint'))
+    if ~isempty(ver('fixedpoint')) && license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
         Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
     end
     if strcmp(input.RxTx, 'Rx')
@@ -379,11 +379,11 @@ while (1)
         rg_pass = abs(freqz(filter,omega(1:Gpass+1),input.converter_rate).*analogresp('Tx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));
         rg_stop = abs(freqz(filter,omega(Gpass+2:end),input.converter_rate).*analogresp('Tx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
     end
-
+    
     % quantitative values about actual passband and stopband
     Apass_actual_vector(i) = mag2db(max(rg_pass))-mag2db(min(rg_pass));
     Astop_actual_vector(i) = -mag2db(max(rg_stop));
-
+    
     if input.int_FIR == 0
         h = tap_store(1,1:M);
         Apass_actual = Apass_actual_vector(1);
@@ -442,7 +442,7 @@ if input.RxTx == 'Tx'
 end
 
 Hmd = dec_int_func(input.FIR,h);
-if ~isempty(ver('fixedpoint'))
+if ~isempty(ver('fixedpoint')) && license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
     Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
 end
 if strcmp(input.RxTx, 'Rx')
