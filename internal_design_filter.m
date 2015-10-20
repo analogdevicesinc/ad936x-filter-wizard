@@ -425,7 +425,7 @@ while (1)
     end
 end
 
-if input.RxTx == 'Tx'
+if strcmp(input.RxTx, 'Tx')
     if input.int_FIR == 1 && input.FIR == 2
         R = rem(length(h),32);
         if R ~= 0
