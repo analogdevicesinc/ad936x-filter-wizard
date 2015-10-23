@@ -1208,12 +1208,12 @@ if (RxTx1 ~= FIR_rate && RxTx1 ~= HB1_rate && RxTx1 ~= HB2_rate && RxTx1 ~= HB3_
     mode = '1Rx1Tx';
     rate = RxTx1;
 end
-if ~isempty(mode)
-    warning = sprintf(['This filter is not compatible with %s mode. ', ...
-        'At least one of the clock rates (FIR, HB1, HB2, or HB3) must be equal ', ...
-        'to the data clock rate (LVDS) of %2.4f MHz.'], mode, rate / 1e6);
-    warndlg(warning, 'Filter compatibility');
-end
+% if ~isempty(mode)
+%     warning = sprintf(['This filter is not compatible with %s mode. ', ...
+%         'At least one of the clock rates (FIR, HB1, HB2, or HB3) must be equal ', ...
+%         'to the data clock rate (LVDS) of %2.4f MHz.'], mode, rate / 1e6);
+%     warndlg(warning, 'Filter compatibility');
+% end
 
 set(handles.design_filter, 'Visible', 'on');
 guidata(hObject, handles);
