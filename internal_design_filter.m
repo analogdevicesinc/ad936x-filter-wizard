@@ -496,6 +496,7 @@ end
 
 output = input;
 
+% externally accessible fields
 output.firtaps = firtaps;
 output.nfirtaps = length(h);
 output.filter = filter;
