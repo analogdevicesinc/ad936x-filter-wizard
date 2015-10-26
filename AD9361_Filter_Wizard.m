@@ -1054,7 +1054,7 @@ set(handles.design_filter, 'Enable', 'off');
 
 sel = get_current_rxtx(handles);
 converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 FIR_rate = sel.Rdata * sel.FIR;
 HB1_rate = FIR_rate * sel.HB1;
 HB2_rate = HB1_rate * sel.HB2;
