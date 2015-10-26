@@ -674,7 +674,7 @@ end
 
 fid = fopen(newpath,'w');
 
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 [rx_FIR_rate, rx_HB1_rate, rx_HB2_rate, rx_HB3_rate, rx_RFbw_hw, ...
     tx_FIR_rate, tx_HB1_rate, tx_HB2_rate, tx_HB3_rate, tx_RFbw_hw] = get_path_rates(handles);
 
@@ -741,7 +741,7 @@ fprintf(fid, '# Inputs:\r\n');
 %converter_rate = get_converter_clk(handles);
 %converter_rate = get_ADC_clk(handles);
 
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 [rx_FIR_rate, rx_HB1_rate, rx_HB2_rate, rx_HB3_rate, rx_RFbw_hw, ...
     tx_FIR_rate, tx_HB1_rate, tx_HB2_rate, tx_HB3_rate, tx_RFbw_hw] = get_path_rates(handles);
 
@@ -776,7 +776,7 @@ function save2target_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 [rx_FIR_rate, rx_HB1_rate, rx_HB2_rate, rx_HB3_rate, rx_RFbw_hw, ...
     tx_FIR_rate, tx_HB1_rate, tx_HB2_rate, tx_HB3_rate, tx_RFbw_hw] = get_path_rates(handles);
 
