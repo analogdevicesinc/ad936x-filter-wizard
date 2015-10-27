@@ -163,13 +163,13 @@ for i = 1:2:length(varargin)
         % 'DefaultRxVals'     'structure (in Hz)'
         input = varargin{i + 1};
         input.RxTx = 'Rx';
-        handles.input_rx = cook_input(input);
+        handles.rx = cook_input(input);
         new = 1;
     elseif strcmpi(varargin{i}, 'DefaultTxVals')
         % 'DefaultTxVals'     'structure (in Hz)'
         input = varargin{i + 1};
         input.RxTx = 'Tx';
-        handles.input_tx = cook_input(input);
+        handles.tx = cook_input(input);
         new = 1;
     elseif strcmpi(varargin{i}, 'ApplyCallback')
         handles.applycallback = str2func(varargin{i + 1});
@@ -184,13 +184,13 @@ end
 
 handles = autoselect_rates(handles);
 
-if isfield(handles, 'input_tx') || isfield(handles, 'input_rx')
+if isfield(handles, 'tx') || isfield(handles, 'rx')
     set(handles.store_filter, 'Visible', 'off');
     guidata(hObject, handles);
     data2gui(hObject, handles);
 else
-    handles.input_rx = 0;
-    handles.input_tx = 0;
+    handles.rx = 0;
+    handles.tx = 0;
 end
 
 handles.Original_Size = get(handles.AD9361_Filter_app, 'Position');
@@ -291,7 +291,7 @@ if (handles.freq_units ~= units)
     fcutoff = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
     data_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
     rf_bandwidth = value2Hz(handles, handles.freq_units, str2double(get(handles.RFbw, 'String')));
-    
+
     handles.freq_units = units;
     set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
     set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass)));
@@ -344,9 +344,9 @@ handles = guidata(hObject);
 
 Fpass = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Fpass = Fpass;
+    handles.rx.Fpass = Fpass;
 else
-    handles.input_tx.Fpass = Fpass;
+    handles.tx.Fpass = Fpass;
 end
 
 data2gui(hObject, handles);
@@ -377,17 +377,17 @@ handles = guidata(hObject);
 
 Fstop = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Fstop = Fstop;
+    handles.rx.Fstop = Fstop;
 else
-    handles.input_tx.Fstop = Fstop;
+    handles.tx.Fstop = Fstop;
 end
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -442,55 +442,55 @@ interpolate = str2double(interpolate(1:2));
 
 function handles = autoselect_rates(handles)
 % sanity check the PLL rate and DAC divider values and alter them if necessary
-if isfield(handles, 'input_tx') && isfield(handles, 'input_rx')
-    if (handles.input_rx.PLL_rate ~= handles.input_tx.PLL_rate)
+if isfield(handles, 'tx') && isfield(handles, 'rx')
+    if (handles.rx.PLL_rate ~= handles.tx.PLL_rate)
         % If dec3 is used by Rx or Tx, both must use it in order for the
         % PLL rates to match.
-        if handles.input_tx.HB3 == 3 || handles.input_rx.HB3 == 3
-            handles.input_rx.HB3 = 3;
-            handles.input_tx.HB3 = 3;
+        if handles.tx.HB3 == 3 || handles.rx.HB3 == 3
+            handles.rx.HB3 = 3;
+            handles.tx.HB3 = 3;
         end
-        
-        ADC_rate = handles.input_rx.Rdata * handles.input_rx.FIR * ...
-            handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3;
-        DAC_rate = handles.input_tx.Rdata * handles.input_tx.FIR * ...
-            handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3;
+
+        ADC_rate = handles.rx.Rdata * handles.rx.FIR * ...
+            handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3;
+        DAC_rate = handles.tx.Rdata * handles.tx.FIR * ...
+            handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3;
         DAC_div = ADC_rate / DAC_rate;
-        if (handles.input_tx.DAC_div ~= DAC_div)
+        if (handles.tx.DAC_div ~= DAC_div)
             if (DAC_div == 1 || DAC_div == 2)
-                handles.input_tx.DAC_div = DAC_div;
-                handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
+                handles.tx.DAC_div = DAC_div;
+                handles.tx.PLL_mult = handles.rx.PLL_mult;
                 filter_type = get(handles.filter_type, 'Value');
                 set(handles.filter_type, 'Value', 0);
-                handles.input_tx.caldiv = default_caldiv(handles);
+                handles.tx.caldiv = default_caldiv(handles);
                 set(handles.filter_type, 'Value', filter_type);
             end
         end
-        
-        handles.input_rx.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], handles.MAX_BBPLL_FREQ, handles.MIN_BBPLL_FREQ, ...
-            handles.input_rx.Rdata * handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3 * handles.input_rx.DAC_div);
-        handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
-        
-        if handles.input_rx.PLL_mult > 64
+
+        handles.rx.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], handles.MAX_BBPLL_FREQ, handles.MIN_BBPLL_FREQ, ...
+            handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3 * handles.rx.DAC_div);
+        handles.tx.PLL_mult = handles.rx.PLL_mult;
+
+        if handles.rx.PLL_mult > 64
             X = ['Date rate = ', num2str(tohwTx.TXSAMP), ' Hz. Tx BBPLL is too high for Rx to match.'];
             disp(X);
         end
-        
-        handles.input_rx.PLL_rate = handles.input_rx.Rdata * handles.input_rx.FIR * handles.input_rx.HB1 * ...
-            handles.input_rx.HB2 * handles.input_rx.HB3 * handles.input_rx.PLL_mult;
+
+        handles.rx.PLL_rate = handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * ...
+            handles.rx.HB2 * handles.rx.HB3 * handles.rx.PLL_mult;
     else
-        ADC_rate = handles.input_rx.Rdata * handles.input_rx.FIR * ...
-            handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3;
-        DAC_rate = handles.input_tx.Rdata * handles.input_tx.FIR * ...
-            handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3;
+        ADC_rate = handles.rx.Rdata * handles.rx.FIR * ...
+            handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3;
+        DAC_rate = handles.tx.Rdata * handles.tx.FIR * ...
+            handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3;
         DAC_div = ADC_rate / DAC_rate;
-        if (handles.input_tx.DAC_div ~= DAC_div)
+        if (handles.tx.DAC_div ~= DAC_div)
             if (DAC_div == 1 || DAC_div == 2)
-                handles.input_tx.DAC_div = DAC_div;
-                handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
+                handles.tx.DAC_div = DAC_div;
+                handles.tx.PLL_mult = handles.rx.PLL_mult;
                 filter_type = get(handles.filter_type, 'Value');
                 set(handles.filter_type, 'Value', 0);
-                handles.input_tx.caldiv = default_caldiv(handles);
+                handles.tx.caldiv = default_caldiv(handles);
                 set(handles.filter_type, 'Value', filter_type);
             end
         end
@@ -500,10 +500,10 @@ end
 function sel = get_current_rxtx(handles)
 if (get(handles.filter_type, 'Value') == 1)
     % receive
-    sel = handles.input_rx;
+    sel = handles.rx;
 else
     % transmit
-    sel = handles.input_tx;
+    sel = handles.tx;
 end
 
 function data_clk_Callback(hObject, eventdata, handles)
@@ -518,9 +518,9 @@ input = {};
 input.Rdata = data_rate;
 
 input.RxTx = 'Rx';
-handles.input_rx = cook_input(input);
+handles.rx = cook_input(input);
 input.RxTx = 'Tx';
-handles.input_tx = cook_input(input);
+handles.tx = cook_input(input);
 handles = autoselect_rates(handles);
 
 % reset fcutoff to the default value for advanced mode
@@ -557,9 +557,9 @@ handles = guidata(hObject);
 
 Astop = str2double(get(hObject, 'String'));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Astop = Astop;
+    handles.rx.Astop = Astop;
 else
-    handles.input_tx.Astop = Astop;
+    handles.tx.Astop = Astop;
 end
 
 if get(handles.FIR_Astop, 'Value') >= str2double(get(hObject,'String'))
@@ -596,9 +596,9 @@ handles = guidata(hObject);
 
 Apass = str2double(get(hObject, 'String'));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Apass = Apass;
+    handles.rx.Apass = Apass;
 else
-    handles.input_tx.Apass = Apass;
+    handles.tx.Apass = Apass;
 end
 
 data2gui(hObject, handles);
@@ -920,14 +920,14 @@ if ~ isempty(handles.libiio_ctrl_dev)
     else
         [data_clk, bbpll, converter_rate] = get_target_path_rates(handles.libiio_ctrl_dev, 'tx');
     end
-    
+
     div = num2str(converter_rate / data_clk);
     decimate = cellstr(get(handles.HB1, 'String'))';
     idx = find(strncmp(decimate, div, length(div)) == 1);
     if (~isempty(idx))
         set(handles.HB1, 'Value', idx(1));
     end
-    
+
     % Set the BPLL div
     opts = get(handles.converter2PLL, 'String');
     for i = 1:length(opts)
@@ -938,7 +938,7 @@ if ~ isempty(handles.libiio_ctrl_dev)
             break;
         end
     end
-    
+
     % Update the data clock
     put_data_clk(handles, data_clk);
     data_clk_Callback(handles.data_clk, eventdata, handles);
@@ -1102,14 +1102,14 @@ if get(handles.filter_type, 'Value') == 1
     addStage(handles.grpdelaycal,filter_result.Hd2,1);
     addStage(handles.grpdelaycal,filter_result.Hd1,2);
     handles.rfirtaps = int32(filter_result.firtaps);
-    
+
     % values used for saving to a filter file or pushing to the target directly
     handles.rx = filter_result;
 else
     addStage(handles.grpdelaycal,filter_result.Hd1);
     addStage(handles.grpdelaycal,filter_result.Hd2);
     handles.tfirtaps = int32(filter_result.firtaps);
-    
+
     % values used for saving to a filter file or pushing to the target directly
     handles.tx = filter_result;
 end
@@ -1248,11 +1248,11 @@ for j = initial_step:10
         if isempty(idx)
             set(handles.target_delay, 'String', num2str(filter_input.phEQ, 8));
             drawnow;
-            
+
             filter_result = internal_design_filter(filter_input);
             results = [results ; (filter_result.delay * 1e9) (filter_result.grpdelayvar * 1e9);];
             results = sortrows(results, 1);
-            
+
             [minval, minidx] = min(results(:,2));
             str = sprintf('%1.2f@%3.2f', minval, results(minidx));
             set(handles.results_group_delay, 'String', str);
@@ -1260,7 +1260,7 @@ for j = initial_step:10
                 i_end = ceil(abs(results(minidx) + span/(2^j) - nom) * (2^j));
                 i_max = max(i_max, nom + (i_end/(2^j)));
             end
-            
+
             plot(results(:,1), results(:,2) ,'r.');
             xlim([i_min i_max]);
             xlabel('Group Delay target (ns)');
@@ -1277,10 +1277,10 @@ for j = initial_step:10
             end
         end
     end
-    
+
     [minval, minidx] = min(results(:,2));
     nom = round(results(minidx) * (2^j)) / (2^j);
-    
+
     if (j > initial_step )
         sub = results(minidx - (span * initial_step):minidx + i_end,:);
         [sub_minval, sub_minidx] = min(sub(:,2));
@@ -1342,8 +1342,8 @@ if isfield(handles, 'tfirtaps')
     handles = rmfield(handles, 'tfirtaps');
 end
 
-handles.input_rx = cook_input(getfield(options.ad9361_settings.rx, Rx{matchRx}));
-handles.input_tx = cook_input(getfield(options.ad9361_settings.tx, Tx{matchTx}));
+handles.rx = cook_input(getfield(options.ad9361_settings.rx, Rx{matchRx}));
+handles.tx = cook_input(getfield(options.ad9361_settings.tx, Tx{matchTx}));
 
 set(handles.store_filter, 'Visible', 'off');
 guidata(hObject, handles);
@@ -1356,12 +1356,12 @@ OK = 1;
 rates_uipanel = findall(gcf, 'type', 'uipanel', 'Tag', 'rates_uipanel');
 if get(handles.filter_type, 'Value') == 1
     % Receive
-    sel = handles.input_rx;
+    sel = handles.rx;
     max_HB = handles.MAX_RX;
     set(rates_uipanel, 'Tag', 'rates_uipanel', 'Title', 'AD936x Decimation Rates');
 else
     % Transmit
-    sel = handles.input_tx;
+    sel = handles.tx;
     max_HB = handles.MAX_TX;
     set(rates_uipanel, 'Tag', 'rates_uipanel', 'Title', 'AD936x Interpolation Rates');
 end
@@ -1396,7 +1396,7 @@ set(handles.Astop, 'String', num2str(sel.Astop));
 
 set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Rdata)));
 
-if handles.input_rx.Fstop <= handles.input_rx.Rdata / 2
+if handles.rx.Fstop <= handles.rx.Rdata / 2
     set(handles.Fstop, 'ForegroundColor', [0 0 0]);
 else
     set(handles.Fstop, 'ForegroundColor', [1 0 0]);
@@ -1406,7 +1406,7 @@ else
     OK = 0;
 end
 
-if handles.input_rx.Rdata == handles.input_tx.Rdata
+if handles.rx.Rdata == handles.tx.Rdata
     set(handles.data_clk, 'ForegroundColor', [0 0 0]);
 else
     set(handles.data_clk, 'ForegroundColor', [1 0 0]);
@@ -1521,13 +1521,13 @@ for i = 1:length(opts)
 end
 
 % PLL Settings
-set(handles.DAC_by2, 'Value', handles.input_tx.DAC_div);
-set(handles.ADC_clk, 'String', num2str(handles.input_rx.Rdata / 1e6 * handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3));
-set(handles.DAC_clk, 'String', num2str(handles.input_tx.Rdata / 1e6 * handles.input_tx.FIR * handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3));
+set(handles.DAC_by2, 'Value', handles.tx.DAC_div);
+set(handles.ADC_clk, 'String', num2str(handles.rx.Rdata / 1e6 * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3));
+set(handles.DAC_clk, 'String', num2str(handles.tx.Rdata / 1e6 * handles.tx.FIR * handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3));
 
 % Make sure Rx and Tx PLL rates are equal
-if (handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3) == ...
-        (handles.input_tx.FIR * handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3 * handles.input_tx.DAC_div)
+if (handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3) == ...
+        (handles.tx.FIR * handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3 * handles.tx.DAC_div)
     set(handles.ADC_clk, 'ForegroundColor', [0 0 0]);
     set(handles.DAC_clk, 'ForegroundColor', [0 0 0]);
 else
@@ -1698,13 +1698,13 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([0 Fstop], [0 0], 'Color', label_colour, 'LineStyle', ':');
         line([Fpass Fstop+30], [-ripple -ripple], 'Color', label_colour, 'LineStyle', ':');
         line([Fpass Fstop+30], [ripple ripple], 'Color', label_colour, 'LineStyle', ':');
-        
+
         handles.arrows{1} = annotation('arrow', 'Y',[max_y ripple], 'X',[130 130]);
         set(handles.arrows{1}, 'Color', label_colour);
         handles.arrows{2} = annotation('arrow', 'Y',[-max_y -ripple], 'X',[130 130]);
         set(handles.arrows{2}, 'Color', label_colour);
         text(Fstop + 12, 0, 'A_{pass}', 'BackgroundColor','white', 'EdgeColor','white');
-        
+
         % Stop band
         line([Fstop max_x-10], [-80 -80], 'Color', 'Black');
         line([max_x-10 max_x-10], [-80+ripple -80], 'Color', 'Black');
@@ -1712,13 +1712,13 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fstop Fstop], [-80+ripple -80], 'Color', 'Black');
         line([Fstop Fstop], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
         line([max_x-10 max_x-10], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
-        
+
         line([150 170], [0 0], 'Color', label_colour, 'LineStyle', ':');
         text(0, -108, '0');
         text(Fpass - 5, -108, 'F_{pass}');
         text(Fstop - 5, -108, 'F_{stop}');
         text(max_x - 15, -108, 'Fs_{/2}');
-        
+
         % A(stop) label and arrows
         hTest = text(150, -40, 'A_{stop}');
         textExt = get(hTest,'Extent');
@@ -1727,20 +1727,20 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         set(handles.arrows{3}, 'Color', label_colour);
         handles.arrows{4} = annotation('arrow', 'Y',[-45 -80], 'X',[w w]);
         set(handles.arrows{4}, 'Color', label_colour);
-        
+
         % reparent arrows within the filter plot so they're displayed properly
         plot = findall(gcf, 'type', 'axes', 'Tag', 'magnitude_plot');
         for i = 1:4
             set(handles.arrows{i}, 'Parent', plot);
         end
-        
+
     case 'Root Raised Cosine'
         % Pass band
         line([0 Fpass], [-ripple -ripple], 'Color', 'Black');
         line([0 Fpass], [ripple ripple], 'Color', 'Black');
         line([Fpass Fpass], [max_y ripple], 'Color', 'Black');
         line([Fpass Fpass], [-ripple -100], 'Color', 'Black');
-        
+
         % Stop band
         line([Fstop max_x-10], [-80 -80], 'Color', 'Black');
         line([max_x-10 max_x-10], [-80+ripple -80], 'Color', 'Black');
@@ -1748,12 +1748,12 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fstop Fstop], [-80+ripple -80], 'Color', 'Black');
         line([Fstop Fstop], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
         line([max_x-10 max_x-10], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
-        
+
         text(0, -108, '0');
         text(Fpass - 5, -108, 'F_{pass}');
         text(Fstop - 5, -108, 'F_{stop}');
         text(max_x - 15, -108, 'Fs_{/2}');
-        
+
     case 'Bandpass'
         Fpass = 20;
         Fcenter = 80;
@@ -1765,11 +1765,11 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fcenter+Fstop Fcenter+Fstop], [max_y ripple], 'Color', 'Black');
         line([Fcenter-Fpass Fcenter-Fpass], [-ripple -80], 'Color', 'Black');
         line([Fcenter+Fpass Fcenter+Fpass], [-ripple -80], 'Color', 'Black');
-        
+
         line([0 Fcenter+Fstop], [0 0], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter+Fstop Fcenter+Fstop+30], [-ripple -ripple], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter+Fstop Fcenter+Fstop+30], [ripple ripple], 'Color', label_colour, 'LineStyle', ':');
-        
+
         [x1, y1] = xy2norm(130, ripple, handles);
         [x2, y2] = xy2norm(130, max_y, handles);
         handles.arrows{1} = annotation('arrow', 'Y',[y2 y1], 'X',[x1 x2]);
@@ -1779,21 +1779,21 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         handles.arrows{2} = annotation('arrow', 'Y',[y2 y1], 'X',[x1 x2]);
         set(handles.arrows{2}, 'Color', label_colour);
         text(Fcenter + Fstop + 12, 0, 'A_{pass}', 'BackgroundColor','white', 'EdgeColor','white');
-        
+
         % Stop band
         line([Fcenter+Fstop max_x-10], [-80 -80], 'Color', 'Black');
         line([0 Fcenter-Fstop], [-80 -80], 'Color', 'Black');
-        
+
         line([max_x-10 max_x-10], [-80+ripple -80], 'Color', 'Black');
         line([Fcenter+Fstop Fcenter+Fstop], [-80+ripple -80], 'Color', 'Black');
         line([Fcenter-Fstop Fcenter-Fstop], [-80+ripple -80], 'Color', 'Black');
-        
+
         line([Fcenter-Fstop Fcenter-Fstop], [ripple -100], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter+Fstop Fcenter+Fstop], [ripple -100], 'Color', label_colour, 'LineStyle', ':');
         line([max_x-10 max_x-10], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter Fcenter], [0 -100], 'Color', label_colour, 'LineStyle', ':');
         %        line([150 170], [0 0], 'Color', label_colour, 'LineStyle', ':');
-        
+
         % Labels "0" "Fcenter"
         text(0, -108, '0');
         text(Fcenter - 5, -108, 'F_{center}');
@@ -1802,7 +1802,7 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fcenter Fcenter+Fstop], [-60 -60], 'Color', label_colour, 'LineStyle', ':');
         text(Fcenter + Fstop +5, -60, 'F_{stop}');
         text(max_x - 15, -108, 'Fs_{/2}');
-        
+
         % A(stop) label and arrows
         hTest = text(Fcenter/4, -40, 'A_{stop}');
         textExt = get(hTest,'Extent');
@@ -1815,7 +1815,7 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         [x2, y2] = xy2norm(w, -45, handles);
         handles.arrows{4} = annotation('arrow', 'Y',[y2 y1], 'X',[x1 x2]);
         set(handles.arrows{4}, 'Color', label_colour);
-        
+
     case 'Equalize'
         line([0 max_x-10], [0 0], 'Color', 'Black');
         line([max_x-10 max_x-10], [0 ripple], 'Color', 'Black');
@@ -2015,9 +2015,9 @@ else
 end
 
 if (get(handles.filter_type, 'Value') == 1)
-    handles.input_rx.phEQ = phEQ;
+    handles.rx.phEQ = phEQ;
 else
-    handles.input_tx.phEQ = phEQ;
+    handles.tx.phEQ = phEQ;
 end
 
 if (handles.active_plot ~= 0)
@@ -2084,11 +2084,11 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.HB1 = HB;
-    handles.input_rx.HBs = HB * handles.input_rx.HB2 * handles.input_rx.HB3;
+    handles.rx.HB1 = HB;
+    handles.rx.HBs = HB * handles.rx.HB2 * handles.rx.HB3;
 else
-    handles.input_tx.HB1 = HB;
-    handles.input_tx.HBs = HB * handles.input_tx.HB2 * handles.input_tx.HB3;
+    handles.tx.HB1 = HB;
+    handles.tx.HBs = HB * handles.tx.HB2 * handles.tx.HB3;
 end
 
 % Update handles structure
@@ -2138,21 +2138,21 @@ HBs = num2cell(sort(HBs));
 
 [HB1, HB2, HB3] = HBs{:};
 if (get(handles.filter_type, 'Value') == 1)
-    handles.input_rx.HB1 = HB1;
-    handles.input_rx.HB2 = HB2;
-    handles.input_rx.HB3 = HB3;
+    handles.rx.HB1 = HB1;
+    handles.rx.HB2 = HB2;
+    handles.rx.HB3 = HB3;
 else
-    handles.input_tx.HB1 = HB1;
-    handles.input_tx.HB2 = HB2;
-    handles.input_tx.HB3 = HB3;
+    handles.tx.HB1 = HB1;
+    handles.tx.HB2 = HB2;
+    handles.tx.HB3 = HB3;
 end
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 % Update handles structure
@@ -2184,15 +2184,15 @@ HB = cellstr(get(hObject,'String'));
 HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
-handles.input_tx.PLL_mult = HB;
-handles.input_rx.PLL_mult = HB;
+handles.tx.PLL_mult = HB;
+handles.rx.PLL_mult = HB;
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -2246,7 +2246,7 @@ if error_msg
         case 'OK'
     end
     return
-    
+
 end
 
 if get(handles.filter_type, 'Value') == 1
@@ -2295,9 +2295,9 @@ set(handles.data_clk, 'String', num2str(data_clk, 10));
 
 function caldiv = default_caldiv(handles)
 if (get(handles.filter_type, 'Value') == 1)
-    wnom = 1.4 * handles.input_rx.Fstop;  % Rx
+    wnom = 1.4 * handles.rx.Fstop;  % Rx
 else
-    wnom = 1.6 * handles.input_tx.Fstop;  % Tx
+    wnom = 1.6 * handles.tx.Fstop;  % Tx
 end
 
 pll = get_pll_rate(handles);
@@ -2306,9 +2306,9 @@ caldiv = min(max(div,1),511);
 
 function caldiv = get_caldiv(handles)
 if (get(handles.filter_type, 'Value') == 1)
-    wnom = 1.4 * handles.input_rx.Fstop;  % Rx
+    wnom = 1.4 * handles.rx.Fstop;  % Rx
 else
-    wnom = 1.6 * handles.input_tx.Fstop;  % Tx
+    wnom = 1.6 * handles.tx.Fstop;  % Tx
 end
 
 Fcutoff = str2double(get(handles.Fcutoff, 'String'));
@@ -2328,13 +2328,13 @@ set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, wc)
 function pll = get_pll_rate(handles)
 if (get(handles.filter_type, 'Value') == 1)
     % Rx
-    pll = handles.input_rx.Rdata * handles.input_rx.FIR * handles.input_rx.HB1 * ...
-        handles.input_rx.HB2 * handles.input_rx.HB3 * handles.input_rx.PLL_mult;
+    pll = handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * ...
+        handles.rx.HB2 * handles.rx.HB3 * handles.rx.PLL_mult;
 else
     % Tx
-    pll = handles.input_tx.Rdata * handles.input_tx.FIR * handles.input_tx.HB1 * ...
-        handles.input_tx.HB2 * handles.input_tx.HB3 * handles.input_tx.DAC_div * ...
-        handles.input_tx.PLL_mult;
+    pll = handles.tx.Rdata * handles.tx.FIR * handles.tx.HB1 * ...
+        handles.tx.HB2 * handles.tx.HB3 * handles.tx.DAC_div * ...
+        handles.tx.PLL_mult;
 end
 
 % calculate a channel's complex bandwidth that matches 32 bit integer precision
@@ -2351,9 +2351,9 @@ pll_rate = get_pll_rate(handles);
 [rfbw, caldiv] = calculate_rfbw(pll_rate, caldiv, sel.RxTx, false);
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 function Fcutoff_Callback(hObject, eventdata, handles)
@@ -2365,9 +2365,9 @@ handles = guidata(hObject);
 
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 set_caldiv(handles, caldiv);
@@ -2397,9 +2397,9 @@ function target_delay_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if (get(handles.filter_type, 'Value') == 1)
-    handles.input_rx.phEQ = str2double(get(hObject, 'String'));
+    handles.rx.phEQ = str2double(get(hObject, 'String'));
 else
-    handles.input_tx.phEQ = str2double(get(hObject, 'String'));
+    handles.tx.phEQ = str2double(get(hObject, 'String'));
 end
 data2gui(hObject, handles);
 guidata(hObject, handles);
@@ -2551,14 +2551,14 @@ end
 % both channels when data2gui is run
 if isstruct(get_current_rxtx(handles))
     filter_type = get(handles.filter_type, 'Value');
-    
+
     set(handles.filter_type, 'Value', 1);
     caldiv = default_caldiv(handles);
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
     set(handles.filter_type, 'Value', 2);
     caldiv = default_caldiv(handles);
-    handles.input_tx.caldiv = caldiv;
-    
+    handles.tx.caldiv = caldiv;
+
     set(handles.filter_type, 'Value', filter_type);
 end
 
@@ -2595,7 +2595,7 @@ end
 [pathstr, ~, ~] = fileparts(mfilename('fullpath'));
 if exist(fullfile(pathstr, 'libiio', 'libiio_if.m'), 'file')
     addpath(fullfile(pathstr, 'libiio'));
-    
+
     % Initialize the libiio_if object
     handles.libiio_ctrl_dev = libiio_if();
     [ret, err_msg, msg_log] = init(handles.libiio_ctrl_dev, ip_address, ...
@@ -2623,11 +2623,11 @@ if (ret < 0)
 else
     set(handles.connect2target, 'String', 'Connected to Target');
     set(handles.target_get_clock, 'Enable', 'on');
-    
+
     if isfield(handles, 'rfirtaps') && isfield(handles, 'tfirtaps')
         set(handles.save2target, 'Enable', 'on');
     end
-    
+
     % save IP address to restore on next startup
     [pathstr, ~, ~] = fileparts(mfilename('fullpath'));
     cached_ip_file = fullfile(pathstr, '.previous_ip_addr');
@@ -2699,14 +2699,14 @@ HB = cellstr(get(hObject,'String'));
 HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
-handles.input_tx.DAC_div = HB;
+handles.tx.DAC_div = HB;
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -2741,17 +2741,17 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.FIR = HB;
+    handles.rx.FIR = HB;
 else
-    handles.input_tx.FIR = HB;
+    handles.tx.FIR = HB;
 end
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -2859,7 +2859,7 @@ if isfield(options.ad9361_settings.rx, answer)
         'Replace', 'Replace', 'Cancel', 'Cancel');
 end
 if strcmp(button, 'Replace')
-    options.ad9361_settings.rx.(answer) = handles.input_rx;
+    options.ad9361_settings.rx.(answer) = handles.rx;
 end
 
 button = 'Replace';
@@ -2867,7 +2867,7 @@ if isfield(options.ad9361_settings.tx, answer)
     button = questdlg(strcat('Tx setting "', answer, '" exists, replace?'),...
         'Replace', 'Replace', 'Cancel', 'Cancel');end
 if strcmp(button, 'Replace')
-    options.ad9361_settings.tx.(answer) = handles.input_tx;
+    options.ad9361_settings.tx.(answer) = handles.tx;
 end
 
 ad9361_settings = options.ad9361_settings;
@@ -2904,11 +2904,11 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.HB2 = HB;
-    handles.input_rx.HBs = handles.input_rx.HB1 * HB * handles.input_rx.HB3;
+    handles.rx.HB2 = HB;
+    handles.rx.HBs = handles.rx.HB1 * HB * handles.rx.HB3;
 else
-    handles.input_tx.HB2 = HB;
-    handles.input_tx.HBs = handles.input_tx.HB1 * HB * handles.input_tx.HB3;
+    handles.tx.HB2 = HB;
+    handles.tx.HBs = handles.tx.HB1 * HB * handles.tx.HB3;
 end
 
 guidata(hObject, handles);
@@ -2941,11 +2941,11 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.HB3 = HB;
-    handles.input_rx.HBs = handles.input_rx.HB1 * handles.input_rx.HB2 * HB;
+    handles.rx.HB3 = HB;
+    handles.rx.HBs = handles.rx.HB1 * handles.rx.HB2 * HB;
 else
-    handles.input_tx.HB3 = HB;
-    handles.input_tx.HBs = handles.input_tx.HB1 * handles.input_tx.HB2 * HB;
+    handles.tx.HB3 = HB;
+    handles.tx.HBs = handles.tx.HB1 * handles.tx.HB2 * HB;
 end
 
 data2gui(hObject, handles);
@@ -2963,7 +2963,6 @@ function HB3_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 
 % --- Executes when selected object is changed in Response_Type.
@@ -3000,7 +2999,6 @@ switch h
         set(handles.Fcenter, 'Visible', 'on');
     case 'Equalize'
         set(handles.Freq_Specs, 'Visible', 'off');
-        
 end
 
 display_default_image(hObject);
