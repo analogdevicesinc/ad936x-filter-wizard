@@ -348,8 +348,8 @@ while (1)
         else
             d2 = fdesign.arbmag('N,B,F,A',M-1,B,F3,A3,F4,A4);
         end
-        Hd2 = design(d2,'equiripple','B1Weights',W3,'B2Weights',W4,'SystemObject',false);
-        scoef = Hd2.Numerator;
+        Hdeq = design(d2,'equiripple','B1Weights',W3,'B2Weights',W4,'SystemObject',false);
+        scoef = Hdeq.Numerator;
         for k = 1:length(scoef)
             scoef(k) = -scoef(k)*(-1)^(k-1);
         end
@@ -496,6 +496,7 @@ end
 
 output = input;
 
+% externally accessible fields
 output.firtaps = firtaps;
 output.nfirtaps = length(h);
 output.filter = filter;

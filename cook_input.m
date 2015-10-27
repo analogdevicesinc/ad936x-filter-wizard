@@ -78,20 +78,20 @@
 function cooked = cook_input(input)
 
 % AD9361/AD9364 specific max/min clock rates
-maxval.MAX_BBPLL_FREQ = 1430000000;                         % 1430.0 MHz
-maxval.MIN_BBPLL_FREQ =  715000000;                         %  715.0 MHz
-maxval.MAX_ADC_CLK    =  640000000;                         %  640.0 MHz
-maxval.MIN_ADC_CLK    =  maxval.MIN_BBPLL_FREQ / (2 ^ 6);  %   11.2 MHz
-maxval.MAX_DAC_CLK    =  maxval.MAX_ADC_CLK / 2;           % (MAX_ADC_CLK / 2)
-maxval.MAX_DATA_RATE  =   61440000;                         %   61.44 MSPS
-maxval.MIN_DATA_RATE  =  maxval.MIN_BBPLL_FREQ / (48 * (2 ^ 6));
-maxval.MAX_FIR        =  maxval.MAX_DATA_RATE * 2;
-maxval.MAX_RX.HB1     =  245760000;
-maxval.MAX_RX.HB2     =  320000000;
-maxval.MAX_RX.HB3     =  640000000;
-maxval.MAX_TX.HB1     =  160000000;
-maxval.MAX_TX.HB2     =  320000000;
-maxval.MAX_TX.HB3     =  320000000;
+bounds.MAX_BBPLL_FREQ = 1430000000;                         % 1430.0 MHz
+bounds.MIN_BBPLL_FREQ =  715000000;                         %  715.0 MHz
+bounds.MAX_ADC_CLK    =  640000000;                         %  640.0 MHz
+bounds.MIN_ADC_CLK    =  bounds.MIN_BBPLL_FREQ / (2 ^ 6);  %   11.2 MHz
+bounds.MAX_DAC_CLK    =  bounds.MAX_ADC_CLK / 2;           % (MAX_ADC_CLK / 2)
+bounds.MAX_DATA_RATE  =   61440000;                         %   61.44 MSPS
+bounds.MIN_DATA_RATE  =  bounds.MIN_BBPLL_FREQ / (48 * (2 ^ 6));
+bounds.MAX_FIR        =  bounds.MAX_DATA_RATE * 2;
+bounds.MAX_RX.HB1     =  245760000;
+bounds.MAX_RX.HB2     =  320000000;
+bounds.MAX_RX.HB3     =  640000000;
+bounds.MAX_TX.HB1     =  160000000;
+bounds.MAX_TX.HB2     =  320000000;
+bounds.MAX_TX.HB3     =  320000000;
 
 if ~isstruct(input)
     input = struct;
@@ -118,7 +118,7 @@ end
 if ~isfield(input, 'Rdata')
     if isfield(input, 'PLL_rate')
         input.Rdata = input.PLL_rate;
-        while input.Rdata > maxval.MAX_DATA_RATE / 2
+        while input.Rdata > bounds.MAX_DATA_RATE / 2
             input.Rdata = input.Rdata / 2;
         end
     else
@@ -131,17 +131,17 @@ else
     end
 end
 
-if input.Rdata > maxval.MAX_DATA_RATE
-    input.Rdata = maxval.MAX_DATA_RATE;
+if input.Rdata > bounds.MAX_DATA_RATE
+    input.Rdata = bounds.MAX_DATA_RATE;
 end
-if input.Rdata < maxval.MIN_DATA_RATE
-    input.Rdata = maxval.MIN_DATA_RATE;
+if input.Rdata < bounds.MIN_DATA_RATE
+    input.Rdata = bounds.MIN_DATA_RATE;
 end
 
-input = autoselect_rates(input, maxval, false);
+input = autoselect_rates(input, bounds, false);
 % If PLL rate bounds aren't met, enable 3x dec/int for HB3.
-if ((input.PLL_rate > maxval.MAX_BBPLL_FREQ) || (input.PLL_rate < maxval.MIN_BBPLL_FREQ))
-    input = autoselect_rates(input, maxval, true);
+if ((input.PLL_rate > bounds.MAX_BBPLL_FREQ) || (input.PLL_rate < bounds.MIN_BBPLL_FREQ))
+    input = autoselect_rates(input, bounds, true);
 end
 
 if strcmp(input.Type, 'Lowpass')
@@ -203,11 +203,11 @@ end
 
 cooked = input;
 
-function input = autoselect_rates(input, maxval, dec_int3)
+function input = autoselect_rates(input, bounds, dec_int3)
 if strcmp(input.RxTx, 'Rx')
-    max_HB = maxval.MAX_RX;
+    max_HB = bounds.MAX_RX;
 else
-    max_HB = maxval.MAX_TX;
+    max_HB = bounds.MAX_TX;
 end
 
 if ~isfield(input, 'DAC_div')
@@ -227,8 +227,8 @@ if dec_int3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(inp
     end
     input.HB2 = fastest_FIR([2 1], max_HB.HB2, 0, input.Rdata * input.HB3);
     input.HB1 = fastest_FIR([2 1], max_HB.HB1, 0, input.Rdata * input.HB3 * input.HB2);
-    input.FIR = fastest_FIR([4 2 1], maxval.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
-    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], maxval.MAX_BBPLL_FREQ, maxval.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
+    input.FIR = fastest_FIR([4 2 1], bounds.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
+    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], bounds.MAX_BBPLL_FREQ, bounds.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
 end
 
 input.converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;

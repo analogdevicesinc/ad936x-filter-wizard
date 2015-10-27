@@ -163,13 +163,13 @@ for i = 1:2:length(varargin)
         % 'DefaultRxVals'     'structure (in Hz)'
         input = varargin{i + 1};
         input.RxTx = 'Rx';
-        handles.input_rx = cook_input(input);
+        handles.rx = cook_input(input);
         new = 1;
     elseif strcmpi(varargin{i}, 'DefaultTxVals')
         % 'DefaultTxVals'     'structure (in Hz)'
         input = varargin{i + 1};
         input.RxTx = 'Tx';
-        handles.input_tx = cook_input(input);
+        handles.tx = cook_input(input);
         new = 1;
     elseif strcmpi(varargin{i}, 'ApplyCallback')
         handles.applycallback = str2func(varargin{i + 1});
@@ -184,13 +184,13 @@ end
 
 handles = autoselect_rates(handles);
 
-if isfield(handles, 'input_tx') || isfield(handles, 'input_rx')
+if isfield(handles, 'tx') || isfield(handles, 'rx')
     set(handles.store_filter, 'Visible', 'off');
     guidata(hObject, handles);
     data2gui(hObject, handles);
 else
-    handles.input_rx = 0;
-    handles.input_tx = 0;
+    handles.rx = 0;
+    handles.tx = 0;
 end
 
 handles.Original_Size = get(handles.AD9361_Filter_app, 'Position');
@@ -344,9 +344,9 @@ handles = guidata(hObject);
 
 Fpass = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Fpass = Fpass;
+    handles.rx.Fpass = Fpass;
 else
-    handles.input_tx.Fpass = Fpass;
+    handles.tx.Fpass = Fpass;
 end
 
 data2gui(hObject, handles);
@@ -377,17 +377,17 @@ handles = guidata(hObject);
 
 Fstop = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Fstop = Fstop;
+    handles.rx.Fstop = Fstop;
 else
-    handles.input_tx.Fstop = Fstop;
+    handles.tx.Fstop = Fstop;
 end
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -442,55 +442,55 @@ interpolate = str2double(interpolate(1:2));
 
 function handles = autoselect_rates(handles)
 % sanity check the PLL rate and DAC divider values and alter them if necessary
-if isfield(handles, 'input_tx') && isfield(handles, 'input_rx')
-    if (handles.input_rx.PLL_rate ~= handles.input_tx.PLL_rate)
+if isfield(handles, 'tx') && isfield(handles, 'rx')
+    if (handles.rx.PLL_rate ~= handles.tx.PLL_rate)
         % If dec3 is used by Rx or Tx, both must use it in order for the
         % PLL rates to match.
-        if handles.input_tx.HB3 == 3 || handles.input_rx.HB3 == 3
-            handles.input_rx.HB3 = 3;
-            handles.input_tx.HB3 = 3;
+        if handles.tx.HB3 == 3 || handles.rx.HB3 == 3
+            handles.rx.HB3 = 3;
+            handles.tx.HB3 = 3;
         end
 
-        ADC_rate = handles.input_rx.Rdata * handles.input_rx.FIR * ...
-            handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3;
-        DAC_rate = handles.input_tx.Rdata * handles.input_tx.FIR * ...
-            handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3;
+        ADC_rate = handles.rx.Rdata * handles.rx.FIR * ...
+            handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3;
+        DAC_rate = handles.tx.Rdata * handles.tx.FIR * ...
+            handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3;
         DAC_div = ADC_rate / DAC_rate;
-        if (handles.input_tx.DAC_div ~= DAC_div)
+        if (handles.tx.DAC_div ~= DAC_div)
             if (DAC_div == 1 || DAC_div == 2)
-                handles.input_tx.DAC_div = DAC_div;
-                handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
+                handles.tx.DAC_div = DAC_div;
+                handles.tx.PLL_mult = handles.rx.PLL_mult;
                 filter_type = get(handles.filter_type, 'Value');
                 set(handles.filter_type, 'Value', 0);
-                handles.input_tx.caldiv = default_caldiv(handles);
+                handles.tx.caldiv = default_caldiv(handles);
                 set(handles.filter_type, 'Value', filter_type);
             end
         end
 
-        handles.input_rx.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], handles.MAX_BBPLL_FREQ, handles.MIN_BBPLL_FREQ, ...
-            handles.input_rx.Rdata * handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3 * handles.input_rx.DAC_div);
-        handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
+        handles.rx.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], handles.MAX_BBPLL_FREQ, handles.MIN_BBPLL_FREQ, ...
+            handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3 * handles.rx.DAC_div);
+        handles.tx.PLL_mult = handles.rx.PLL_mult;
 
-        if handles.input_rx.PLL_mult > 64
+        if handles.rx.PLL_mult > 64
             X = ['Date rate = ', num2str(tohwTx.TXSAMP), ' Hz. Tx BBPLL is too high for Rx to match.'];
             disp(X);
         end
 
-        handles.input_rx.PLL_rate = handles.input_rx.Rdata * handles.input_rx.FIR * handles.input_rx.HB1 * ...
-            handles.input_rx.HB2 * handles.input_rx.HB3 * handles.input_rx.PLL_mult;
+        handles.rx.PLL_rate = handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * ...
+            handles.rx.HB2 * handles.rx.HB3 * handles.rx.PLL_mult;
     else
-        ADC_rate = handles.input_rx.Rdata * handles.input_rx.FIR * ...
-            handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3;
-        DAC_rate = handles.input_tx.Rdata * handles.input_tx.FIR * ...
-            handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3;
+        ADC_rate = handles.rx.Rdata * handles.rx.FIR * ...
+            handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3;
+        DAC_rate = handles.tx.Rdata * handles.tx.FIR * ...
+            handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3;
         DAC_div = ADC_rate / DAC_rate;
-        if (handles.input_tx.DAC_div ~= DAC_div)
+        if (handles.tx.DAC_div ~= DAC_div)
             if (DAC_div == 1 || DAC_div == 2)
-                handles.input_tx.DAC_div = DAC_div;
-                handles.input_tx.PLL_mult = handles.input_rx.PLL_mult;
+                handles.tx.DAC_div = DAC_div;
+                handles.tx.PLL_mult = handles.rx.PLL_mult;
                 filter_type = get(handles.filter_type, 'Value');
                 set(handles.filter_type, 'Value', 0);
-                handles.input_tx.caldiv = default_caldiv(handles);
+                handles.tx.caldiv = default_caldiv(handles);
                 set(handles.filter_type, 'Value', filter_type);
             end
         end
@@ -500,10 +500,10 @@ end
 function sel = get_current_rxtx(handles)
 if (get(handles.filter_type, 'Value') == 1)
     % receive
-    sel = handles.input_rx;
+    sel = handles.rx;
 else
     % transmit
-    sel = handles.input_tx;
+    sel = handles.tx;
 end
 
 function data_clk_Callback(hObject, eventdata, handles)
@@ -518,9 +518,9 @@ input = {};
 input.Rdata = data_rate;
 
 input.RxTx = 'Rx';
-handles.input_rx = cook_input(input);
+handles.rx = cook_input(input);
 input.RxTx = 'Tx';
-handles.input_tx = cook_input(input);
+handles.tx = cook_input(input);
 handles = autoselect_rates(handles);
 
 % reset fcutoff to the default value for advanced mode
@@ -557,9 +557,9 @@ handles = guidata(hObject);
 
 Astop = str2double(get(hObject, 'String'));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Astop = Astop;
+    handles.rx.Astop = Astop;
 else
-    handles.input_tx.Astop = Astop;
+    handles.tx.Astop = Astop;
 end
 
 if get(handles.FIR_Astop, 'Value') >= str2double(get(hObject,'String'))
@@ -596,9 +596,9 @@ handles = guidata(hObject);
 
 Apass = str2double(get(hObject, 'String'));
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.Apass = Apass;
+    handles.rx.Apass = Apass;
 else
-    handles.input_tx.Apass = Apass;
+    handles.tx.Apass = Apass;
 end
 
 data2gui(hObject, handles);
@@ -674,7 +674,7 @@ end
 
 fid = fopen(newpath,'w');
 
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 [rx_FIR_rate, rx_HB1_rate, rx_HB2_rate, rx_HB3_rate, rx_RFbw_hw, ...
     tx_FIR_rate, tx_HB1_rate, tx_HB2_rate, tx_HB3_rate, tx_RFbw_hw] = get_path_rates(handles);
 
@@ -682,7 +682,7 @@ fprintf(fid, '// Generated with the MATLAB AD9361 Filter Design Wizard\n');
 fprintf(fid, '%s\n', strcat('// Generated', 32, datestr(now())));
 fprintf(fid, '// Inputs:\n');
 
-fprintf(fid, '// Data Sample Frequency = %d Hz\n', handles.rx.Rdata);
+fprintf(fid, '// Data Sample Frequency = %.0f Hz\n', handles.rx.Rdata);
 if get(handles.phase_eq, 'Value')
     fprintf(fid, '// RX Phase equalization = %f ns\n', handles.rx.phEQ);
     fprintf(fid, '// TX Phase equalization = %f ns\n', handles.tx.phEQ);
@@ -697,9 +697,9 @@ coefficients = sprintf('%.0f,', flip(rot90(handles.rfirtaps)));
 coefficients = coefficients(1:end-1); % strip final comma
 fprintf(fid, '\t{%s}, // rx_coef[128]\n', coefficients);
 fprintf(fid, '\t%d, // rx_coef_size\n', handles.nfirtaps);
-fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // rx_path_clks[6]\n', ...
+fprintf(fid, '\t{%.0f,%.0f,%.0f,%.0f,%.0f,%.0f}, // rx_path_clks[6]\n', ...
     PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata);
-fprintf(fid, '\t%d // rx_bandwidth\n', rx_RFbw_hw);
+fprintf(fid, '\t%.0f // rx_bandwidth\n', rx_RFbw_hw);
 fprintf(fid, '};\n\n');
 
 % Tx
@@ -711,9 +711,9 @@ coefficients = sprintf('%.0f,', flip(rot90(handles.tfirtaps)));
 coefficients = coefficients(1:end-1); % strip final comma
 fprintf(fid, '\t{%s}, // tx_coef[128]\n', coefficients);
 fprintf(fid, '\t%d, // tx_coef_size\n', handles.nfirtaps);
-fprintf(fid, '\t{%d,%d,%d,%d,%d,%d}, // tx_path_clks[6]\n', ...
+fprintf(fid, '\t{%.0f,%.0f,%.0f,%.0f,%.0f,%.0f}, // tx_path_clks[6]\n', ...
     PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata);
-fprintf(fid, '\t%d // tx_bandwidth\n', tx_RFbw_hw);
+fprintf(fid, '\t%.0f // tx_bandwidth\n', tx_RFbw_hw);
 fprintf(fid, '};\n');
 
 fclose(fid);
@@ -741,23 +741,23 @@ fprintf(fid, '# Inputs:\r\n');
 %converter_rate = get_converter_clk(handles);
 %converter_rate = get_ADC_clk(handles);
 
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 [rx_FIR_rate, rx_HB1_rate, rx_HB2_rate, rx_HB3_rate, rx_RFbw_hw, ...
     tx_FIR_rate, tx_HB1_rate, tx_HB2_rate, tx_HB3_rate, tx_RFbw_hw] = get_path_rates(handles);
 
 %fprintf(fid, '# PLL CLK Frequency = %f Hz\r\n', pll_rate);
 %fprintf(fid, '# Converter Sample Frequency = %f Hz\r\n', converter_rate);
-fprintf(fid, '# Data Sample Frequency = %d Hz\r\n', handles.rx.Rdata);
+fprintf(fid, '# Data Sample Frequency = %.0f Hz\r\n', handles.rx.Rdata);
 if get(handles.phase_eq, 'Value')
     fprintf(fid, '# RX Phase equalization = %f ns\r\n', handles.rx.phEQ);
     fprintf(fid, '# TX Phase equalization = %f ns\r\n', handles.tx.phEQ);
 end
 fprintf(fid, 'TX 3 GAIN %d INT %d\r\n', handles.tx.gain, handles.tx.FIR);
 fprintf(fid, 'RX 3 GAIN %d DEC %d\r\n', handles.rx.gain, handles.rx.FIR);
-fprintf(fid, 'RTX %d %d %d %d %d %d\r\n', PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata);
-fprintf(fid, 'RRX %d %d %d %d %d %d\r\n', PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata);
-fprintf(fid, 'BWTX %d\r\n', tx_RFbw_hw);
-fprintf(fid, 'BWRX %d\r\n', rx_RFbw_hw);
+fprintf(fid, 'RTX %.0f %.0f %.0f %.0f %.0f %.0f\r\n', PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata);
+fprintf(fid, 'RRX %.0f %.0f %.0f %.0f %.0f %.0f\r\n', PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata);
+fprintf(fid, 'BWTX %.0f\r\n', tx_RFbw_hw);
+fprintf(fid, 'BWRX %.0f\r\n', rx_RFbw_hw);
 
 % concat and transform Rx and Tx coefficient matrices for output
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
@@ -776,16 +776,16 @@ function save2target_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 [rx_FIR_rate, rx_HB1_rate, rx_HB2_rate, rx_HB3_rate, rx_RFbw_hw, ...
     tx_FIR_rate, tx_HB1_rate, tx_HB2_rate, tx_HB3_rate, tx_RFbw_hw] = get_path_rates(handles);
 
 fir_filter_str = sprintf('TX 3 GAIN %d INT %d', handles.tx.gain, handles.tx.FIR);
 fir_filter_str = strcat(fir_filter_str, sprintf('\nRX 3 GAIN %d DEC %d', handles.rx.gain, handles.rx.FIR));
-fir_filter_str = strcat(fir_filter_str, sprintf('\nRTX %d %d %d %d %d %d', PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata));
-fir_filter_str = strcat(fir_filter_str, sprintf('\nRRX %d %d %d %d %d %d', PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata));
-fir_filter_str = strcat(fir_filter_str, sprintf('\nBWTX %d', tx_RFbw_hw));
-fir_filter_str = strcat(fir_filter_str, sprintf('\nBWRX %d', rx_RFbw_hw));
+fir_filter_str = strcat(fir_filter_str, sprintf('\nRTX %.0f %.0f %.0f %.0f %.0f %.0f', PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata));
+fir_filter_str = strcat(fir_filter_str, sprintf('\nRRX %.0f %.0f %.0f %.0f %.0f %.0f', PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata));
+fir_filter_str = strcat(fir_filter_str, sprintf('\nBWTX %.0f', tx_RFbw_hw));
+fir_filter_str = strcat(fir_filter_str, sprintf('\nBWRX %.0f', rx_RFbw_hw));
 
 % concat and transform Rx and Tx coefficient matrices for outputting
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
@@ -1054,7 +1054,7 @@ set(handles.design_filter, 'Enable', 'off');
 
 sel = get_current_rxtx(handles);
 converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
-PLL_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.Pll_rate, 'String')));
+PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 FIR_rate = sel.Rdata * sel.FIR;
 HB1_rate = FIR_rate * sel.HB1;
 HB2_rate = HB1_rate * sel.HB2;
@@ -1182,18 +1182,10 @@ set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB '
 set(handles.results_Apass, 'String', [num2str(filter_result.Apass_actual) ' dB ']);
 set(handles.results_group_delay, 'String', [num2str(filter_result.grpdelayvar * 1e9, 3) ' ns ']);
 
-if get(handles.filter_type, 'Value') == 1
-    if handles.filter.Stage3.FullPrecisionOverride == 1
-        set(handles.results_fixed, 'String', 'Floating point approx');
-    else
-        set(handles.results_fixed, 'String', 'Fixed Point');
-    end
+if ~isempty(ver('fixedpoint')) && license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
+    set(handles.results_fixed, 'String', 'Fixed Point');
 else
-    if handles.filter.Stage1.FullPrecisionOverride == 1
-        set(handles.results_fixed, 'String', 'Floating point approx');
-    else
-        set(handles.results_fixed, 'String', 'Fixed Point');
-    end
+    set(handles.results_fixed, 'String', 'Floating point approx');
 end
 
 % check if the filter isn't compatible with 2Rx2Tx or 1Rx1Tx mode
@@ -1350,8 +1342,8 @@ if isfield(handles, 'tfirtaps')
     handles = rmfield(handles, 'tfirtaps');
 end
 
-handles.input_rx = cook_input(getfield(options.ad9361_settings.rx, Rx{matchRx}));
-handles.input_tx = cook_input(getfield(options.ad9361_settings.tx, Tx{matchTx}));
+handles.rx = cook_input(getfield(options.ad9361_settings.rx, Rx{matchRx}));
+handles.tx = cook_input(getfield(options.ad9361_settings.tx, Tx{matchTx}));
 
 set(handles.store_filter, 'Visible', 'off');
 guidata(hObject, handles);
@@ -1364,12 +1356,12 @@ OK = 1;
 rates_uipanel = findall(gcf, 'type', 'uipanel', 'Tag', 'rates_uipanel');
 if get(handles.filter_type, 'Value') == 1
     % Receive
-    sel = handles.input_rx;
+    sel = handles.rx;
     max_HB = handles.MAX_RX;
     set(rates_uipanel, 'Tag', 'rates_uipanel', 'Title', 'AD936x Decimation Rates');
 else
     % Transmit
-    sel = handles.input_tx;
+    sel = handles.tx;
     max_HB = handles.MAX_TX;
     set(rates_uipanel, 'Tag', 'rates_uipanel', 'Title', 'AD936x Interpolation Rates');
 end
@@ -1404,7 +1396,7 @@ set(handles.Astop, 'String', num2str(sel.Astop));
 
 set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Rdata)));
 
-if handles.input_rx.Fstop <= handles.input_rx.Rdata / 2
+if handles.rx.Fstop <= handles.rx.Rdata / 2
     set(handles.Fstop, 'ForegroundColor', [0 0 0]);
 else
     set(handles.Fstop, 'ForegroundColor', [1 0 0]);
@@ -1414,7 +1406,7 @@ else
     OK = 0;
 end
 
-if handles.input_rx.Rdata == handles.input_tx.Rdata
+if handles.rx.Rdata == handles.tx.Rdata
     set(handles.data_clk, 'ForegroundColor', [0 0 0]);
 else
     set(handles.data_clk, 'ForegroundColor', [1 0 0]);
@@ -1529,13 +1521,13 @@ for i = 1:length(opts)
 end
 
 % PLL Settings
-set(handles.DAC_by2, 'Value', handles.input_tx.DAC_div);
-set(handles.ADC_clk, 'String', num2str(handles.input_rx.Rdata / 1e6 * handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3));
-set(handles.DAC_clk, 'String', num2str(handles.input_tx.Rdata / 1e6 * handles.input_tx.FIR * handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3));
+set(handles.DAC_by2, 'Value', handles.tx.DAC_div);
+set(handles.ADC_clk, 'String', num2str(handles.rx.Rdata / 1e6 * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3));
+set(handles.DAC_clk, 'String', num2str(handles.tx.Rdata / 1e6 * handles.tx.FIR * handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3));
 
 % Make sure Rx and Tx PLL rates are equal
-if (handles.input_rx.FIR * handles.input_rx.HB1 * handles.input_rx.HB2 * handles.input_rx.HB3) == ...
-        (handles.input_tx.FIR * handles.input_tx.HB1 * handles.input_tx.HB2 * handles.input_tx.HB3 * handles.input_tx.DAC_div)
+if (handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3) == ...
+        (handles.tx.FIR * handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3 * handles.tx.DAC_div)
     set(handles.ADC_clk, 'ForegroundColor', [0 0 0]);
     set(handles.DAC_clk, 'ForegroundColor', [0 0 0]);
 else
@@ -2023,9 +2015,9 @@ else
 end
 
 if (get(handles.filter_type, 'Value') == 1)
-    handles.input_rx.phEQ = phEQ;
+    handles.rx.phEQ = phEQ;
 else
-    handles.input_tx.phEQ = phEQ;
+    handles.tx.phEQ = phEQ;
 end
 
 if (handles.active_plot ~= 0)
@@ -2092,11 +2084,11 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.HB1 = HB;
-    handles.input_rx.HBs = HB * handles.input_rx.HB2 * handles.input_rx.HB3;
+    handles.rx.HB1 = HB;
+    handles.rx.HBs = HB * handles.rx.HB2 * handles.rx.HB3;
 else
-    handles.input_tx.HB1 = HB;
-    handles.input_tx.HBs = HB * handles.input_tx.HB2 * handles.input_tx.HB3;
+    handles.tx.HB1 = HB;
+    handles.tx.HBs = HB * handles.tx.HB2 * handles.tx.HB3;
 end
 
 % Update handles structure
@@ -2146,21 +2138,21 @@ HBs = num2cell(sort(HBs));
 
 [HB1, HB2, HB3] = HBs{:};
 if (get(handles.filter_type, 'Value') == 1)
-    handles.input_rx.HB1 = HB1;
-    handles.input_rx.HB2 = HB2;
-    handles.input_rx.HB3 = HB3;
+    handles.rx.HB1 = HB1;
+    handles.rx.HB2 = HB2;
+    handles.rx.HB3 = HB3;
 else
-    handles.input_tx.HB1 = HB1;
-    handles.input_tx.HB2 = HB2;
-    handles.input_tx.HB3 = HB3;
+    handles.tx.HB1 = HB1;
+    handles.tx.HB2 = HB2;
+    handles.tx.HB3 = HB3;
 end
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 % Update handles structure
@@ -2192,15 +2184,15 @@ HB = cellstr(get(hObject,'String'));
 HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
-handles.input_tx.PLL_mult = HB;
-handles.input_rx.PLL_mult = HB;
+handles.tx.PLL_mult = HB;
+handles.rx.PLL_mult = HB;
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -2303,9 +2295,9 @@ set(handles.data_clk, 'String', num2str(data_clk, 10));
 
 function caldiv = default_caldiv(handles)
 if (get(handles.filter_type, 'Value') == 1)
-    wnom = 1.4 * handles.input_rx.Fstop;  % Rx
+    wnom = 1.4 * handles.rx.Fstop;  % Rx
 else
-    wnom = 1.6 * handles.input_tx.Fstop;  % Tx
+    wnom = 1.6 * handles.tx.Fstop;  % Tx
 end
 
 pll = get_pll_rate(handles);
@@ -2314,9 +2306,9 @@ caldiv = min(max(div,1),511);
 
 function caldiv = get_caldiv(handles)
 if (get(handles.filter_type, 'Value') == 1)
-    wnom = 1.4 * handles.input_rx.Fstop;  % Rx
+    wnom = 1.4 * handles.rx.Fstop;  % Rx
 else
-    wnom = 1.6 * handles.input_tx.Fstop;  % Tx
+    wnom = 1.6 * handles.tx.Fstop;  % Tx
 end
 
 Fcutoff = str2double(get(handles.Fcutoff, 'String'));
@@ -2336,13 +2328,13 @@ set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, wc)
 function pll = get_pll_rate(handles)
 if (get(handles.filter_type, 'Value') == 1)
     % Rx
-    pll = handles.input_rx.Rdata * handles.input_rx.FIR * handles.input_rx.HB1 * ...
-        handles.input_rx.HB2 * handles.input_rx.HB3 * handles.input_rx.PLL_mult;
+    pll = handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * ...
+        handles.rx.HB2 * handles.rx.HB3 * handles.rx.PLL_mult;
 else
     % Tx
-    pll = handles.input_tx.Rdata * handles.input_tx.FIR * handles.input_tx.HB1 * ...
-        handles.input_tx.HB2 * handles.input_tx.HB3 * handles.input_tx.DAC_div * ...
-        handles.input_tx.PLL_mult;
+    pll = handles.tx.Rdata * handles.tx.FIR * handles.tx.HB1 * ...
+        handles.tx.HB2 * handles.tx.HB3 * handles.tx.DAC_div * ...
+        handles.tx.PLL_mult;
 end
 
 % calculate a channel's complex bandwidth that matches 32 bit integer precision
@@ -2359,9 +2351,9 @@ pll_rate = get_pll_rate(handles);
 [rfbw, caldiv] = calculate_rfbw(pll_rate, caldiv, sel.RxTx, false);
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 function Fcutoff_Callback(hObject, eventdata, handles)
@@ -2373,9 +2365,9 @@ handles = guidata(hObject);
 
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 set_caldiv(handles, caldiv);
@@ -2405,9 +2397,9 @@ function target_delay_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if (get(handles.filter_type, 'Value') == 1)
-    handles.input_rx.phEQ = str2double(get(hObject, 'String'));
+    handles.rx.phEQ = str2double(get(hObject, 'String'));
 else
-    handles.input_tx.phEQ = str2double(get(hObject, 'String'));
+    handles.tx.phEQ = str2double(get(hObject, 'String'));
 end
 data2gui(hObject, handles);
 guidata(hObject, handles);
@@ -2562,10 +2554,10 @@ if isstruct(get_current_rxtx(handles))
 
     set(handles.filter_type, 'Value', 1);
     caldiv = default_caldiv(handles);
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
     set(handles.filter_type, 'Value', 2);
     caldiv = default_caldiv(handles);
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 
     set(handles.filter_type, 'Value', filter_type);
 end
@@ -2707,14 +2699,14 @@ HB = cellstr(get(hObject,'String'));
 HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
-handles.input_tx.DAC_div = HB;
+handles.tx.DAC_div = HB;
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -2749,17 +2741,17 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.FIR = HB;
+    handles.rx.FIR = HB;
 else
-    handles.input_tx.FIR = HB;
+    handles.tx.FIR = HB;
 end
 
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.caldiv = caldiv;
+    handles.rx.caldiv = caldiv;
 else
-    handles.input_tx.caldiv = caldiv;
+    handles.tx.caldiv = caldiv;
 end
 
 data2gui(hObject, handles);
@@ -2867,7 +2859,7 @@ if isfield(options.ad9361_settings.rx, answer)
         'Replace', 'Replace', 'Cancel', 'Cancel');
 end
 if strcmp(button, 'Replace')
-    options.ad9361_settings.rx.(answer) = handles.input_rx;
+    options.ad9361_settings.rx.(answer) = handles.rx;
 end
 
 button = 'Replace';
@@ -2875,7 +2867,7 @@ if isfield(options.ad9361_settings.tx, answer)
     button = questdlg(strcat('Tx setting "', answer, '" exists, replace?'),...
         'Replace', 'Replace', 'Cancel', 'Cancel');end
 if strcmp(button, 'Replace')
-    options.ad9361_settings.tx.(answer) = handles.input_tx;
+    options.ad9361_settings.tx.(answer) = handles.tx;
 end
 
 ad9361_settings = options.ad9361_settings;
@@ -2912,11 +2904,11 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.HB2 = HB;
-    handles.input_rx.HBs = handles.input_rx.HB1 * HB * handles.input_rx.HB3;
+    handles.rx.HB2 = HB;
+    handles.rx.HBs = handles.rx.HB1 * HB * handles.rx.HB3;
 else
-    handles.input_tx.HB2 = HB;
-    handles.input_tx.HBs = handles.input_tx.HB1 * HB * handles.input_tx.HB3;
+    handles.tx.HB2 = HB;
+    handles.tx.HBs = handles.tx.HB1 * HB * handles.tx.HB3;
 end
 
 guidata(hObject, handles);
@@ -2949,11 +2941,11 @@ HB = HB{get(hObject,'Value')};
 HB = str2double(HB(1:2));
 
 if get(handles.filter_type, 'Value') == 1
-    handles.input_rx.HB3 = HB;
-    handles.input_rx.HBs = handles.input_rx.HB1 * handles.input_rx.HB2 * HB;
+    handles.rx.HB3 = HB;
+    handles.rx.HBs = handles.rx.HB1 * handles.rx.HB2 * HB;
 else
-    handles.input_tx.HB3 = HB;
-    handles.input_tx.HBs = handles.input_tx.HB1 * handles.input_tx.HB2 * HB;
+    handles.tx.HB3 = HB;
+    handles.tx.HBs = handles.tx.HB1 * handles.tx.HB2 * HB;
 end
 
 data2gui(hObject, handles);
@@ -2971,7 +2963,6 @@ function HB3_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 
 % --- Executes when selected object is changed in Response_Type.
@@ -3008,7 +2999,6 @@ switch h
         set(handles.Fcenter, 'Visible', 'on');
     case 'Equalize'
         set(handles.Freq_Specs, 'Visible', 'off');
-
 end
 
 display_default_image(hObject);
