@@ -211,9 +211,9 @@ end
 if strcmp(input.RxTx, 'Tx')
     filter_stages = fliplr(filter_stages);
 end
-filter = cascade(filter_stages{:});
+dfilter = cascade(filter_stages{:});
 
-Hmiddle = clone(filter);
+Hmiddle = clone(dfilter);
 if strcmp(input.RxTx, 'Rx')
     if strcmp(enables,'1111') ||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
         Hmiddle = cascade(Hd1,Hmiddle);
@@ -242,9 +242,9 @@ for i = 2:(Nw)
 end
 
 if strcmp(input.RxTx, 'Rx')
-    response = analogresp('Rx',w,input.converter_rate,b1,a1,b2,a2).*freqz(filter,w,input.converter_rate);
+    response = analogresp('Rx',w,input.converter_rate,b1,a1,b2,a2).*freqz(dfilter,w,input.converter_rate);
 else
-    response = freqz(filter,w,input.converter_rate).*analogresp('Tx',w,input.converter_rate,b1,a1,b2,a2);
+    response = freqz(dfilter,w,input.converter_rate).*analogresp('Tx',w,input.converter_rate,b1,a1,b2,a2);
 end
 for i = 1:(Nw)
     invariance(i) = real(response(i))^2+imag(response(i))^2;
@@ -283,9 +283,9 @@ for i = 1:(Gpass+1)
     omega(i) = fg(i)*clkFIR;
 end
 if strcmp(input.RxTx, 'Rx')
-    rg1 = analogresp('Rx',omega,input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega,input.converter_rate);
+    rg1 = analogresp('Rx',omega,input.converter_rate,b1,a1,b2,a2).*freqz(dfilter,omega,input.converter_rate);
 else
-    rg1 = freqz(filter,omega,input.converter_rate).*analogresp('Tx',omega,input.converter_rate,b1,a1,b2,a2);
+    rg1 = freqz(dfilter,omega,input.converter_rate).*analogresp('Tx',omega,input.converter_rate,b1,a1,b2,a2);
 end
 phase = unwrap(angle(rg1));
 gd1 = GroupDelay(omega,phase); % group delay on passband for Analog + Converter + HB
@@ -303,10 +303,10 @@ for m = Gstop:(G/2)
     rg(g) = 0;
 end
 if strcmp(input.RxTx, 'Rx')
-    wg1 = abs(analogresp('Rx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),input.converter_rate));
+    wg1 = abs(analogresp('Rx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*freqz(dfilter,omega(Gpass+2:end),input.converter_rate));
     wg2 = (wg1)/(dBinv(-input.Astop));
 else
-    wg1 = abs(freqz(filter,omega(Gpass+2:end),input.converter_rate).*analogresp('Tx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
+    wg1 = abs(freqz(dfilter,omega(Gpass+2:end),input.converter_rate).*analogresp('Tx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
     wg2 = (sqrt(input.FIR)*wg1)/(dBinv(-input.Astop));
 end
 wg3 = dBinv(input.FIRdBmin);
@@ -401,20 +401,20 @@ while (1)
     end
     if strcmp(input.RxTx, 'Rx')
         if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
-            filter = cascade(filter,Hmd);
+            dfilter = cascade(dfilter,Hmd);
         else
-            addStage(filter,Hmd);
+            addStage(dfilter,Hmd);
         end
-        rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega(1:Gpass+1),input.converter_rate));
-        rg_stop = abs(analogresp('Rx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*freqz(filter,omega(Gpass+2:end),input.converter_rate));
+        rg_pass = abs(analogresp('Rx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2).*freqz(dfilter,omega(1:Gpass+1),input.converter_rate));
+        rg_stop = abs(analogresp('Rx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*freqz(dfilter,omega(Gpass+2:end),input.converter_rate));
     else
         if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
-            filter = cascade(Hmd,filter);
+            dfilter = cascade(Hmd,dfilter);
         else
-            addStage(filter, Hmd, 1);
+            addStage(dfilter, Hmd, 1);
         end
-        rg_pass = abs(freqz(filter,omega(1:Gpass+1),input.converter_rate).*analogresp('Tx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));
-        rg_stop = abs(freqz(filter,omega(Gpass+2:end),input.converter_rate).*analogresp('Tx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
+        rg_pass = abs(freqz(dfilter,omega(1:Gpass+1),input.converter_rate).*analogresp('Tx',omega(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));
+        rg_stop = abs(freqz(dfilter,omega(Gpass+2:end),input.converter_rate).*analogresp('Tx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
     end
     
     % quantitative values about actual passband and stopband
@@ -426,9 +426,9 @@ while (1)
         Apass_actual = Apass_actual_vector(1);
         Astop_actual = Astop_actual_vector(1);
         if strcmp(input.RxTx, 'Rx')
-            removeStage(filter);
+            removeStage(dfilter);
         else
-            removeStage(filter, 1);
+            removeStage(dfilter, 1);
         end
         break
     elseif Apass_actual_vector(1) > input.Apass || Astop_actual_vector(1) < input.Astop
@@ -436,9 +436,9 @@ while (1)
         Apass_actual = Apass_actual_vector(1);
         Astop_actual = Astop_actual_vector(1);
         if strcmp(input.RxTx, 'Rx')
-            removeStage(filter);
+            removeStage(dfilter);
         else
-            removeStage(filter, 1);
+            removeStage(dfilter, 1);
         end
         break
     elseif Apass_actual_vector(i) > input.Apass || Astop_actual_vector(i) < input.Astop
@@ -446,18 +446,18 @@ while (1)
         Apass_actual = Apass_actual_vector(i-1);
         Astop_actual = Astop_actual_vector(i-1);
         if strcmp(input.RxTx, 'Rx')
-            removeStage(filter);
+            removeStage(dfilter);
         else
-            removeStage(filter, 1);
+            removeStage(dfilter, 1);
         end
         break
     else
         N = N-16;
         i = i+1;
         if strcmp(input.RxTx, 'Rx')
-            removeStage(filter);
+            removeStage(dfilter);
         else
-            removeStage(filter, 1);
+            removeStage(dfilter, 1);
         end
     end
 end
@@ -483,9 +483,9 @@ if ~isempty(ver('fixedpoint')) && license('test','fixed_point_toolbox') && licen
     Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
 end
 if strcmp(input.RxTx, 'Rx')
-    addStage(filter, Hmd);
+    addStage(dfilter, Hmd);
 else
-    addStage(filter, Hmd, 1);
+    addStage(dfilter, Hmd, 1);
 end
 gd2 = grpdelay(Hmd,omega1,clkFIR).*(1/clkFIR);
 if input.phEQ == -1
@@ -536,7 +536,7 @@ output = input;
 % externally accessible fields
 output.firtaps = firtaps;
 output.nfirtaps = length(h);
-output.filter = filter;
+output.filter = dfilter;
 output.gain = gain;
 output.Hm1 = Hm1;
 output.Hm2 = Hm2;
