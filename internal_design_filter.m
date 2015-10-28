@@ -122,9 +122,46 @@ else
 end
 
 Hm1 = dec_int_func(2, hb1_coeff);
+Hm1.FullPrecisionOverride = false;
+Hm1.OutputDataType='Custom';
+Hm1.CustomOutputDataType=numerictype([],16,14);
+Hm1.CoefficientsDataType='Custom';
+Hm1.CustomCoefficientsDataType=numerictype([],16);
+
 Hm2 = dec_int_func(2, hb2_coeff);
+Hm2.FullPrecisionOverride = false;
+Hm2.OutputDataType='Custom';
+Hm2.CustomOutputDataType=numerictype([],16,14);
+Hm2.CoefficientsDataType='Custom';
+Hm2.CustomCoefficientsDataType=numerictype([],16);
+
+Hm1c34 = dec_int_func(2, hb1_coeff);
+Hm1c34.FullPrecisionOverride = false;
+Hm1c34.OutputDataType='Custom';
+Hm1c34.CustomOutputDataType=numerictype([],4,2);
+Hm1c34.CoefficientsDataType='Custom';
+Hm1c34.CustomCoefficientsDataType=numerictype([],16);
+
+Hm2c34 = dec_int_func(2, hb2_coeff);
+Hm2c34.FullPrecisionOverride = false;
+Hm2c34.OutputDataType='Custom';
+Hm2c34.CustomOutputDataType=numerictype([],4,2);
+Hm2c34.CoefficientsDataType='Custom';
+Hm2c34.CustomCoefficientsDataType=numerictype([],16);
+
 Hm3 = dec_int_func(2, hb3_coeff);
+Hm3.FullPrecisionOverride = false;
+Hm3.OutputDataType='Custom';
+Hm3.CustomOutputDataType=numerictype([],8,6);
+Hm3.CoefficientsDataType='Custom';
+Hm3.CustomCoefficientsDataType=numerictype([],16);
+
 Hm4 = dec_int_func(3, dec_int3_coeff);
+Hm4.FullPrecisionOverride = false;
+Hm4.OutputDataType='Custom';
+Hm4.CustomOutputDataType=numerictype([],16,14);
+Hm4.CoefficientsDataType='Custom';
+Hm4.CustomCoefficientsDataType=numerictype([],16);
 
 hb1 = input.HB1;
 hb2 = input.HB2;
@@ -153,19 +190,19 @@ switch enables
     case '2211' % Hb2,Hb1
         filter_stages = {Hm2,Hm1};
     case '2121' % Hb3,Hb1
-        filter_stages = {Hm3,Hm1};
+        filter_stages = {Hm3,Hm1c34};
     case '1221' % Hb3,Hb2
-        filter_stages = {Hm3,Hm2};
+        filter_stages = {Hm3,Hm2c34};
     case '2221' % Hb3,Hb2,Hb1
-        filter_stages = {Hm3,Hm2,Hm1};
+        filter_stages = {Hm3,Hm2c34,Hm1};
     case '1113' % Dec/Int3
         filter_stages = {Hm4};
     case '2113' % Dec/Int3,Hb1
-        filter_stages = {Hm4,Hm1};
+        filter_stages = {Hm4,Hm1c34};
     case '1213' % Dec/Int3,Hb2
-        filter_stages = {Hm4,Hm2};
+        filter_stages = {Hm4,Hm2c34};
     case '2213' % Dec/Int3,Hb2,Hb1
-        filter_stages = {Hm4,Hm2,Hm1};
+        filter_stages = {Hm4,Hm2c34,Hm1};
     otherwise
         error('ddcresponse:IllegalOption', 'At least one of the stages must be there.')
 end
