@@ -128,19 +128,19 @@ Hm1.CustomOutputDataType=numerictype([],16,14);
 Hm1.CoefficientsDataType='Custom';
 Hm1.CustomCoefficientsDataType=numerictype([],16);
 
-Hm2 = dec_int_func(2, hb2_coeff);
-Hm2.FullPrecisionOverride = false;
-Hm2.OutputDataType='Custom';
-Hm2.CustomOutputDataType=numerictype([],16,14);
-Hm2.CoefficientsDataType='Custom';
-Hm2.CustomCoefficientsDataType=numerictype([],16);
-
 Hm1c34 = dec_int_func(2, hb1_coeff);
 Hm1c34.FullPrecisionOverride = false;
 Hm1c34.OutputDataType='Custom';
 Hm1c34.CustomOutputDataType=numerictype([],4,2);
 Hm1c34.CoefficientsDataType='Custom';
 Hm1c34.CustomCoefficientsDataType=numerictype([],16);
+
+Hm2 = dec_int_func(2, hb2_coeff);
+Hm2.FullPrecisionOverride = false;
+Hm2.OutputDataType='Custom';
+Hm2.CustomOutputDataType=numerictype([],16,14);
+Hm2.CoefficientsDataType='Custom';
+Hm2.CustomCoefficientsDataType=numerictype([],16);
 
 Hm2c34 = dec_int_func(2, hb2_coeff);
 Hm2c34.FullPrecisionOverride = false;
