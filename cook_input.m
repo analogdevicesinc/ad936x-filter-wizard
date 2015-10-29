@@ -88,6 +88,10 @@ if ~isfield(input, 'Type')
     input.Type = 'Lowpass';
 end
 
+if (isfield(input, 'RxTx') && ~(strcmp(input.RxTx, 'Rx') || strcmp(input.RxTx, 'Tx')))
+    error('RxTx parameter must be Rx or Tx');
+end
+
 if ~isfield(input, 'RxTx')
     input.RxTx = 'Rx';
 end
@@ -128,6 +132,7 @@ end
 input = autoselect_rates(input, bounds, false);
 
 pll_out_of_bounds = ((input.PLL_rate > bounds.MAX_BBPLL_FREQ) || (input.PLL_rate < bounds.MIN_BBPLL_FREQ));
+converter_out_of_bounds = 0;
 if strcmp(input.RxTx, 'Rx')
     converter_out_of_bounds = (input.converter_rate > bounds.MAX_ADC_CLK || input.converter_rate < bounds.MIN_ADC_CLK);
 elseif strcmp(input.RxTx, 'Tx')
