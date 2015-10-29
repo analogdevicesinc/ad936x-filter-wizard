@@ -126,8 +126,16 @@ if input.Rdata < bounds.MIN_DATA_RATE
 end
 
 input = autoselect_rates(input, bounds, false);
-% If PLL rate bounds aren't met, enable 3x dec/int for HB3.
-if ((input.PLL_rate > bounds.MAX_BBPLL_FREQ) || (input.PLL_rate < bounds.MIN_BBPLL_FREQ))
+
+pll_out_of_bounds = ((input.PLL_rate > bounds.MAX_BBPLL_FREQ) || (input.PLL_rate < bounds.MIN_BBPLL_FREQ));
+if strcmp(input.RxTx, 'Rx')
+    converter_out_of_bounds = (input.converter_rate > bounds.MAX_ADC_CLK || input.converter_rate < bounds.MIN_ADC_CLK);
+elseif strcmp(input.RxTx, 'Tx')
+    converter_out_of_bounds = (input.converter_rate > bounds.MAX_DAC_CLK || input.converter_rate < bounds.MIN_DAC_CLK);
+end
+
+% If PLL or converter rate bounds aren't met, enable 3x dec/int for HB3.
+if (pll_out_of_bounds || converter_out_of_bounds)
     input = autoselect_rates(input, bounds, true);
 end
 
