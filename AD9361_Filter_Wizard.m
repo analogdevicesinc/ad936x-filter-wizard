@@ -267,8 +267,8 @@ channels = {'rx' 'tx'};
 numarg = 1;
 
 for i = 1:length(channels)
-    if isfield(handles, channels(i))
-        output = getfield(handles, char(channels(i)));
+    output = getfield(handles, char(channels(i)));
+    if isfield(output, 'firtaps')
         varargout{numarg} = clean_filter_fields(output);
         numarg = numarg + 1;
     end
