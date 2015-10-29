@@ -106,22 +106,9 @@ function AD9361_Filter_Wizard_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for AD9361_Filter_Wizard
 handles.output = hObject;
 
-handles.MAX_BBPLL_FREQ = 1430000000;                         % 1430.0 MHz
-handles.MIN_BBPLL_FREQ =  715000000;                         %  715.0 MHz
-
-handles.MAX_ADC_CLK    =  640000000;                         %  640.0 MHz
-handles.MIN_ADC_CLK    =  handles.MIN_BBPLL_FREQ / (2 ^ 6);  %   11.2 MHz
-handles.MAX_DAC_CLK    =  handles.MAX_ADC_CLK / 2;           % (MAX_ADC_CLK / 2)
-
-handles.MAX_DATA_RATE  =   61440000;                         %   61.44 MSPS
-handles.MIN_DATA_RATE  =  handles.MIN_BBPLL_FREQ / (48 * (2 ^ 6));
-handles.MAX_FIR        =  handles.MAX_DATA_RATE * 2;
-handles.MAX_RX.HB1     =  245760000;
-handles.MAX_RX.HB2     =  320000000;
-handles.MAX_RX.HB3     =  640000000;
-handles.MAX_TX.HB1     =  160000000;
-handles.MAX_TX.HB2     =  320000000;
-handles.MAX_TX.HB3     =  320000000;
+% import various value bounds
+rate_bounds;
+handles.bounds = bounds;
 
 new = 0;
 handles.freq_units = 3;
@@ -467,7 +454,7 @@ if isfield(handles, 'tx') && isfield(handles, 'rx')
             end
         end
 
-        handles.rx.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], handles.MAX_BBPLL_FREQ, handles.MIN_BBPLL_FREQ, ...
+        handles.rx.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], handles.bounds.MAX_BBPLL_FREQ, handles.bounds.MIN_BBPLL_FREQ, ...
             handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3 * handles.rx.DAC_div);
         handles.tx.PLL_mult = handles.rx.PLL_mult;
 
@@ -1357,12 +1344,12 @@ rates_uipanel = findall(gcf, 'type', 'uipanel', 'Tag', 'rates_uipanel');
 if get(handles.filter_type, 'Value') == 1
     % Receive
     sel = handles.rx;
-    max_HB = handles.MAX_RX;
+    max_HB = handles.bounds.MAX_RX;
     set(rates_uipanel, 'Tag', 'rates_uipanel', 'Title', 'AD936x Decimation Rates');
 else
     % Transmit
     sel = handles.tx;
-    max_HB = handles.MAX_TX;
+    max_HB = handles.bounds.MAX_TX;
     set(rates_uipanel, 'Tag', 'rates_uipanel', 'Title', 'AD936x Interpolation Rates');
 end
 
@@ -1426,7 +1413,7 @@ for i = 1:length(opts)
     end
 end
 set(handles.FIR_rate, 'String', num2str(FIR_rate / 1e6));
-if FIR_rate > handles.MAX_FIR
+if FIR_rate > handles.bounds.MAX_FIR
     set(handles.FIR_rate, 'ForegroundColor', [1 0 0]);
     if OK
         warn = 'FIR rate too high';
@@ -1544,16 +1531,16 @@ end
 pll = get_pll_rate(handles);
 set(handles.Pll_rate, 'String', num2str(pll / 1e6));
 
-if (pll <= handles.MAX_BBPLL_FREQ) && (pll >= handles.MIN_BBPLL_FREQ)
+if (pll <= handles.bounds.MAX_BBPLL_FREQ) && (pll >= handles.bounds.MIN_BBPLL_FREQ)
     set(handles.Pll_rate, 'ForegroundColor', [0 0 0]);
 else
     set(handles.Pll_rate, 'ForegroundColor', [1 0 0]);
     if OK
-        if (pll > handles.MAX_BBPLL_FREQ)
-            max_bbpll = num2str(Hz2value(handles, 3, handles.MAX_BBPLL_FREQ));
+        if (pll > handles.bounds.MAX_BBPLL_FREQ)
+            max_bbpll = num2str(Hz2value(handles, 3, handles.bounds.MAX_BBPLL_FREQ));
             warn = sprintf('PLL rate above maximum (%s %s)', max_bbpll, 'MHz');
         else
-            min_bbpll = num2str(Hz2value(handles, 3, handles.MIN_BBPLL_FREQ));
+            min_bbpll = num2str(Hz2value(handles, 3, handles.bounds.MIN_BBPLL_FREQ));
             warn = sprintf('PLL rate below minimum (%s %s)', min_bbpll, 'MHz');
         end
     end
