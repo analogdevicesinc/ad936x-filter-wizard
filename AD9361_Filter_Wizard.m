@@ -253,6 +253,9 @@ function varargout = AD9361_Filter_Wizard_OutputFcn(hObject, eventdata, handles)
 channels = {'rx' 'tx'};
 numarg = 1;
 
+% Return empty structs if the GUI was closed before a filter was designed.
+[varargout{1:nargout}] = deal(struct);
+
 for i = 1:length(channels)
     output = getfield(handles, char(channels(i)));
     if isfield(output, 'firtaps')
