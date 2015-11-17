@@ -1512,13 +1512,13 @@ end
 
 % PLL Settings
 set(handles.DAC_by2, 'Value', handles.tx.DAC_div);
-ADC_clk = handles.rx.Rdata / 1e6 * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3;
-set(handles.ADC_clk, 'String', num2str(ADC_clk));
-DAC_clk = handles.tx.Rdata / 1e6 * handles.tx.FIR * handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3;
-set(handles.DAC_clk, 'String', num2str(DAC_clk));
+ADC_clk = handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3;
+set(handles.ADC_clk, 'String', num2str(ADC_clk / 1e6));
+DAC_clk = handles.tx.Rdata * handles.tx.FIR * handles.tx.HB1 * handles.tx.HB2 * handles.tx.HB3;
+set(handles.DAC_clk, 'String', num2str(DAC_clk / 1e6));
 
-ADC_clk = round(value2Hz(handles, handles.freq_units, ADC_clk));
-DAC_clk = round(value2Hz(handles, handles.freq_units, DAC_clk));
+ADC_clk = round(ADC_clk);
+DAC_clk = round(DAC_clk);
 
 % Make sure ADC clocks are within bounds
 if (ADC_clk <= handles.bounds.MAX_ADC_CLK) && (ADC_clk >= handles.bounds.MIN_ADC_CLK)
