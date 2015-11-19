@@ -2542,6 +2542,11 @@ function Advanced_options_Callback(hObject, eventdata, handles)
 handles = guidata(hObject);
 if get(hObject,'Value')
     show_advanced(handles);
+
+    % reset fcutoff to the default value when advanced is re-enabled
+    set(handles.Fcutoff, 'String', '0');
+    caldiv = get_caldiv(handles);
+    set_fcutoff(handles, caldiv);
 else
     hide_advanced(handles);
 end
