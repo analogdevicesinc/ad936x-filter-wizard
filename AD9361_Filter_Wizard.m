@@ -381,12 +381,19 @@ else
     handles.tx.Fstop = Fstop;
 end
 
+set(handles.Fcutoff, 'String', '0');
+
 % reset caldiv so the advanced mode setting is respected
 caldiv = get_caldiv(handles);
 if get(handles.filter_type, 'Value') == 1
     handles.rx.caldiv = caldiv;
 else
     handles.tx.caldiv = caldiv;
+end
+
+% recalculate fcutoff for advanced mode
+if get(handles.Advanced_options, 'Value')
+    set_fcutoff(handles, caldiv);
 end
 
 data2gui(hObject, handles);
