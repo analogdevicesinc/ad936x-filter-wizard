@@ -351,7 +351,7 @@ end
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
-guidata(hObject, handles)
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -399,7 +399,7 @@ end
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
-guidata(hObject, handles)
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -574,7 +574,7 @@ end
 
 data2gui(hObject, handles);
 handles = guidata(hObject);
-guidata(hObject, handles)
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -609,7 +609,7 @@ end
 
 data2gui(hObject, handles);
 handles = guidata(hObject);
-guidata(hObject, handles)
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -2426,7 +2426,7 @@ set_fcutoff(handles, caldiv);
 data2gui(hObject, handles);
 handles = guidata(hObject);
 
-guidata(hObject, handles)
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
