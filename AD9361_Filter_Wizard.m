@@ -281,6 +281,10 @@ if (handles.freq_units ~= units)
     fcutoff = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
     data_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.data_clk, 'String')));
     rf_bandwidth = value2Hz(handles, handles.freq_units, str2double(get(handles.RFbw, 'String')));
+    fir_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.FIR_rate, 'String')));
+    hb1_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
+    hb2_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB2_rate, 'String')));
+    hb3_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB3_rate, 'String')));
 
     handles.freq_units = units;
     set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
@@ -288,6 +292,11 @@ if (handles.freq_units ~= units)
     set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, fcutoff)));
     set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, data_rate)));
     set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, rf_bandwidth)));
+    set(handles.FIR_rate, 'String', num2str(Hz2value(handles, handles.freq_units, fir_rate)));
+    set(handles.HB1_rate, 'String', num2str(Hz2value(handles, handles.freq_units, hb1_rate)));
+    set(handles.HB2_rate, 'String', num2str(Hz2value(handles, handles.freq_units, hb2_rate)));
+    set(handles.HB3_rate, 'String', num2str(Hz2value(handles, handles.freq_units, hb3_rate)));
+    set(handles.HBs_rate, 'String', get(handles.HB3_rate, 'String'));
     % Update handles structure
     guidata(hObject, handles);
 end
@@ -1415,7 +1424,7 @@ for i = 1:length(opts)
         break;
     end
 end
-set(handles.FIR_rate, 'String', num2str(FIR_rate / 1e6));
+set(handles.FIR_rate, 'String', num2str(Hz2value(handles, handles.freq_units, FIR_rate)));
 if FIR_rate > handles.bounds.MAX_FIR
     set(handles.FIR_rate, 'ForegroundColor', [1 0 0]);
     if OK
@@ -1436,7 +1445,7 @@ for i = 1:length(opts)
     end
 end
 
-set(handles.HB1_rate, 'String', num2str(HB1_rate / 1e6))
+set(handles.HB1_rate, 'String', num2str(Hz2value(handles, handles.freq_units, HB1_rate)));
 if HB1_rate > max_HB.HB1
     set(handles.HB1_rate, 'ForegroundColor', [1 0 0]);
     if OK
@@ -1456,7 +1465,7 @@ for i = 1:length(opts)
         break;
     end
 end
-set(handles.HB2_rate, 'String', num2str(HB2_rate / 1e6));
+set(handles.HB2_rate, 'String', num2str(Hz2value(handles, handles.freq_units, HB2_rate)));
 if HB2_rate > max_HB.HB2
     set(handles.HB2_rate, 'ForegroundColor', [1 0 0]);
     if OK
@@ -1476,7 +1485,7 @@ for i = 1:length(opts)
         break;
     end
 end
-set(handles.HB3_rate, 'String', num2str(HB3_rate / 1e6));
+set(handles.HB3_rate, 'String', num2str(Hz2value(handles, handles.freq_units, HB3_rate)));
 if HB3_rate > max_HB.HB3
     set(handles.HB3_rate, 'ForegroundColor', [1 0 0]);
     if OK
