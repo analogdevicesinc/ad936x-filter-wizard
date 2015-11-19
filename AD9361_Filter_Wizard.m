@@ -870,9 +870,8 @@ function FIR_Astop_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 handles.active_plot = 0;
 plot_buttons_off(handles);
-guidata(hObject, handles)
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+data2gui(hObject, handles);
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
