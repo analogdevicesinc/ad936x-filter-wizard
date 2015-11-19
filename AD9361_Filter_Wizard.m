@@ -526,7 +526,7 @@ handles = autoselect_rates(handles);
 if get(handles.Advanced_options, 'Value')
     set(handles.Fcutoff, 'String', '0');
     caldiv = get_caldiv(handles);
-    set_caldiv(handles, caldiv);
+    set_fcutoff(handles, caldiv);
 end
 
 data2gui(hObject, handles);
@@ -1376,7 +1376,7 @@ end
 
 if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
     show_advanced(handles);
-    set_caldiv(handles, sel.caldiv);
+    set_fcutoff(handles, sel.caldiv);
 end
 
 FIR_rate = sel.Rdata * sel.FIR;
@@ -2320,8 +2320,8 @@ pll = get_pll_rate(handles);
 div = ceil((pll/wnom)*(log(2)/(2*pi)));
 caldiv = min(max(div,1),511);
 
-function set_caldiv(handles, value)
-wc = (get_pll_rate(handles) / value)*(log(2)/(2*pi));
+function set_fcutoff(handles, caldiv)
+wc = (get_pll_rate(handles) / caldiv)*(log(2)/(2*pi));
 set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, wc)));
 
 function pll = get_pll_rate(handles)
@@ -2369,7 +2369,7 @@ else
     handles.tx.caldiv = caldiv;
 end
 
-set_caldiv(handles, caldiv);
+set_fcutoff(handles, caldiv);
 
 data2gui(hObject, handles);
 handles = guidata(hObject);
