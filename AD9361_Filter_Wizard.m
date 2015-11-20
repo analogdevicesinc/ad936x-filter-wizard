@@ -1193,23 +1193,14 @@ else
     set(handles.results_fixed, 'String', 'Floating point approx');
 end
 
-% check if the filter isn't compatible with 2Rx2Tx or 1Rx1Tx mode
-RxTx2 = 4 * sel.Rdata;
-RxTx1 = 2 * sel.Rdata;
-mode = '';
-if (RxTx2 ~= FIR_rate && RxTx2 ~= HB1_rate && RxTx2 ~= HB2_rate && RxTx2 ~= HB3_rate)
-    mode = '2Rx2Tx';
-    rate = RxTx2;
+% check if the filter is compatible with available clock rates
+clk_divs = [1 2 3 4 6 8 12 16 24 32 48];
+clk_rates = converter_rate ./ clk_divs;
+if ~any(4 * sel.Rdata == clk_rates)
+    warndlg('This filter is not compatible with 2Rx2Tx mode.', 'Filter compatibility');
 end
-if (RxTx1 ~= FIR_rate && RxTx1 ~= HB1_rate && RxTx1 ~= HB2_rate && RxTx1 ~= HB3_rate)
-    mode = '1Rx1Tx';
-    rate = RxTx1;
-end
-if ~isempty(mode)
-    warning = sprintf(['This filter is not compatible with %s mode. ', ...
-        'At least one of the clock rates (FIR, HB1, HB2, or HB3) must be equal ', ...
-        'to the data clock rate (LVDS) of %2.4f MHz.'], mode, rate / 1e6);
-    warndlg(warning, 'Filter compatibility');
+if ~any(2 * sel.Rdata == clk_rates)
+    warndlg('This filter is not compatible with 1Rx1Tx mode.', 'Filter compatibility');
 end
 
 set(handles.design_filter, 'Visible', 'on');
