@@ -1,3 +1,6 @@
+% AD9361 Filter Wizard
+% version: 16.1.0
+%
 % Name-Value Pair Arguments
 %
 % Specify optional comma-separated pairs of Name,Value arguments. Name is
@@ -183,7 +186,8 @@ end
 handles.Original_Size = get(handles.AD9361_Filter_app, 'Position');
 
 % set the window name
-set(handles.AD9361_Filter_app, 'Name', 'AD9361 Filter Wizard');
+window_name = sprintf('AD9361 Filter Wizard %s', get_version);
+set(handles.AD9361_Filter_app, 'Name', window_name);
 
 guidata(hObject, handles);
 
