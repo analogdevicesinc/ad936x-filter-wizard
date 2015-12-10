@@ -1,11 +1,11 @@
 function version = get_version()
 version = '';
+version_regex = '%\s*version: (\S+)';
 
 % extract version info from main application header
 fid = fopen('AD9361_Filter_Wizard.m');
 line = fgets(fid);
 while strcmp(version, '') && ischar(line)
-    version_regex = '%\s*version: (\S+)';
     [tokens, match] = regexpi(line, version_regex, 'tokens', 'match');
     if ~isempty(match)
         version = tokens{1}{1};
