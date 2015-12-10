@@ -182,6 +182,9 @@ end
 
 handles.Original_Size = get(handles.AD9361_Filter_app, 'Position');
 
+% set the window name
+set(handles.AD9361_Filter_app, 'Name', 'AD9361 Filter Wizard');
+
 guidata(hObject, handles);
 
 axes(handles.ADI_logo);
