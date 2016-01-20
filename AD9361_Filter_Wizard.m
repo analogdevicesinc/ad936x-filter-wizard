@@ -1,5 +1,5 @@
 % AD9361 Filter Wizard
-% version: 16.1.0_pre1
+% version: 16.1.0
 %
 % Name-Value Pair Arguments
 %
