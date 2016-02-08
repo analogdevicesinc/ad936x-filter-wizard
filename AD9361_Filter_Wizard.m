@@ -691,7 +691,7 @@ PLL_rate = str2double(get(handles.Pll_rate, 'String')) * 1e6;
 [rx_FIR_rate, rx_HB1_rate, rx_HB2_rate, rx_HB3_rate, rx_RFbw_hw, ...
     tx_FIR_rate, tx_HB1_rate, tx_HB2_rate, tx_HB3_rate, tx_RFbw_hw] = get_path_rates(handles);
 
-fprintf(fid, '// Generated with the MATLAB AD9361 Filter Design Wizard\n');
+fprintf(fid, '// Generated with the MATLAB AD9361 Filter Design Wizard %s\n', get_version);
 fprintf(fid, '%s\n', strcat('// Generated', 32, datestr(now())));
 fprintf(fid, '// Inputs:\n');
 
@@ -746,7 +746,7 @@ end
 
 fid = fopen(newpath,'w');
 
-fprintf(fid, '# Generated with the MATLAB AD9361 Filter Design Wizard\r\n');
+fprintf(fid, '# Generated with the MATLAB AD9361 Filter Design Wizard %s\r\n', get_version);
 fprintf(fid, '%s\r\n', strcat('# Generated', 32, datestr(now())));
 fprintf(fid, '# Inputs:\r\n');
 
