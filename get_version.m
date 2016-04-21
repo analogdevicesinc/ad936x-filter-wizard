@@ -1,21 +1,19 @@
 function version = get_version()
-version = '';
-version_regex = '%\s*version: (\S+)';
-
-% extract version info from main application header
-fid = fopen('AD9361_Filter_Wizard.m');
-line = fgets(fid);
-while strcmp(version, '') && ischar(line)
-    [tokens, match] = regexpi(line, version_regex, 'tokens', 'match');
-    if ~isempty(match)
-        version = tokens{1}{1};
-        break;
-    end
-    line = fgets(fid);
+% extract version info from VERSION file
+try
+    fid = fopen('VERSION');
+    version = deblank(fgets(fid));
+catch
+    version = '';
 end
 
+version_regex = '^\d+\.\d+\.\d+$';
+[tokens, match] = regexpi(version, version_regex, 'tokens', 'match');
+
 if strcmp(version, '')
-    error('Missing application version in main file!');
+    error('version missing from VERSION file!');
+elseif isempty(match)
+    error('wrong version format in VERSION file (should be x.x.x)');
 end
 
 % add git hash info if inside a git repo
