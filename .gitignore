@@ -4,4 +4,5 @@
 *.swp
 **/slprj/**
 *TestFiltWiz*.m
+*.asv
 .previous_ip_addr
