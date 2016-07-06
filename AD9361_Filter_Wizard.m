@@ -1022,6 +1022,8 @@ set(handles.save2HDL, 'Visible', 'off');
 
 set(handles.results_Apass, 'Visible', 'off');
 set(handles.results_Astop, 'Visible', 'off');
+set(handles.results_maxinput, 'Visible', 'off');
+set(handles.results_maxinputdB, 'Visible', 'off');
 set(handles.results_taps, 'Visible', 'off');
 set(handles.results_group_delay, 'Visible', 'off');
 
@@ -1156,6 +1158,8 @@ end
 
 set(handles.results_Apass, 'Visible', 'on');
 set(handles.results_Astop, 'Visible', 'on');
+set(handles.results_maxinput, 'Visible', 'on');
+set(handles.results_maxinputdB, 'Visible', 'on');
 set(handles.results_taps, 'Visible', 'on');
 set(handles.results_group_delay, 'Visible', 'on');
 
@@ -1191,6 +1195,8 @@ line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
 % add the quantitative values about actual passband, stopband, and group delay
 set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB ']);
 set(handles.results_Apass, 'String', [num2str(filter_result.Apass_actual) ' dB ']);
+set(handles.results_maxinput, 'String', [num2str(1.0 / max(abs(freqz(filter_result.Hmd)))) ' FS ']);
+set(handles.results_maxinputdB, 'String', [num2str(20 * log10(1.0 / max(abs(freqz(filter_result.Hmd))))) ' dB ']);
 set(handles.results_group_delay, 'String', [num2str(filter_result.grpdelayvar * 1e9, 3) ' ns ']);
 
 if ~isempty(ver('fixedpoint')) && license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
