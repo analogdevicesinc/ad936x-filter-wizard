@@ -53,4 +53,8 @@
 % delay            = actual delay used in phase equalization
 
 function output = design_filter(input)
+% check MATLAB version compatibility
+if ~check_compat()
+    warn('AD9361 Filter Wizard requires MATLAB 2015b or later, older versions are unsupported.')
+end
 output = clean_filter_fields(internal_design_filter(input));
