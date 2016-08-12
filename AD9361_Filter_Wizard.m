@@ -108,6 +108,11 @@ function AD9361_Filter_Wizard_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for AD9361_Filter_Wizard
 handles.output = hObject;
 
+% check MATLAB version compatibility
+if ~check_compat()
+    warndlg('AD9361 Filter Wizard requires MATLAB 2015b or later, older versions are unsupported.')
+end
+
 % import various value bounds
 rate_bounds;
 handles.bounds = bounds;
