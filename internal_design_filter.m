@@ -90,6 +90,7 @@ if strcmp(input.RxTx, 'Rx')
     Hanalog = cascade(Hd2,Hd1);
     
     % Define the digital filters with fixed coefficients
+    allpass_coeff = 1;
     hb1_coeff = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
     hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
     hb3_coeff = 2^(-4)*[1 4 6 4 1];
@@ -113,6 +114,7 @@ else
     Hanalog = cascade(Hd1,Hd2);
     
     % Define the digital filters with fixed coefficients
+    allpass_coeff = 1;
     hb1_coeff = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
     hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
     hb3_coeff = 2^(-2)*[1 2 1];
@@ -121,6 +123,7 @@ else
     dec_int_func = @dsp.FIRInterpolator;
 end
 
+Hallpass = dec_int_func(1, allpass_coeff);
 Hm1 = dec_int_func(2, hb1_coeff);
 Hm1.FullPrecisionOverride = false;
 Hm1.OutputDataType='Custom';
@@ -231,7 +234,7 @@ end
 enables = strrep(num2str([hb1 hb2 hb3 dec_int3]), ' ', '');
 switch enables
     case '1111' % only FIR
-        filter_stages = {1};
+        filter_stages = {Hallpass};
     case '2111' % Hb1
         filter_stages = {Hm1};
     case '1211' % Hb2
@@ -267,14 +270,14 @@ dfilter = cascade(filter_stages{:});
 Hmiddle = clone(dfilter);
 if strcmp(input.RxTx, 'Rx')
     if strcmp(enables,'1111') ||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
-        Hmiddle = cascade(Hd1,Hmiddle);
+        addStage(Hmiddle,Hd1,1);
     else
         addStage(Hmiddle,Hd1,1);
     end
     addStage(Hmiddle,Hd2,1);
 else
     if strcmp(enables,'1111') ||  strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
-        Hmiddle = cascade(Hmiddle,Hd1);
+        addStage(Hmiddle,Hd1);
     else
         addStage(Hmiddle,Hd1);
     end
@@ -452,7 +455,7 @@ while (1)
     end
     if strcmp(input.RxTx, 'Rx')
         if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
-            dfilter = cascade(dfilter,Hmd);
+            addStage(dfilter,Hmd);
         else
             addStage(dfilter,Hmd);
         end
@@ -460,7 +463,7 @@ while (1)
         rg_stop = abs(analogresp('Rx',omega(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*freqz(dfilter,omega(Gpass+2:end),input.converter_rate));
     else
         if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
-            dfilter = cascade(Hmd,dfilter);
+            addStage(dfilter, Hmd, 1);
         else
             addStage(dfilter, Hmd, 1);
         end
