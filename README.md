@@ -1,4 +1,5 @@
-MATLAB-based FIR filter design for the AD936x.
+MATLAB-based FIR filter design for the AD936x that requires MATLAB 2015b or
+later, older versions are unsupported.
 
 User documentation is available on the [ADI wiki][wiki].
 
