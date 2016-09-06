@@ -1,11 +1,7 @@
 function version = get_version()
-% extract version info from VERSION file
-try
-    fid = fopen('VERSION');
-    version = deblank(fgets(fid));
-catch
-    version = '';
-end
+% source version info file
+version = '';
+release_version;
 
 version_regex = '^\d+\.\d+\.\d+$';
 [tokens, match] = regexpi(version, version_regex, 'tokens', 'match');
