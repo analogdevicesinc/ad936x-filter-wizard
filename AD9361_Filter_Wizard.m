@@ -1183,8 +1183,12 @@ end
 handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
     abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
     handles.filter,linspace(0,sel.Rdata/2,G),converter_rate))));
+
 hold on;
-plot(linspace(0,sel.Rdata/2,G),mag2db((2*sin(pi*linspace(0,sel.Rdata/2,G)/(converter_rate))).^3),'g');
+bestSNR = -1 * (6.02 * 12 + 1.76);
+plot(linspace(0,converter_rate,G),max(bestSNR, mag2db((2*sin(pi*linspace(0,converter_rate,G)/(converter_rate))).^3) - 10*log10(converter_rate/sel.Rdata)),'g');
+
+legend('Filter response','Noise');
 
 xlim([0 sel.Rdata/2]);
 ylim([-100 10]);
