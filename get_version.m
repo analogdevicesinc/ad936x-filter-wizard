@@ -1,7 +1,7 @@
 function version = get_version()
 % source version info file
 version = '';
-release_version;
+adi_release_version;
 
 version_regex = '^\d+\.\d+\.\d+$';
 [tokens, match] = regexpi(version, version_regex, 'tokens', 'match');
