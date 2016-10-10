@@ -2271,14 +2271,9 @@ if error_msg
 
 end
 
-if get(handles.filter_type, 'Value') == 1
-    Hd = handles.filter.Stage(2);
-else
-    Hd = handles.filter.Stage(1);
-end
-Hd.arithmetic = 'fixed';
-fdhdltool(Hd);
-
+sel = get_current_rxtx(handles);
+Hd = sel.Hmd;
+fdhdltool(Hd,numerictype(1,16,15));
 
 % --- If Enable == 'on', executes on mouse press in 5 pixel border.
 % --- Otherwise, executes on mouse press in 5 pixel border or over HB1.
