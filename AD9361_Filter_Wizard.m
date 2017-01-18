@@ -531,6 +531,11 @@ dirty(hObject, handles);
 handles = guidata(hObject);
 
 data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
+
+if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
+    data_rate = data_rate*8;
+end
+
 input = {};
 input.Rdata = data_rate;
 
@@ -988,17 +993,8 @@ astop = str2double(get(handles.Astop, 'String'));
 
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, apass, astop);
 
-if get(handles.pluto, 'Value') == 1
-    hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
-        'FrequencyRange','Specify freq. vector', ...
-        'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
-        converter_rate, ...
-        'ShowReference','off','Color','White');
-    set(hfvt1, 'Color', [1 1 1]);
-    set(hfvt1.CurrentAxes, 'YLim', [-100 20]);
-    legend(hfvt1, 'Converter','Analog','Analog + Half Band','Analog + HB + FIR');
-    
-else
+data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
+if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
     hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,handles.plutofilter,...
         'FrequencyRange','Specify freq. vector', ...
         'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
@@ -1007,6 +1003,15 @@ else
     set(hfvt1, 'Color', [1 1 1]);
     set(hfvt1.CurrentAxes, 'YLim', [-100 20]);
     legend(hfvt1, 'Converter','Analog','Analog + Half Band','Analog + HB + FIR','Analog + HB + FIR + Pluto');
+else
+    hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
+        'FrequencyRange','Specify freq. vector', ...
+        'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
+        converter_rate, ...
+        'ShowReference','off','Color','White');
+    set(hfvt1, 'Color', [1 1 1]);
+    set(hfvt1.CurrentAxes, 'YLim', [-100 20]);
+    legend(hfvt1, 'Converter','Analog','Analog + Half Band','Analog + HB + FIR');
     
 end
 text(1, 10,...
@@ -1101,6 +1106,7 @@ filter_input.PLL_rate = PLL_rate;
 filter_input.dBstop_FIR = sel.FIRdBmin;
 filter_input.wnom = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
 filter_input.int_FIR = get(handles.Use_FIR, 'Value');
+filter_input.pluto_filter = 1;
 filter_input.RFbw = RFbw;
 
 plot_buttons_off(handles);
@@ -1230,25 +1236,17 @@ if get(handles.filter_type, 'Value') == 1
 else
     channel = 'Tx';
 end
-if get(handles.pluto, 'Value') == 1
-    handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
-        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
-        handles.filter,linspace(0,sel.Rdata/2,G),converter_rate))));
-    hold on;
-    bestSNR = -1 * (6.02 * 12 + 1.76);
-    plot(linspace(0,converter_rate,G),max(bestSNR, mag2db((2*sin(pi*linspace(0,converter_rate,G)/(converter_rate))).^3) - 10*log10(converter_rate/sel.Rdata)),'g');
-    legend('Filter response','Noise');
-else
+
+data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
+if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
     handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
         abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
         handles.plotpluto,linspace(0,sel.Rdata/2,G),converter_rate))));
-    hold on;
-    bestSNR = -1 * (6.02 * 12 + 1.76);
-    plot(linspace(0,converter_rate,G),max(bestSNR, mag2db((2*sin(pi*linspace(0,converter_rate,G)/(converter_rate))).^3) - 10*log10(converter_rate/sel.Rdata)),'g');
-    legend('Filter response with Pluto filter','Noise');
+else
+    handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
+        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
+        filter_result.filter,linspace(0,sel.Rdata/2,G),converter_rate))));
 end
-
-
 
 xlim([0 sel.Rdata/2]);
 ylim([-100 10]);
@@ -2548,16 +2546,8 @@ converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
 
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, sel.Apass, sel.Astop);
 
-if get(handles.pluto, 'Value') == 1
-    hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
-        'FrequencyRange','Specify freq. vector', ...
-        'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
-        converter_rate, ...
-        'ShowReference','off','Color','White');
-    set(hfvt3, 'Color', [1 1 1]);
-    set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
-    legend(hfvt3, 'Analog','Analog + Half Band','Analog + HB + FIR');
-else
+data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
+if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
     hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,handles.plutofilter,...
         'FrequencyRange','Specify freq. vector', ...
         'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
@@ -2566,6 +2556,15 @@ else
     set(hfvt3, 'Color', [1 1 1]);
     set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
     legend(hfvt3, 'Analog','Analog + Half Band','Analog + HB + FIR','Analog + HB + FIR + Pluto');
+else
+    hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
+        'FrequencyRange','Specify freq. vector', ...
+        'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
+        converter_rate, ...
+        'ShowReference','off','Color','White');
+    set(hfvt3, 'Color', [1 1 1]);
+    set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
+    legend(hfvt3, 'Analog','Analog + Half Band','Analog + HB + FIR');
 end
 text(0.5, 10,...
     str,...
@@ -2930,6 +2929,7 @@ function which_device_Callback(hObject, eventdata, handles)
 % hObject    handle to which_device (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+set(handles.design_filter, 'Enable', 'on');
 
 
 % --- Executes during object creation, after setting all properties.
