@@ -1,4 +1,4 @@
-% AD9361 Filter Wizard
+% % AD9361 Filter Wizard
 %
 % Name-Value Pair Arguments
 %
@@ -76,7 +76,7 @@ function varargout = AD9361_Filter_Wizard(varargin)
 
 % Edit the above text to modify the response to help AD9361_Filter_Wizard
 
-% Last Modified by GUIDE v2.5 15-Dec-2016 11:00:18
+% Last Modified by GUIDE v2.5 19-Jan-2017 14:03:14
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -209,6 +209,7 @@ set(handles.ADI_logo, 'HandleVisibility', 'off');
 
 % Set the defaults
 set(handles.Use_FIR, 'Value', 1);
+set(handles.use_FPGAfilter, 'Value', 0);
 hide_advanced(handles);
 
 % restore previously used IP address
@@ -296,6 +297,7 @@ if (handles.freq_units ~= units)
     hb1_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     hb2_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB2_rate, 'String')));
     hb3_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB3_rate, 'String')));
+    fpga_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.FPGA_rate, 'String')));
     
     handles.freq_units = units;
     set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
@@ -303,6 +305,7 @@ if (handles.freq_units ~= units)
     set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, fcutoff)));
     set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, data_rate)));
     set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, rf_bandwidth)));
+    set(handles.FPGA_rate, 'String', num2str(Hz2value(handles, handles.freq_units, fpga_rate)));
     set(handles.FIR_rate, 'String', num2str(Hz2value(handles, handles.freq_units, fir_rate)));
     set(handles.HB1_rate, 'String', num2str(Hz2value(handles, handles.freq_units, hb1_rate)));
     set(handles.HB2_rate, 'String', num2str(Hz2value(handles, handles.freq_units, hb2_rate)));
@@ -533,7 +536,17 @@ handles = guidata(hObject);
 data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
 
 if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
+    set(handles.use_FPGAfilter, 'Value', 1);
+    set(handles.FPGA_label, 'Visible', 'on');
+    set(handles.use_FPGAfilter, 'Visible', 'on');
+    set(handles.FPGA_rate, 'Visible', 'on');
     data_rate = data_rate*8;
+else
+    set(handles.use_FPGAfilter, 'Value', 0);
+    set(handles.FPGA_label, 'Visible', 'off');
+    set(handles.use_FPGAfilter, 'Visible', 'off');
+    set(handles.FPGA_rate, 'Visible', 'off');
+    data_rate = data_rate;
 end
 
 input = {};
@@ -993,8 +1006,7 @@ astop = str2double(get(handles.Astop, 'String'));
 
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, apass, astop);
 
-data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
-if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
+if get(handles.use_FPGAfilter, 'Value')== 1
     hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,handles.plutofilter,...
         'FrequencyRange','Specify freq. vector', ...
         'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
@@ -1237,29 +1249,31 @@ else
     channel = 'Tx';
 end
 
-data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
-if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
+if get(handles.use_FPGAfilter, 'Value')== 1
     handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
-        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
-        handles.plotpluto,linspace(0,sel.Rdata/2,G),converter_rate))));
+        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate/2,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
+        handles.plotpluto,linspace(0,sel.Rdata/2,G),converter_rate/2))));
+    xlim([0 sel.Rdata/16]);
 else
     handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
         abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
         filter_result.filter,linspace(0,sel.Rdata/2,G),converter_rate))));
+    xlim([0 sel.Rdata/2]);
 end
 
-xlim([0 sel.Rdata/2]);
 ylim([-100 10]);
 zoom_axis(gca);
 xlabel('Frequency (MHz)');
 ylabel('Magnitude (dB)');
 
 % plot the mask that we are interested in
+if get(handles.use_FPGAfilter, 'Value')== 0
 line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
 line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
 line([0 sel.Fstop], [sel.Apass/2 sel.Apass/2], 'Color', 'Red');
 line([sel.Fstop sel.Fstop], [sel.Apass/2 -sel.Astop], 'Color', 'Red');
 line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
+end
 
 % add the quantitative values about actual passband, stopband, and group delay
 set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB ']);
@@ -1457,11 +1471,18 @@ if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
     set_fcutoff(handles, sel.caldiv);
 end
 
-FIR_rate = sel.Rdata * sel.FIR;
+if get(handles.use_FPGAfilter, 'Value')==1
+    sel.Rdata = sel.Rdata/8;
+    FPGA_rate = sel.Rdata*8;
+else
+    FPGA_rate = sel.Rdata;
+end
+FIR_rate = FPGA_rate * sel.FIR;
 HB1_rate = FIR_rate * sel.HB1;
 HB2_rate = HB1_rate * sel.HB2;
 HB3_rate = HB2_rate * sel.HB3;
 
+set(handles.FPGA_rate, 'String', num2str(Hz2value(handles, handles.freq_units, FPGA_rate)));
 set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
 set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop)));
 set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, get_rfbw(handles, sel.caldiv))));
@@ -2546,12 +2567,11 @@ converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
 
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, sel.Apass, sel.Astop);
 
-data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
-if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
+if get(handles.use_FPGAfilter, 'Value')== 1
     hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,handles.plutofilter,...
         'FrequencyRange','Specify freq. vector', ...
         'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
-        converter_rate, ...
+        converter_rate/2, ...
         'ShowReference','off','Color','White');
     set(hfvt3, 'Color', [1 1 1]);
     set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
@@ -3209,3 +3229,43 @@ function pluto_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+
+function edit25_Callback(hObject, eventdata, handles)
+% hObject    handle to edit25 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit25 as text
+%        str2double(get(hObject,'String')) returns contents of edit25 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit25_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit25 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function FIR_rate_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to FIR_rate (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on key press with focus on FVTool_deeper and none of its controls.
+function FVTool_deeper_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to FVTool_deeper (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
