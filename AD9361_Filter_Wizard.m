@@ -114,8 +114,8 @@ if ~check_compat()
 end
 
 % import various value bounds
-rate_bounds;
-handles.bounds = bounds;
+bounds9361 = rate_bounds;
+handles.bounds = bounds9361;
 
 new = 0;
 handles.freq_units = 3;
@@ -300,13 +300,8 @@ if (handles.freq_units ~= units)
     fpga_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.FPGA_rate, 'String')));
     
     handles.freq_units = units;
-    if get(handles.use_FPGAfilter, 'Value')== 1
-        set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop/8)));
-        set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass/8)));
-    else
-        set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
-        set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass)));
-    end
+    set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
+    set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass)));
     set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, fcutoff)));
     set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, data_rate)));
     set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, rf_bandwidth)));
@@ -540,17 +535,19 @@ handles = guidata(hObject);
 
 data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
 
-if get(handles.which_device,'Value')==3&&data_rate<=7.68e6
+if get(handles.which_device,'Value')==3&&data_rate<=520.83e3
     set(handles.use_FPGAfilter, 'Value', 1);
     set(handles.FPGA_label, 'Visible', 'on');
     set(handles.use_FPGAfilter, 'Visible', 'on');
     set(handles.FPGA_rate, 'Visible', 'on');
+    magandfreq_off(handles);
     data_rate = data_rate*8;
 else
     set(handles.use_FPGAfilter, 'Value', 0);
     set(handles.FPGA_label, 'Visible', 'off');
     set(handles.use_FPGAfilter, 'Visible', 'off');
     set(handles.FPGA_rate, 'Visible', 'off');
+    magandfreq_on(handles);
     data_rate = data_rate;
 end
 
@@ -573,6 +570,7 @@ end
 data2gui(hObject, handles);
 handles = guidata(hObject);
 guidata(hObject, handles);
+
 
 % --- Executes during object creation, after setting all properties.
 function data_clk_CreateFcn(hObject, eventdata, handles)
@@ -1067,6 +1065,27 @@ set(handles.results_maxinputdB, 'Visible', 'off');
 set(handles.results_taps, 'Visible', 'off');
 set(handles.results_group_delay, 'Visible', 'off');
 
+function magandfreq_off(handles)
+set(handles.Apass, 'Enable', 'off');
+set(handles.Astop, 'Enable', 'off');
+set(handles.FIR_Astop, 'Enable', 'off');
+set(handles.Fpass, 'Enable', 'off');
+set(handles.Fstop, 'Enable', 'off');
+set(handles.Fcenter, 'Enable', 'off');
+set(handles.Fcutoff, 'Enable', 'off');
+set(handles.RFbw, 'Enable', 'off');
+set(handles.Freq_units, 'Enable', 'off');
+
+function magandfreq_on(handles)
+set(handles.Apass, 'Enable', 'on');
+set(handles.Astop, 'Enable', 'on');
+set(handles.FIR_Astop, 'Enable', 'on');
+set(handles.Fpass, 'Enable', 'on');
+set(handles.Fstop, 'Enable', 'on');
+set(handles.Fcenter, 'Enable', 'on');
+set(handles.Fcutoff, 'Enable', 'on');
+set(handles.RFbw, 'Enable', 'on');
+set(handles.Freq_units, 'Enable', 'on');
 
 function create_filter(hObject, handles)
 handles = guidata(hObject);
@@ -1146,10 +1165,6 @@ if (filter_input.phEQ == 0)
     filter_input.phEQ = minimize_group_delay(handles, filter_input);
 end
 
-if get(handles.use_FPGAfilter, 'Value')== 1
-    filter_input.Fpass = filter_input.Fpass/8;
-    filter_input.Fstop = filter_input.Fstop/8;
-end
 filter_result = internal_design_filter(filter_input);
 
 handles.filter = filter_result.filter;
@@ -1233,7 +1248,11 @@ end
 
 units = cellstr(get(handles.Freq_units, 'String'));
 units = char(units(get(handles.Freq_units, 'Value')));
-set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))/2, units));
+if get(handles.use_FPGAfilter, 'Value')== 0
+    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))/2, units));
+else
+    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))*8/2, units));
+end
 
 if ~ get(handles.Use_FIR, 'Value')
     set(handles.save2HDL, 'Visible', 'on');
@@ -1493,13 +1512,8 @@ HB2_rate = HB1_rate * sel.HB2;
 HB3_rate = HB2_rate * sel.HB3;
 
 set(handles.FPGA_rate, 'String', num2str(Hz2value(handles, handles.freq_units, FPGA_rate)));
-if get(handles.use_FPGAfilter, 'Value')==1
-    set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass/8)));
-    set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop/8)));
-else
-    set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
-    set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop)));
-end
+set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
+set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop)));
 set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, get_rfbw(handles, sel.caldiv))));
 
 set(handles.Fcenter, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fcenter)));
@@ -2586,7 +2600,7 @@ if get(handles.use_FPGAfilter, 'Value')== 1
     hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,handles.plutofilter,...
         'FrequencyRange','Specify freq. vector', ...
         'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
-        converter_rate/2, ...
+        converter_rate, ...
         'ShowReference','off','Color','White');
     set(hfvt3, 'Color', [1 1 1]);
     set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
@@ -2965,6 +2979,11 @@ function which_device_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 set(handles.design_filter, 'Enable', 'on');
+magandfreq_on(handles);
+set(handles.use_FPGAfilter, 'Value', 0);
+set(handles.FPGA_label, 'Visible', 'off');
+set(handles.use_FPGAfilter, 'Visible', 'off');
+set(handles.FPGA_rate, 'Visible', 'off');
 
 
 % --- Executes during object creation, after setting all properties.
