@@ -300,8 +300,13 @@ if (handles.freq_units ~= units)
     fpga_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.FPGA_rate, 'String')));
     
     handles.freq_units = units;
-    set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
-    set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass)));
+    if get(handles.use_FPGAfilter, 'Value')== 1
+        set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop/8)));
+        set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass/8)));
+    else
+        set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
+        set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass)));
+    end
     set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, fcutoff)));
     set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, data_rate)));
     set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, rf_bandwidth)));
@@ -1140,6 +1145,11 @@ drawnow;
 if (filter_input.phEQ == 0)
     filter_input.phEQ = minimize_group_delay(handles, filter_input);
 end
+
+if get(handles.use_FPGAfilter, 'Value')== 1
+    filter_input.Fpass = filter_input.Fpass/8;
+    filter_input.Fstop = filter_input.Fstop/8;
+end
 filter_result = internal_design_filter(filter_input);
 
 handles.filter = filter_result.filter;
@@ -1251,8 +1261,8 @@ end
 
 if get(handles.use_FPGAfilter, 'Value')== 1
     handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
-        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate/2,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
-        handles.plotpluto,linspace(0,sel.Rdata/2,G),converter_rate/2))));
+        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
+        handles.plotpluto,linspace(0,sel.Rdata/2,G),converter_rate))));
     xlim([0 sel.Rdata/16]);
 else
     handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
@@ -1268,11 +1278,11 @@ ylabel('Magnitude (dB)');
 
 % plot the mask that we are interested in
 if get(handles.use_FPGAfilter, 'Value')== 0
-line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
-line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
-line([0 sel.Fstop], [sel.Apass/2 sel.Apass/2], 'Color', 'Red');
-line([sel.Fstop sel.Fstop], [sel.Apass/2 -sel.Astop], 'Color', 'Red');
-line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
+    line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
+    line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
+    line([0 sel.Fstop], [sel.Apass/2 sel.Apass/2], 'Color', 'Red');
+    line([sel.Fstop sel.Fstop], [sel.Apass/2 -sel.Astop], 'Color', 'Red');
+    line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
 end
 
 % add the quantitative values about actual passband, stopband, and group delay
@@ -1483,8 +1493,13 @@ HB2_rate = HB1_rate * sel.HB2;
 HB3_rate = HB2_rate * sel.HB3;
 
 set(handles.FPGA_rate, 'String', num2str(Hz2value(handles, handles.freq_units, FPGA_rate)));
-set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
-set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop)));
+if get(handles.use_FPGAfilter, 'Value')==1
+    set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass/8)));
+    set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop/8)));
+else
+    set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
+    set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop)));
+end
 set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, get_rfbw(handles, sel.caldiv))));
 
 set(handles.Fcenter, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fcenter)));
