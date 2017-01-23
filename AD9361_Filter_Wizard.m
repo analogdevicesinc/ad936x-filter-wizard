@@ -1172,8 +1172,8 @@ if get(handles.filter_type, 'Value') == 1  % Rx
     addStage(handles.grpdelaycal,filter_result.Hd1,2);
     handles.plutofilter = clone(handles.grpdelaycal);
     ast = 80;
-    n = 128;
-    f = fdesign.decimator(8, 'Nyquist', 8, 'N,Ast', n, ast);
+    tw = 0.08;
+    f = fdesign.decimator(8, 'Nyquist', 8, 'TW,Ast', tw, ast);
     hf = design(f,'SystemObject',true);
     hf.FullPrecisionOverride = false;
     hf.OutputDataType='Custom';
@@ -1197,8 +1197,8 @@ else  % Tx
     addStage(handles.grpdelaycal,filter_result.Hd2);
     handles.plutofilter = clone(handles.grpdelaycal);
     ast = 80;
-    n = 128;
-    f = fdesign.interpolator(8,'Nyquist', 8,'N,Ast', n, ast);
+    tw = 0.08;
+    f = fdesign.interpolator(8, 'Nyquist', 8, 'TW,Ast', tw, ast);
     hf = design(f,'kaiserwin','SystemObject',true);
     hf.Numerator = hf.Numerator./8;
     hf.FullPrecisionOverride = false;
@@ -1291,8 +1291,8 @@ ylabel('Magnitude (dB)');
 
 % plot the mask that we are interested in
 if get(handles.use_FPGAfilter, 'Value')== 1
-    sel.Fpass = sel.Rdata/2*0.11722;
-    sel.Fstop = sel.Rdata/2*0.16492;
+    sel.Fpass = sel.Rdata/2*0.085;
+    sel.Fstop = sel.Rdata/2*0.165;
 end
 line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
 line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
