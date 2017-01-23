@@ -535,19 +535,19 @@ handles = guidata(hObject);
 
 data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
 
-if get(handles.which_device,'Value')==3&&data_rate<=520.83e3
+if get(handles.which_device,'Value')==3 && data_rate<=520.83e3
     set(handles.use_FPGAfilter, 'Value', 1);
     set(handles.FPGA_label, 'Visible', 'on');
     set(handles.use_FPGAfilter, 'Visible', 'on');
     set(handles.FPGA_rate, 'Visible', 'on');
-    magandfreq_off(handles);
-    data_rate = data_rate*8;
+    freq_off(handles);
+    data_rate = data_rate*4;
 else
     set(handles.use_FPGAfilter, 'Value', 0);
     set(handles.FPGA_label, 'Visible', 'off');
     set(handles.use_FPGAfilter, 'Visible', 'off');
     set(handles.FPGA_rate, 'Visible', 'off');
-    magandfreq_on(handles);
+    freq_on(handles);
     data_rate = data_rate;
 end
 
@@ -1065,10 +1065,7 @@ set(handles.results_maxinputdB, 'Visible', 'off');
 set(handles.results_taps, 'Visible', 'off');
 set(handles.results_group_delay, 'Visible', 'off');
 
-function magandfreq_off(handles)
-set(handles.Apass, 'Enable', 'off');
-set(handles.Astop, 'Enable', 'off');
-set(handles.FIR_Astop, 'Enable', 'off');
+function freq_off(handles)
 set(handles.Fpass, 'Enable', 'off');
 set(handles.Fstop, 'Enable', 'off');
 set(handles.Fcenter, 'Enable', 'off');
@@ -1076,10 +1073,7 @@ set(handles.Fcutoff, 'Enable', 'off');
 set(handles.RFbw, 'Enable', 'off');
 set(handles.Freq_units, 'Enable', 'off');
 
-function magandfreq_on(handles)
-set(handles.Apass, 'Enable', 'on');
-set(handles.Astop, 'Enable', 'on');
-set(handles.FIR_Astop, 'Enable', 'on');
+function freq_on(handles)
 set(handles.Fpass, 'Enable', 'on');
 set(handles.Fstop, 'Enable', 'on');
 set(handles.Fcenter, 'Enable', 'on');
@@ -1251,7 +1245,7 @@ units = char(units(get(handles.Freq_units, 'Value')));
 if get(handles.use_FPGAfilter, 'Value')== 0
     set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))/2, units));
 else
-    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))*8/2, units));
+    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))*4/2, units));
 end
 
 if ~ get(handles.Use_FIR, 'Value')
@@ -1296,16 +1290,28 @@ xlabel('Frequency (MHz)');
 ylabel('Magnitude (dB)');
 
 % plot the mask that we are interested in
-if get(handles.use_FPGAfilter, 'Value')== 0
-    line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
-    line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
-    line([0 sel.Fstop], [sel.Apass/2 sel.Apass/2], 'Color', 'Red');
-    line([sel.Fstop sel.Fstop], [sel.Apass/2 -sel.Astop], 'Color', 'Red');
-    line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
+if get(handles.use_FPGAfilter, 'Value')== 1
+    sel.Fpass = sel.Rdata/2*0.11722;
+    sel.Fstop = sel.Rdata/2*0.16492;
 end
+line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
+line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
+line([0 sel.Fstop], [sel.Apass/2 sel.Apass/2], 'Color', 'Red');
+line([sel.Fstop sel.Fstop], [sel.Apass/2 -sel.Astop], 'Color', 'Red');
+line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
 
 % add the quantitative values about actual passband, stopband, and group delay
-set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB ']);
+if get(handles.use_FPGAfilter, 'Value')== 1
+    if get(handles.filter_type, 'Value') == 1
+        rg_stop = abs(freqz(handles.plotpluto,linspace(sel.Fstop,sel.Rdata/8,G),converter_rate).*analogresp('Rx',linspace(sel.Fstop,sel.Rdata/8,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2));
+    else
+        rg_stop = abs(freqz(handles.plotpluto,linspace(sel.Fstop,sel.Rdata/8,G),converter_rate).*analogresp('Tx',linspace(sel.Fstop,sel.Rdata/8,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2));
+    end
+    Astop_actual = -mag2db(max(rg_stop));
+    set(handles.results_Astop, 'String', [num2str(Astop_actual) ' dB ']);
+else
+    set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB ']);
+end
 set(handles.results_Apass, 'String', [num2str(filter_result.Apass_actual) ' dB ']);
 set(handles.results_maxinput, 'String', [num2str(1.0 / max(abs(freqz(filter_result.Hmd)))) ' FS ']);
 set(handles.results_maxinputdB, 'String', [num2str(20 * log10(1.0 / max(abs(freqz(filter_result.Hmd))))) ' dB ']);
@@ -1501,8 +1507,8 @@ if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
 end
 
 if get(handles.use_FPGAfilter, 'Value')==1
-    sel.Rdata = sel.Rdata/8;
-    FPGA_rate = sel.Rdata*8;
+    sel.Rdata = sel.Rdata/4;
+    FPGA_rate = sel.Rdata*4;
 else
     FPGA_rate = sel.Rdata;
 end
@@ -2978,12 +2984,14 @@ function which_device_Callback(hObject, eventdata, handles)
 % hObject    handle to which_device (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.design_filter, 'Enable', 'on');
-magandfreq_on(handles);
-set(handles.use_FPGAfilter, 'Value', 0);
-set(handles.FPGA_label, 'Visible', 'off');
-set(handles.use_FPGAfilter, 'Visible', 'off');
-set(handles.FPGA_rate, 'Visible', 'off');
+set(handles.design_filter, 'Enable', 'off');
+if get(handles.which_device,'Value')==1 || get(handles.which_device,'Value')==2
+    set(handles.use_FPGAfilter, 'Value', 0);
+    set(handles.FPGA_label, 'Visible', 'off');
+    set(handles.use_FPGAfilter, 'Visible', 'off');
+    set(handles.FPGA_rate, 'Visible', 'off');
+    freq_on(handles);
+end
 
 
 % --- Executes during object creation, after setting all properties.
