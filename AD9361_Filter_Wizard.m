@@ -541,14 +541,13 @@ if get(handles.which_device,'Value')==3 && data_rate<=520.83e3
     set(handles.use_FPGAfilter, 'Visible', 'on');
     set(handles.FPGA_rate, 'Visible', 'on');
     freq_off(handles);
-    data_rate = data_rate*4;
+    data_rate = data_rate*8;
 else
     set(handles.use_FPGAfilter, 'Value', 0);
     set(handles.FPGA_label, 'Visible', 'off');
     set(handles.use_FPGAfilter, 'Visible', 'off');
     set(handles.FPGA_rate, 'Visible', 'off');
     freq_on(handles);
-    data_rate = data_rate;
 end
 
 input = {};
@@ -1071,7 +1070,7 @@ set(handles.Fstop, 'Enable', 'off');
 set(handles.Fcenter, 'Enable', 'off');
 set(handles.Fcutoff, 'Enable', 'off');
 set(handles.RFbw, 'Enable', 'off');
-set(handles.Freq_units, 'Enable', 'off');
+
 
 function freq_on(handles)
 set(handles.Fpass, 'Enable', 'on');
@@ -1079,7 +1078,7 @@ set(handles.Fstop, 'Enable', 'on');
 set(handles.Fcenter, 'Enable', 'on');
 set(handles.Fcutoff, 'Enable', 'on');
 set(handles.RFbw, 'Enable', 'on');
-set(handles.Freq_units, 'Enable', 'on');
+
 
 function create_filter(hObject, handles)
 handles = guidata(hObject);
@@ -1245,7 +1244,7 @@ units = char(units(get(handles.Freq_units, 'Value')));
 if get(handles.use_FPGAfilter, 'Value')== 0
     set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))/2, units));
 else
-    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))*4/2, units));
+    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))*8/2, units));
 end
 
 if ~ get(handles.Use_FIR, 'Value')
@@ -1507,8 +1506,8 @@ if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
 end
 
 if get(handles.use_FPGAfilter, 'Value')==1
-    sel.Rdata = sel.Rdata/4;
-    FPGA_rate = sel.Rdata*4;
+    sel.Rdata = sel.Rdata/8;
+    FPGA_rate = sel.Rdata*8;
 else
     FPGA_rate = sel.Rdata;
 end
