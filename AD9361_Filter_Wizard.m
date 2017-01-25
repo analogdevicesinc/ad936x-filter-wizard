@@ -1,4 +1,4 @@
-% AD9361 Filter Wizard
+% % AD9361 Filter Wizard
 %
 % Name-Value Pair Arguments
 %
@@ -76,7 +76,7 @@ function varargout = AD9361_Filter_Wizard(varargin)
 
 % Edit the above text to modify the response to help AD9361_Filter_Wizard
 
-% Last Modified by GUIDE v2.5 13-Oct-2014 13:37:42
+% Last Modified by GUIDE v2.5 19-Jan-2017 14:03:14
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -114,8 +114,8 @@ if ~check_compat()
 end
 
 % import various value bounds
-rate_bounds;
-handles.bounds = bounds;
+bounds9361 = rate_bounds;
+handles.bounds = bounds9361;
 
 new = 0;
 handles.freq_units = 3;
@@ -209,6 +209,7 @@ set(handles.ADI_logo, 'HandleVisibility', 'off');
 
 % Set the defaults
 set(handles.Use_FIR, 'Value', 1);
+set(handles.use_FPGAfilter, 'Value', 0);
 hide_advanced(handles);
 
 % restore previously used IP address
@@ -296,13 +297,15 @@ if (handles.freq_units ~= units)
     hb1_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB1_rate, 'String')));
     hb2_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB2_rate, 'String')));
     hb3_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.HB3_rate, 'String')));
-
+    fpga_rate = value2Hz(handles, handles.freq_units, str2double(get(handles.FPGA_rate, 'String')));
+    
     handles.freq_units = units;
     set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, fstop)));
     set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, fpass)));
     set(handles.Fcutoff, 'String', num2str(Hz2value(handles, handles.freq_units, fcutoff)));
     set(handles.data_clk, 'String', num2str(Hz2value(handles, handles.freq_units, data_rate)));
     set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, rf_bandwidth)));
+    set(handles.FPGA_rate, 'String', num2str(Hz2value(handles, handles.freq_units, fpga_rate)));
     set(handles.FIR_rate, 'String', num2str(Hz2value(handles, handles.freq_units, fir_rate)));
     set(handles.HB1_rate, 'String', num2str(Hz2value(handles, handles.freq_units, hb1_rate)));
     set(handles.HB2_rate, 'String', num2str(Hz2value(handles, handles.freq_units, hb2_rate)));
@@ -467,7 +470,7 @@ if isfield(handles, 'tx') && isfield(handles, 'rx')
             handles.rx.HB3 = 3;
             handles.tx.HB3 = 3;
         end
-
+        
         ADC_rate = handles.rx.Rdata * handles.rx.FIR * ...
             handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3;
         DAC_rate = handles.tx.Rdata * handles.tx.FIR * ...
@@ -483,16 +486,16 @@ if isfield(handles, 'tx') && isfield(handles, 'rx')
                 set(handles.filter_type, 'Value', filter_type);
             end
         end
-
+        
         handles.rx.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], handles.bounds.MAX_BBPLL_FREQ, handles.bounds.MIN_BBPLL_FREQ, ...
             handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * handles.rx.HB2 * handles.rx.HB3 * handles.rx.DAC_div);
         handles.tx.PLL_mult = handles.rx.PLL_mult;
-
+        
         if handles.rx.PLL_mult > 64
             X = ['Date rate = ', num2str(tohwTx.TXSAMP), ' Hz. Tx BBPLL is too high for Rx to match.'];
             disp(X);
         end
-
+        
         handles.rx.PLL_rate = handles.rx.Rdata * handles.rx.FIR * handles.rx.HB1 * ...
             handles.rx.HB2 * handles.rx.HB3 * handles.rx.PLL_mult;
     else
@@ -531,6 +534,22 @@ dirty(hObject, handles);
 handles = guidata(hObject);
 
 data_rate = value2Hz(handles, handles.freq_units, str2double(get(hObject,'String')));
+
+if get(handles.which_device,'Value')==3 && data_rate<=520.83e3
+    set(handles.use_FPGAfilter, 'Value', 1);
+    set(handles.FPGA_label, 'Visible', 'on');
+    set(handles.use_FPGAfilter, 'Visible', 'on');
+    set(handles.FPGA_rate, 'Visible', 'on');
+    freq_off(handles);
+    data_rate = data_rate*8;
+else
+    set(handles.use_FPGAfilter, 'Value', 0);
+    set(handles.FPGA_label, 'Visible', 'off');
+    set(handles.use_FPGAfilter, 'Visible', 'off');
+    set(handles.FPGA_rate, 'Visible', 'off');
+    freq_on(handles);
+end
+
 input = {};
 input.Rdata = data_rate;
 
@@ -550,6 +569,7 @@ end
 data2gui(hObject, handles);
 handles = guidata(hObject);
 guidata(hObject, handles);
+
 
 % --- Executes during object creation, after setting all properties.
 function data_clk_CreateFcn(hObject, eventdata, handles)
@@ -936,14 +956,14 @@ if ~ isempty(handles.libiio_ctrl_dev)
     else
         [data_clk, bbpll, converter_rate] = get_target_path_rates(handles.libiio_ctrl_dev, 'tx');
     end
-
+    
     div = num2str(converter_rate / data_clk);
     decimate = cellstr(get(handles.HB1, 'String'))';
     idx = find(strncmp(decimate, div, length(div)) == 1);
     if (~isempty(idx))
         set(handles.HB1, 'Value', idx(1));
     end
-
+    
     % Set the BPLL div
     opts = get(handles.converter2PLL, 'String');
     for i = 1:length(opts)
@@ -954,7 +974,7 @@ if ~ isempty(handles.libiio_ctrl_dev)
             break;
         end
     end
-
+    
     % Update the data clock
     put_data_clk(handles, data_clk);
     data_clk_Callback(handles.data_clk, eventdata, handles);
@@ -988,14 +1008,26 @@ astop = str2double(get(handles.Astop, 'String'));
 
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, apass, astop);
 
-hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
-    'FrequencyRange','Specify freq. vector', ...
-    'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
-    converter_rate, ...
-    'ShowReference','off','Color','White');
-set(hfvt1, 'Color', [1 1 1]);
-set(hfvt1.CurrentAxes, 'YLim', [-100 20]);
-legend(hfvt1, 'Converter','Analog','Analog + Half Band','Analog + HB + FIR');
+if get(handles.use_FPGAfilter, 'Value')== 1
+    hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,handles.plutofilter,...
+        'FrequencyRange','Specify freq. vector', ...
+        'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
+        converter_rate, ...
+        'ShowReference','off','Color','White');
+    set(hfvt1, 'Color', [1 1 1]);
+    set(hfvt1.CurrentAxes, 'YLim', [-100 20]);
+    legend(hfvt1, 'Converter','Analog','Analog + Half Band','Analog + HB + FIR','Analog + HB + FIR + Pluto');
+else
+    hfvt1 = fvtool(Hcon,handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
+        'FrequencyRange','Specify freq. vector', ...
+        'FrequencyVector',linspace(0,converter_rate/2,2048),'Fs',...
+        converter_rate, ...
+        'ShowReference','off','Color','White');
+    set(hfvt1, 'Color', [1 1 1]);
+    set(hfvt1.CurrentAxes, 'YLim', [-100 20]);
+    legend(hfvt1, 'Converter','Analog','Analog + Half Band','Analog + HB + FIR');
+    
+end
 text(1, 10,...
     str,...
     'BackgroundColor','white',...
@@ -1031,6 +1063,21 @@ set(handles.results_maxinput, 'Visible', 'off');
 set(handles.results_maxinputdB, 'Visible', 'off');
 set(handles.results_taps, 'Visible', 'off');
 set(handles.results_group_delay, 'Visible', 'off');
+
+function freq_off(handles)
+set(handles.Fpass, 'Enable', 'off');
+set(handles.Fstop, 'Enable', 'off');
+set(handles.Fcenter, 'Enable', 'off');
+set(handles.Fcutoff, 'Enable', 'off');
+set(handles.RFbw, 'Enable', 'off');
+
+
+function freq_on(handles)
+set(handles.Fpass, 'Enable', 'on');
+set(handles.Fstop, 'Enable', 'on');
+set(handles.Fcenter, 'Enable', 'on');
+set(handles.Fcutoff, 'Enable', 'on');
+set(handles.RFbw, 'Enable', 'on');
 
 
 function create_filter(hObject, handles)
@@ -1088,6 +1135,7 @@ filter_input.PLL_rate = PLL_rate;
 filter_input.dBstop_FIR = sel.FIRdBmin;
 filter_input.wnom = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
 filter_input.int_FIR = get(handles.Use_FIR, 'Value');
+filter_input.pluto_filter = 1;
 filter_input.RFbw = RFbw;
 
 plot_buttons_off(handles);
@@ -1109,25 +1157,63 @@ drawnow;
 if (filter_input.phEQ == 0)
     filter_input.phEQ = minimize_group_delay(handles, filter_input);
 end
+
 filter_result = internal_design_filter(filter_input);
 
 handles.filter = filter_result.filter;
 handles.analogfilter = filter_result.Hanalog;
 handles.grpdelayvar = filter_result.grpdelayvar;
 handles.grpdelaycal = clone(filter_result.filter);
+handles.plotpluto = clone(filter_result.filter);
 
-if get(handles.filter_type, 'Value') == 1
+if get(handles.filter_type, 'Value') == 1  % Rx
     addStage(handles.grpdelaycal,filter_result.Hd2,1);
     addStage(handles.grpdelaycal,filter_result.Hd1,2);
+    handles.plutofilter = clone(handles.grpdelaycal);
+    ast = 80;
+    tw = 0.08;
+    f = fdesign.decimator(8, 'Nyquist', 8, 'TW,Ast', tw, ast);
+    hf = design(f,'SystemObject',true);
+    hf.FullPrecisionOverride = false;
+    hf.OutputDataType='Custom';
+    hf.CustomOutputDataType=numerictype([],16,15);
+    hf.CoefficientsDataType='Custom';
+    hf.CustomCoefficientsDataType=numerictype([],16,15);
+    hf.ProductDataType='Custom';
+    hf.CustomProductDataType=numerictype([],16,15);
+    hf.AccumulatorDataType = 'Custom';
+    hf.CustomAccumulatorDataType=numerictype([],16,15);
+    
+    addStage(handles.plutofilter, hf);
+    addStage(handles.plotpluto, hf);
     handles.rfirtaps = int32(filter_result.firtaps);
-
+    
     % values used for saving to a filter file or pushing to the target directly
     handles.rx = filter_result;
-else
+    
+else  % Tx
     addStage(handles.grpdelaycal,filter_result.Hd1);
     addStage(handles.grpdelaycal,filter_result.Hd2);
+    handles.plutofilter = clone(handles.grpdelaycal);
+    ast = 80;
+    tw = 0.08;
+    f = fdesign.interpolator(8, 'Nyquist', 8, 'TW,Ast', tw, ast);
+    hf = design(f,'kaiserwin','SystemObject',true);
+    hf.Numerator = hf.Numerator./8;
+    hf.FullPrecisionOverride = false;
+    hf.OutputDataType='Custom';
+    hf.CustomOutputDataType=numerictype([],16,15);
+    hf.CoefficientsDataType='Custom';
+    hf.CustomCoefficientsDataType=numerictype([],16,15);
+    hf.ProductDataType='Custom';
+    hf.CustomProductDataType=numerictype([],16,15);
+    hf.AccumulatorDataType = 'Custom';
+    hf.CustomAccumulatorDataType=numerictype([],16,15);
+    
+    addStage(handles.plutofilter, hf, 1);
+    addStage(handles.plotpluto, hf, 1);
     handles.tfirtaps = int32(filter_result.firtaps);
-
+    
     % values used for saving to a filter file or pushing to the target directly
     handles.tx = filter_result;
 end
@@ -1155,7 +1241,11 @@ end
 
 units = cellstr(get(handles.Freq_units, 'String'));
 units = char(units(get(handles.Freq_units, 'Value')));
-set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))/2, units));
+if get(handles.use_FPGAfilter, 'Value')== 0
+    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))/2, units));
+else
+    set(handles.FVTool_datarate, 'String', sprintf('FVTool to %g %s', str2double(get(handles.data_clk, 'String'))*8/2, units));
+end
 
 if ~ get(handles.Use_FIR, 'Value')
     set(handles.save2HDL, 'Visible', 'on');
@@ -1180,23 +1270,29 @@ if get(handles.filter_type, 'Value') == 1
 else
     channel = 'Tx';
 end
-handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
-    abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
-    handles.filter,linspace(0,sel.Rdata/2,G),converter_rate))));
 
-hold on;
-bestSNR = -1 * (6.02 * 12 + 1.76);
-plot(linspace(0,converter_rate,G),max(bestSNR, mag2db((2*sin(pi*linspace(0,converter_rate,G)/(converter_rate))).^3) - 10*log10(converter_rate/sel.Rdata)),'g');
+if get(handles.use_FPGAfilter, 'Value')== 1
+    handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
+        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
+        handles.plotpluto,linspace(0,sel.Rdata/2,G),converter_rate))));
+    xlim([0 sel.Rdata/8]);
+else
+    handles.active_plot = plot(handles.magnitude_plot, linspace(0,sel.Rdata/2,G),mag2db(...
+        abs(analogresp(channel,linspace(0,sel.Rdata/2,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2).*freqz(...
+        filter_result.filter,linspace(0,sel.Rdata/2,G),converter_rate))));
+    xlim([0 sel.Rdata/2]);
+end
 
-legend('Filter response','Noise');
-
-xlim([0 sel.Rdata/2]);
 ylim([-100 10]);
 zoom_axis(gca);
 xlabel('Frequency (MHz)');
 ylabel('Magnitude (dB)');
 
 % plot the mask that we are interested in
+if get(handles.use_FPGAfilter, 'Value')== 1
+    sel.Fpass = sel.Rdata/2*0.085;
+    sel.Fstop = sel.Rdata/2*0.165;
+end
 line([sel.Fpass sel.Fpass], [-(sel.Apass/2) -100], 'Color', 'Red');
 line([0 sel.Fpass], [-(sel.Apass/2) -(sel.Apass/2)], 'Color', 'Red');
 line([0 sel.Fstop], [sel.Apass/2 sel.Apass/2], 'Color', 'Red');
@@ -1204,7 +1300,17 @@ line([sel.Fstop sel.Fstop], [sel.Apass/2 -sel.Astop], 'Color', 'Red');
 line([sel.Fstop sel.Rdata], [-sel.Astop -sel.Astop], 'Color', 'Red');
 
 % add the quantitative values about actual passband, stopband, and group delay
-set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB ']);
+if get(handles.use_FPGAfilter, 'Value')== 1
+    if get(handles.filter_type, 'Value') == 1
+        rg_stop = abs(freqz(handles.plotpluto,linspace(sel.Fstop,sel.Rdata/8,G),converter_rate).*analogresp('Rx',linspace(sel.Fstop,sel.Rdata/8,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2));
+    else
+        rg_stop = abs(freqz(handles.plotpluto,linspace(sel.Fstop,sel.Rdata/8,G),converter_rate).*analogresp('Tx',linspace(sel.Fstop,sel.Rdata/8,G),converter_rate,filter_result.b1,filter_result.a1,filter_result.b2,filter_result.a2));
+    end
+    Astop_actual = -mag2db(max(rg_stop));
+    set(handles.results_Astop, 'String', [num2str(Astop_actual) ' dB ']);
+else
+    set(handles.results_Astop, 'String', [num2str(filter_result.Astop_actual) ' dB ']);
+end
 set(handles.results_Apass, 'String', [num2str(filter_result.Apass_actual) ' dB ']);
 set(handles.results_maxinput, 'String', [num2str(1.0 / max(abs(freqz(filter_result.Hmd)))) ' FS ']);
 set(handles.results_maxinputdB, 'String', [num2str(20 * log10(1.0 / max(abs(freqz(filter_result.Hmd))))) ' dB ']);
@@ -1267,11 +1373,11 @@ for j = initial_step:10
         if isempty(idx)
             set(handles.target_delay, 'String', num2str(filter_input.phEQ, 8));
             drawnow;
-
+            
             filter_result = internal_design_filter(filter_input);
             results = [results ; (filter_result.delay * 1e9) (filter_result.grpdelayvar * 1e9);];
             results = sortrows(results, 1);
-
+            
             [minval, minidx] = min(results(:,2));
             str = sprintf('%1.2f@%3.2f', minval, results(minidx));
             set(handles.results_group_delay, 'String', str);
@@ -1279,7 +1385,7 @@ for j = initial_step:10
                 i_end = ceil(abs(results(minidx) + span/(2^j) - nom) * (2^j));
                 i_max = max(i_max, nom + (i_end/(2^j)));
             end
-
+            
             plot(results(:,1), results(:,2) ,'r.');
             xlim([i_min i_max]);
             xlabel('Group Delay target (ns)');
@@ -1296,10 +1402,10 @@ for j = initial_step:10
             end
         end
     end
-
+    
     [minval, minidx] = min(results(:,2));
     nom = round(results(minidx) * (2^j)) / (2^j);
-
+    
     if (j > initial_step )
         sub = results(minidx - (span * initial_step):minidx + i_end,:);
         [sub_minval, sub_minidx] = min(sub(:,2));
@@ -1399,11 +1505,18 @@ if sel.caldiv && sel.caldiv ~= default_caldiv(handles)
     set_fcutoff(handles, sel.caldiv);
 end
 
-FIR_rate = sel.Rdata * sel.FIR;
+if get(handles.use_FPGAfilter, 'Value')==1
+    sel.Rdata = sel.Rdata/8;
+    FPGA_rate = sel.Rdata*8;
+else
+    FPGA_rate = sel.Rdata;
+end
+FIR_rate = FPGA_rate * sel.FIR;
 HB1_rate = FIR_rate * sel.HB1;
 HB2_rate = HB1_rate * sel.HB2;
 HB3_rate = HB2_rate * sel.HB3;
 
+set(handles.FPGA_rate, 'String', num2str(Hz2value(handles, handles.freq_units, FPGA_rate)));
 set(handles.Fpass, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fpass)));
 set(handles.Fstop, 'String', num2str(Hz2value(handles, handles.freq_units, sel.Fstop)));
 set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, get_rfbw(handles, sel.caldiv))));
@@ -1762,13 +1875,13 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([0 Fstop], [0 0], 'Color', label_colour, 'LineStyle', ':');
         line([Fpass Fstop+30], [-ripple -ripple], 'Color', label_colour, 'LineStyle', ':');
         line([Fpass Fstop+30], [ripple ripple], 'Color', label_colour, 'LineStyle', ':');
-
+        
         handles.arrows{1} = annotation('arrow', 'Y',[max_y ripple], 'X',[130 130]);
         set(handles.arrows{1}, 'Color', label_colour);
         handles.arrows{2} = annotation('arrow', 'Y',[-max_y -ripple], 'X',[130 130]);
         set(handles.arrows{2}, 'Color', label_colour);
         text(Fstop + 12, 0, 'A_{pass}', 'BackgroundColor','white', 'EdgeColor','white');
-
+        
         % Stop band
         line([Fstop max_x-10], [-80 -80], 'Color', 'Black');
         line([max_x-10 max_x-10], [-80+ripple -80], 'Color', 'Black');
@@ -1776,13 +1889,13 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fstop Fstop], [-80+ripple -80], 'Color', 'Black');
         line([Fstop Fstop], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
         line([max_x-10 max_x-10], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
-
+        
         line([150 170], [0 0], 'Color', label_colour, 'LineStyle', ':');
         text(0, -108, '0');
         text(Fpass - 5, -108, 'F_{pass}');
         text(Fstop - 5, -108, 'F_{stop}');
         text(max_x - 15, -108, 'Fs_{/2}');
-
+        
         % A(stop) label and arrows
         hTest = text(150, -40, 'A_{stop}');
         textExt = get(hTest,'Extent');
@@ -1791,20 +1904,20 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         set(handles.arrows{3}, 'Color', label_colour);
         handles.arrows{4} = annotation('arrow', 'Y',[-45 -80], 'X',[w w]);
         set(handles.arrows{4}, 'Color', label_colour);
-
+        
         % reparent arrows within the filter plot so they're displayed properly
         plot = findall(gcf, 'type', 'axes', 'Tag', 'magnitude_plot');
         for i = 1:4
             set(handles.arrows{i}, 'Parent', plot);
         end
-
+        
     case 'Root Raised Cosine'
         % Pass band
         line([0 Fpass], [-ripple -ripple], 'Color', 'Black');
         line([0 Fpass], [ripple ripple], 'Color', 'Black');
         line([Fpass Fpass], [max_y ripple], 'Color', 'Black');
         line([Fpass Fpass], [-ripple -100], 'Color', 'Black');
-
+        
         % Stop band
         line([Fstop max_x-10], [-80 -80], 'Color', 'Black');
         line([max_x-10 max_x-10], [-80+ripple -80], 'Color', 'Black');
@@ -1812,12 +1925,12 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fstop Fstop], [-80+ripple -80], 'Color', 'Black');
         line([Fstop Fstop], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
         line([max_x-10 max_x-10], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
-
+        
         text(0, -108, '0');
         text(Fpass - 5, -108, 'F_{pass}');
         text(Fstop - 5, -108, 'F_{stop}');
         text(max_x - 15, -108, 'Fs_{/2}');
-
+        
     case 'Bandpass'
         Fpass = 20;
         Fcenter = 80;
@@ -1829,11 +1942,11 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fcenter+Fstop Fcenter+Fstop], [max_y ripple], 'Color', 'Black');
         line([Fcenter-Fpass Fcenter-Fpass], [-ripple -80], 'Color', 'Black');
         line([Fcenter+Fpass Fcenter+Fpass], [-ripple -80], 'Color', 'Black');
-
+        
         line([0 Fcenter+Fstop], [0 0], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter+Fstop Fcenter+Fstop+30], [-ripple -ripple], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter+Fstop Fcenter+Fstop+30], [ripple ripple], 'Color', label_colour, 'LineStyle', ':');
-
+        
         [x1, y1] = xy2norm(130, ripple, handles);
         [x2, y2] = xy2norm(130, max_y, handles);
         handles.arrows{1} = annotation('arrow', 'Y',[y2 y1], 'X',[x1 x2]);
@@ -1843,21 +1956,21 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         handles.arrows{2} = annotation('arrow', 'Y',[y2 y1], 'X',[x1 x2]);
         set(handles.arrows{2}, 'Color', label_colour);
         text(Fcenter + Fstop + 12, 0, 'A_{pass}', 'BackgroundColor','white', 'EdgeColor','white');
-
+        
         % Stop band
         line([Fcenter+Fstop max_x-10], [-80 -80], 'Color', 'Black');
         line([0 Fcenter-Fstop], [-80 -80], 'Color', 'Black');
-
+        
         line([max_x-10 max_x-10], [-80+ripple -80], 'Color', 'Black');
         line([Fcenter+Fstop Fcenter+Fstop], [-80+ripple -80], 'Color', 'Black');
         line([Fcenter-Fstop Fcenter-Fstop], [-80+ripple -80], 'Color', 'Black');
-
+        
         line([Fcenter-Fstop Fcenter-Fstop], [ripple -100], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter+Fstop Fcenter+Fstop], [ripple -100], 'Color', label_colour, 'LineStyle', ':');
         line([max_x-10 max_x-10], [-80 -100], 'Color', label_colour, 'LineStyle', ':');
         line([Fcenter Fcenter], [0 -100], 'Color', label_colour, 'LineStyle', ':');
         %        line([150 170], [0 0], 'Color', label_colour, 'LineStyle', ':');
-
+        
         % Labels "0" "Fcenter"
         text(0, -108, '0');
         text(Fcenter - 5, -108, 'F_{center}');
@@ -1866,7 +1979,7 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         line([Fcenter Fcenter+Fstop], [-60 -60], 'Color', label_colour, 'LineStyle', ':');
         text(Fcenter + Fstop +5, -60, 'F_{stop}');
         text(max_x - 15, -108, 'Fs_{/2}');
-
+        
         % A(stop) label and arrows
         hTest = text(Fcenter/4, -40, 'A_{stop}');
         textExt = get(hTest,'Extent');
@@ -1879,7 +1992,7 @@ switch get(get(handles.Response_Type, 'SelectedObject'), 'String')
         [x2, y2] = xy2norm(w, -45, handles);
         handles.arrows{4} = annotation('arrow', 'Y',[y2 y1], 'X',[x1 x2]);
         set(handles.arrows{4}, 'Color', label_colour);
-
+        
     case 'Equalize'
         line([0 max_x-10], [0 0], 'Color', 'Black');
         line([max_x-10 max_x-10], [0 ripple], 'Color', 'Black');
@@ -2310,7 +2423,7 @@ if error_msg
         case 'OK'
     end
     return
-
+    
 end
 
 sel = get_current_rxtx(handles);
@@ -2488,14 +2601,25 @@ converter_rate = sel.Rdata * sel.FIR * sel.HB1 * sel.HB2 * sel.HB3;
 
 str = sprintf('%s Filter\nFpass = %g MHz; Fstop = %g MHz\nApass = %g dB; Astop = %g dB', sel.RxTx, sel.Fpass/1e6, sel.Fstop/1e6, sel.Apass, sel.Astop);
 
-hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
-    'FrequencyRange','Specify freq. vector', ...
-    'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
-    converter_rate, ...
-    'ShowReference','off','Color','White');
-set(hfvt3, 'Color', [1 1 1]);
-set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
-legend(hfvt3, 'Analog','Analog + Half Band','Analog + HB + FIR');
+if get(handles.use_FPGAfilter, 'Value')== 1
+    hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,handles.plutofilter,...
+        'FrequencyRange','Specify freq. vector', ...
+        'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
+        converter_rate, ...
+        'ShowReference','off','Color','White');
+    set(hfvt3, 'Color', [1 1 1]);
+    set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
+    legend(hfvt3, 'Analog','Analog + Half Band','Analog + HB + FIR','Analog + HB + FIR + Pluto');
+else
+    hfvt3 = fvtool(handles.analogfilter,handles.Hmiddle,handles.grpdelaycal,...
+        'FrequencyRange','Specify freq. vector', ...
+        'FrequencyVector',linspace(0,sel.Rdata/2,2048),'Fs',...
+        converter_rate, ...
+        'ShowReference','off','Color','White');
+    set(hfvt3, 'Color', [1 1 1]);
+    set(hfvt3.CurrentAxes, 'YLim', [-100 20]);
+    legend(hfvt3, 'Analog','Analog + Half Band','Analog + HB + FIR');
+end
 text(0.5, 10,...
     str,...
     'BackgroundColor','white',...
@@ -2602,7 +2726,7 @@ function Advanced_options_Callback(hObject, eventdata, handles)
 handles = guidata(hObject);
 if get(hObject,'Value')
     show_advanced(handles);
-
+    
     % reset fcutoff to the default value when advanced is re-enabled
     set(handles.Fcutoff, 'String', '0');
     caldiv = get_caldiv(handles);
@@ -2615,14 +2739,14 @@ end
 % both channels when data2gui is run
 if isstruct(get_current_rxtx(handles))
     filter_type = get(handles.filter_type, 'Value');
-
+    
     set(handles.filter_type, 'Value', 1);
     caldiv = default_caldiv(handles);
     handles.rx.caldiv = caldiv;
     set(handles.filter_type, 'Value', 2);
     caldiv = default_caldiv(handles);
     handles.tx.caldiv = caldiv;
-
+    
     set(handles.filter_type, 'Value', filter_type);
 end
 
@@ -2659,7 +2783,7 @@ end
 [pathstr, ~, ~] = fileparts(mfilename('fullpath'));
 if exist(fullfile(pathstr, 'libiio', 'libiio_if.m'), 'file')
     addpath(fullfile(pathstr, 'libiio'));
-
+    
     % Initialize the libiio_if object
     handles.libiio_ctrl_dev = libiio_if();
     [ret, err_msg, msg_log] = init(handles.libiio_ctrl_dev, ip_address, ...
@@ -2687,11 +2811,11 @@ if (ret < 0)
 else
     set(handles.connect2target, 'String', 'Connected to Target');
     set(handles.target_get_clock, 'Enable', 'on');
-
+    
     if isfield(handles, 'rfirtaps') && isfield(handles, 'tfirtaps')
         set(handles.save2target, 'Enable', 'on');
     end
-
+    
     % save IP address to restore on next startup
     [pathstr, ~, ~] = fileparts(mfilename('fullpath'));
     cached_ip_file = fullfile(pathstr, '.previous_ip_addr');
@@ -2859,6 +2983,14 @@ function which_device_Callback(hObject, eventdata, handles)
 % hObject    handle to which_device (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+set(handles.design_filter, 'Enable', 'off');
+if get(handles.which_device,'Value')==1 || get(handles.which_device,'Value')==2
+    set(handles.use_FPGAfilter, 'Value', 0);
+    set(handles.FPGA_label, 'Visible', 'off');
+    set(handles.use_FPGAfilter, 'Visible', 'off');
+    set(handles.FPGA_rate, 'Visible', 'off');
+    freq_on(handles);
+end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -3092,3 +3224,89 @@ function results_Apass_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 % vim: set et sw=4 ts=4 ft=matlab:
+
+
+% --- Executes on selection change in popupmenu15.
+function popupmenu15_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu15 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu15
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu15_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu15 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in pluto.
+function pluto_Callback(hObject, eventdata, handles)
+% hObject    handle to pluto (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns pluto contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from pluto
+set(handles.design_filter, 'Enable', 'on');
+
+% --- Executes during object creation, after setting all properties.
+function pluto_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to pluto (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit25_Callback(hObject, eventdata, handles)
+% hObject    handle to edit25 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit25 as text
+%        str2double(get(hObject,'String')) returns contents of edit25 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit25_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit25 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function FIR_rate_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to FIR_rate (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on key press with focus on FVTool_deeper and none of its controls.
+function FVTool_deeper_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to FVTool_deeper (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
