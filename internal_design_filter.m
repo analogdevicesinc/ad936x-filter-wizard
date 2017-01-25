@@ -45,7 +45,6 @@
 % phEQ       = phase equalization on (not -1)/off (-1)
 % int_FIR    = use AD9361 FIR on (1)/off (0)
 % wnom       = analog cutoff frequency (in Hz)
-% pluto_filter = use Pluto filter on (1)/off (0)
 %
 % Outputs (structure containing the following fields)
 % ===============================================
@@ -290,15 +289,6 @@ if strcmp(input.RxTx, 'Tx')
     filter_stages = fliplr(filter_stages);
 end
 dfilter = cascade(filter_stages{:});
-
-% % when Pluto filter is enabled
-% if(input.pluto_filter==1)
-%     if strcmp(input.RxTx, 'Tx')
-%         addStage(dfilter, hf, 1);
-%     else
-%         addStage(dfilter, hf);
-%     end
-% end
 
 Hmiddle = clone(dfilter);
 if strcmp(input.RxTx, 'Rx')
