@@ -1068,16 +1068,16 @@ function freq_off(handles)
 set(handles.Fpass, 'Enable', 'off');
 set(handles.Fstop, 'Enable', 'off');
 set(handles.Fcenter, 'Enable', 'off');
-set(handles.Fcutoff, 'Enable', 'off');
-set(handles.RFbw, 'Enable', 'off');
+% set(handles.Fcutoff, 'Enable', 'off');
+% set(handles.RFbw, 'Enable', 'off');
 
 
 function freq_on(handles)
 set(handles.Fpass, 'Enable', 'on');
 set(handles.Fstop, 'Enable', 'on');
 set(handles.Fcenter, 'Enable', 'on');
-set(handles.Fcutoff, 'Enable', 'on');
-set(handles.RFbw, 'Enable', 'on');
+% set(handles.Fcutoff, 'Enable', 'on');
+% set(handles.RFbw, 'Enable', 'on');
 
 
 function create_filter(hObject, handles)
