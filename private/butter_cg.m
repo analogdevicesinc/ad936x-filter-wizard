@@ -1,62 +1,9 @@
-function [num, den, z, p] = butter(n, Wn, varargin)
-%BUTTER Butterworth digital and analog filter design.
-%   [B,A] = BUTTER(N,Wn) designs an Nth order lowpass digital
-%   Butterworth filter and returns the filter coefficients in length
-%   N+1 vectors B (numerator) and A (denominator). The coefficients
-%   are listed in descending powers of z. The cutoff frequency
-%   Wn must be 0.0 < Wn < 1.0, with 1.0 corresponding to
-%   half the sample rate.
-%
-%   If Wn is a two-element vector, Wn = [W1 W2], BUTTER returns an
-%   order 2N bandpass filter with passband  W1 < W < W2.
-%   [B,A] = BUTTER(N,Wn,'high') designs a highpass filter.
-%   [B,A] = BUTTER(N,Wn,'low') designs a lowpass filter.
-%   [B,A] = BUTTER(N,Wn,'stop') is a bandstop filter if Wn = [W1 W2].
-%
-%   When used with three left-hand arguments, as in
-%   [Z,P,K] = BUTTER(...), the zeros and poles are returned in
-%   length N column vectors Z and P, and the gain in scalar K.
-%
-%   When used with four left-hand arguments, as in
-%   [A,B,C,D] = BUTTER(...), state-space matrices are returned.
-%
-%   BUTTER(N,Wn,'s'), BUTTER(N,Wn,'high','s') and BUTTER(N,Wn,'stop','s')
-%   design analog Butterworth filters.  In this case, Wn is in [rad/s]
-%   and it can be greater than 1.0.
-%
-%   % Example 1:
-%   %   For data sampled at 1000 Hz, design a 9th-order highpass
-%   %   Butterworth filter with cutoff frequency of 300Hz.
-%
-%   Wn = 300/500;                   % Normalized cutoff frequency        
-%   [z,p,k] = butter(9,Wn,'high');  % Butterworth filter
-%   [sos] = zp2sos(z,p,k);          % Convert to SOS form
-%   h = fvtool(sos);                % Plot magnitude response
-%
-%   % Example 2:
-%   %   Design a 4th-order butterworth band-pass filter which passes
-%   %   frequencies between 0.15 and 0.3.
-%
-%   [b,a]=butter(2,[.15,.3]);        % Bandpass digital filter design
-%   h = fvtool(b,a);                 % Visualize filter
-%
-%   See also BUTTORD, BESSELF, CHEBY1, CHEBY2, ELLIP, FREQZ,
-%   FILTER, DESIGNFILT.
+function [num, den, z, p] = butter_cg(n, Wn, varargin)
+%BUTTER_CG Butterworth digital and analog filter design.  Codegen support
 
-%   Author(s): J.N. Little, 1-14-87
-%   	   J.N. Little, 1-14-88, revised
-%   	   L. Shure, 4-29-88, revised
-%   	   T. Krauss, 3-24-93, revised
-%   Copyright 1988-2013 The MathWorks, Inc.
 
-%   References:
-%     [1] T. W. Parks and C. S. Burrus, Digital Filter Design,
-%         John Wiley & Sons, 1987, chapter 7, section 7.3.3.
-
-[btype,analog,errStr,msgobj] = iirchk(Wn,varargin{:});
-if ~isempty(errStr)
-  error(msgobj);
-end
+%[btype,analog,errStr,msgobj] = iirchk(Wn,varargin{:});
+btype = 1; analog = 1;
 
 if n>500
     error(message('signal:butter:InvalidRange'))
@@ -91,14 +38,14 @@ validateattributes(n,{'numeric'},{'scalar','integer','positive'},'butter','N');
 n = double(n);
 
 % step 3: Get N-th order Butterworth analog lowpass prototype
-[z,p,k] = buttap(n);
+[z,p,k] = buttap_cg(n);
 
 % Transform to state-space
-[a,b,c,d] = zp2ss(z,p,k);
+[a,b,c,d] = zp2ss_cg(z,p,k);
 
 % step 4: Transform to lowpass, bandpass, highpass, or bandstop of desired Wn
 if btype == 1		% Lowpass
-    [a,b,c,d] = lp2lp(a,b,c,d,Wn);
+    [a,b,c,d] = lp2lp_cg(a,b,c,d,Wn);
     
 elseif btype == 2	% Bandpass
     [a,b,c,d] = lp2bp(a,b,c,d,Wn,Bw);

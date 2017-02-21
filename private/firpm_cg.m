@@ -1,4 +1,4 @@
-function [h,err,res] = firpm(order, ff, aa, varargin)
+function [h,valid,err] = firpm_tfc(order, ff, amplitudes, frequencies, weights, varargin)
 %FIRPM Parks-McClellan optimal equiripple FIR filter design.
 %   B=FIRPM(N,F,A) returns a length N+1 linear phase (real, symmetric
 %   coefficients) FIR filter which has the best approximation to the
@@ -129,17 +129,30 @@ function [h,err,res] = firpm(order, ff, aa, varargin)
 %          IEEE Press, 1976, pg. 97.
 
 % Cast to enforce Precision rules
-order = signal.internal.sigcasttofloat(order,'double','firpm','N','allownumeric');
-ff = signal.internal.sigcasttofloat(ff,'double','firpm','F','allownumeric');
+%order = signal.internal.sigcasttofloat(order,'double','firpm','N','allownumeric');
+%ff = signal.internal.sigcasttofloat(ff,'double','firpm','F','allownumeric');
 
-[nfilt,ff,grid,des,wt,ftype,sign_val,hilbert,neg] = firpminit(order, ff, aa, varargin{:});
+%[nfilt,ff,grid,des,wt,ftype,sign_val,hilbert,neg] = firpminit(order, ff, aa, varargin{:});
+
+% amplitudes = aa{2};
+% frequencies = aa{3};
+% weights = aa{4};
+
+[grid,des,wt] = genWeights(order, ff, frequencies, weights, amplitudes);
+% Workaround
+nfilt = order + 1;
+%ftype = 2;
+%sign_val = 1;
+hilbert = 0; % Always bandpass designs
+neg = 0;
+
 % cast to enforce precision rules
 wt = double(wt);
 des = double(des);
 grid = double(grid);
 
 % Call actual design algorithm
-[h,err,iext] = remezm(nfilt,ff/2,grid/2,des,wt,neg);
+[h,err,valid] = remezm(nfilt,ff/2,grid/2,des,wt,neg);
 
 err = abs(err);
 h = h(:).';  % make it a row
@@ -150,31 +163,51 @@ if neg && ~hilbert
 end
 
 
-%
-% arrange 'results' structure
-%
-if nargout > 2 
-    res.fgrid = grid(:);
-    res.des = des(:);
-    res.wt = wt(:);
-    res.H = freqz(h,1,res.fgrid*pi);
-    if neg  % asymmetric impulse response
-        linphase = exp(sqrt(-1)*(res.fgrid*pi*(order/2) - pi/2));
-    else
-        linphase = exp(sqrt(-1)*res.fgrid*pi*(order/2));
+% %
+% % arrange 'results' structure
+% %
+% if nargout > 2 
+%     res.fgrid = grid(:);
+%     res.des = des(:);
+%     res.wt = wt(:);
+%     res.H = freqz(h,1,res.fgrid*pi);
+%     if neg  % asymmetric impulse response
+%         linphase = exp(sqrt(-1)*(res.fgrid*pi*(order/2) - pi/2));
+%     else
+%         linphase = exp(sqrt(-1)*res.fgrid*pi*(order/2));
+%     end
+%     if hilbert
+%         res.error = real(des(:) + res.H.*linphase);
+%     else
+%         res.error = real(des(:) - res.H.*linphase);
+%     end
+%     res.iextr = iext(1:end-1);
+%     res.fextr = grid(res.iextr);  % extremal frequencies
+%     res.fextr = res.fextr(:);
+% end
+
+%% 
+function [grid,des,wt] = genWeights(filterOrder, bands, frequencies, weights, amplitudes)
+    
+    lgrid = 16;
+    grid = firpmgrid_cg(filterOrder+1,lgrid,bands,0,0);
+
+    orgFreqIndx = frequencies;
+
+    positionsOfNewFreqIndx = zeros(size(grid));
+    for ind = 1:length(positionsOfNewFreqIndx)
+
+        [~,indx] = min( abs(orgFreqIndx-grid(ind)) );
+
+        positionsOfNewFreqIndx(ind) = indx;
     end
-    if hilbert
-        res.error = real(des(:) + res.H.*linphase);
-    else
-        res.error = real(des(:) - res.H.*linphase);
-    end
-    res.iextr = iext(1:end-1);
-    res.fextr = grid(res.iextr);  % extremal frequencies
-    res.fextr = res.fextr(:);
-end
+
+    wt = weights(positionsOfNewFreqIndx);
+    des = amplitudes(positionsOfNewFreqIndx);
+
 
 %%
-function [h,dev,iext]  = remezm(nfilt,edge,grid,des,wt,neg)
+function [h,dev,valid]  = remezm(nfilt,edge,grid,des,wt,neg)
 % remezm function
 % Inputs
 %     nfilt - filter length
@@ -188,6 +221,8 @@ function [h,dev,iext]  = remezm(nfilt,edge,grid,des,wt,neg)
 %     h - coefficients of basis functions
 %     dev - computed error
 %     iext - indices of extremal frequencies
+
+valid = true;
 
 nbands = length(edge)/2;
 jb = 2*nbands;
@@ -214,18 +249,23 @@ else
 end
 temp = (ngrid-1)/nfcns;
 j=1:nfcns;
-iext = fix([temp*(j-1)+1 ngrid])';
+iext = [fix([temp*(j-1)+1 ngrid])';0];
 nz = nfcns + 1;
 
 % Remez exchange loop
-comp = [];
+comp = -1;dtemp = -1;y1 = -1;luck = -1;nut1=-1;err=-1;y=-1;dev=-1;
 itrmax = 250;
 devl = -1;
-nzz = nz + 1;
+nzz = nz + 1; x = zeros(1,nz);
 niter = 0;
 jchnge = 1;
 jet = fix((nfcns - 1)/15) + 1;
 ad = zeros(1,nz);
+
+
+% index manager(s)
+inextLen = nzz;
+
 while jchnge > 0
     iext(nzz) = ngrid + 1;
     niter = niter + 1;
@@ -249,8 +289,14 @@ while jchnge > 0
     dev = -nu*dev;
     y = des(l) + nu*dev*add./wt(l);
     if dev <= devl
-        warning(message('signal:firpm:DidNotConverge',niter))
-        break;
+        %warning(message('signal:firpm:DidNotConverge',niter))
+        fprintf('%s\n','DidNotConverge');
+        h = zeros(nfilt,1);
+        dev = -1;
+        %iext
+        valid = false;
+        return;
+        %break;
     end
     devl = dev;
     jchnge = 0;
@@ -457,7 +503,8 @@ while jchnge > 0
             if flag
                 flag34 = 0;
                 if luck ~= 6
-                    iext = [k1 iext(2:nz-nfcns)' iext(nz-nfcns:nz-1)']';
+                    inextLen = length([k1 iext(2:nz-nfcns)' iext(nz-nfcns:nz-1)']'); % Update index
+                    iext(1:inextLen) = [k1 iext(2:nz-nfcns)' iext(nz-nfcns:nz-1)']';
                     jchnge = jchnge + 1;
                 end
                 break;
@@ -466,7 +513,8 @@ while jchnge > 0
     end
     if flag34 && j > nzz,
         if luck > 9
-            iext = [iext(2:nfcns+1)' iext(nfcns+1:nz-1)' iext(nzz) iext(nzz)]';
+            inextLen = length([iext(2:nfcns+1)' iext(nfcns+1:nz-1)' iext(nzz) iext(nzz)]'); % Update index
+            iext(1:inextLen) = [iext(2:nfcns+1)' iext(nfcns+1:nz-1)' iext(nzz) iext(nzz)]';
             jchnge = jchnge + 1;
         else
             y1 = max([y1 comp]);
@@ -500,13 +548,15 @@ while jchnge > 0
                     end
                     iext(j) = l + 1;
                     jchnge = jchnge + 1;
-                    iext = [iext(2:nfcns+1)' iext(nfcns+1:nz-1)' iext(nzz) iext(nzz)]';
+                    inextLen = length([iext(2:nfcns+1)' iext(nfcns+1:nz-1)' iext(nzz) iext(nzz)]'); % Update index
+                    iext(1:inextLen) = [iext(2:nfcns+1)' iext(nfcns+1:nz-1)' iext(nzz) iext(nzz)]';
                     break;
                 end
                 l = l - 1;
             end
             if luck ~= 6
-                iext = [k1 iext(2:nz-nfcns)' iext(nz-nfcns:nz-1)']';
+                inextLen = length([k1 iext(2:nz-nfcns)' iext(nz-nfcns:nz-1)']'); % Update index
+                iext(1:inextLen) = [k1 iext(2:nz-nfcns)' iext(nz-nfcns:nz-1)']';
                 jchnge = jchnge + 1;
             end
         end
@@ -514,9 +564,11 @@ while jchnge > 0
 end
 
 % Inverse Fourier transformation
+bb = -1;aa = -1;% initialize memory
 nm1 = nfcns - 1;
 fsh = 1.0e-6;
-x(nzz) = -2;
+%x(nzz) = -2;
+x2 = [x,-2];
 cn = 2*nfcns - 1;
 delf = 1/cn;
 l = 1;
@@ -538,17 +590,17 @@ for j = 1:nfcns
         xt = (xt-bb)/aa;
         ft = acos(xt)/(2*pi);
     end
-    xe = x(l);
+    xe = x2(l);
     while (xt <= xe) && (xe-xt >= fsh)
         l = l + 1;
-        xe = x(l);
+        xe = x2(l);
     end
     if abs(xt-xe) < fsh
         a(j) = y(l);
     else
         grid(1) = ft;
         % gee
-        c = ad./(cos(2*pi*ft)-x(1:nz));
+        c = ad./(cos(2*pi*ft)-x2(1:nz));
         a(j) = c*y'/sum(c);
     end
     l = max([1, l-1]);
@@ -566,6 +618,8 @@ for j = 1:nfcns
     end
 end
 alpha = [alpha(1) 2*alpha(2:nfcns)]'/cn;
+p = zeros(1,nfcns);
+q = zeros(1,nm1);
 if kkk ~= 1
     p(1) = 2*alpha(nfcns)*bb + alpha(nm1);
     p(2) = 2*aa*alpha(nfcns);
@@ -594,28 +648,33 @@ if kkk ~= 1
     end
     alpha(1:nfcns) = p(1:nfcns);
 end
+
+% alpha must be at lease >=3
 if nfcns <= 3
-    alpha(nfcns + 1) = 0;
-    alpha(nfcns + 2) = 0;
+    %alpha(nfcns + 1) = 0;
+    %alpha(nfcns + 2) = 0;
+    alphaFull = [alpha; 0; 0]';
+else
+    alphaFull = alpha';
 end
 
-alpha=alpha';
+%alpha=alpha';
 % now that's done!
 
 if neg <= 0
     if nodd ~= 0
-        h = [.5*alpha(nz-1:-1:nz-nm1) alpha(1)];
+        h = [.5*alphaFull(nz-1:-1:nz-nm1) alphaFull(1)];
     else
-        h = .25*[alpha(nfcns) alpha(nz-2:-1:nz-nm1)+alpha(nfcns:-1:nfcns-nm1+2) ...
-            2*alpha(1)+alpha(2)];
+        h = .25*[alphaFull(nfcns) alphaFull(nz-2:-1:nz-nm1)+alphaFull(nfcns:-1:nfcns-nm1+2) ...
+            2*alphaFull(1)+alphaFull(2)];
     end
 elseif nodd ~= 0
-    h = .25*[alpha(nfcns) alpha(nm1)];
-    h = [h .25*[alpha(nz-3:-1:nz-nm1)-alpha(nfcns:-1:nfcns-nm1+3) ...
-        2*alpha(1)-alpha(3) ] 0];
+    h = .25*[alphaFull(nfcns) alphaFull(nm1)];
+    h = [h .25*[alphaFull(nz-3:-1:nz-nm1)-alphaFull(nfcns:-1:nfcns-nm1+3) ...
+        2*alphaFull(1)-alphaFull(3) ] 0];
 else
-    h = .25*[alpha(nfcns) alpha(nz-2:-1:nz-nm1)-alpha(nfcns:-1:nfcns-nm1+2) ...
-        2*alpha(1)-alpha(2)];
+    h = .25*[alphaFull(nfcns) alphaFull(nz-2:-1:nz-nm1)-alphaFull(nfcns:-1:nfcns-nm1+2) ...
+        2*alphaFull(1)-alphaFull(2)];
 end
 
 %%

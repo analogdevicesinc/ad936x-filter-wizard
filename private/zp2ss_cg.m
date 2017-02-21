@@ -1,54 +1,36 @@
-function [a,b,c,d] = zp2ss(z,p,k)
-%ZP2SS  Zero-pole to state-space conversion.
-%   [A,B,C,D] = ZP2SS(Z,P,K)  calculates a state-space representation:
-%       .
-%       x = Ax + Bu
-%       y = Cx + Du
-%
-%   for a system given a set of pole locations in column vector P,
-%   a matrix Z with the zero locations in as many columns as there are
-%   outputs, and the gains for each numerator transfer function in
-%   vector K.  The A,B,C,D matrices are returned in block diagonal
-%   form.  
-%
-%   The poles and zeros must correspond to a proper system. If the poles
-%   or zeros are complex, they must appear in complex conjugate pairs,
-%   i.e., the corresponding transfer function must be real.
-%     
-%   See also SS2ZP, ZP2TF, TF2ZP, TF2SS, SS2TF.
+function [a,b,c,d] = zp2ss_cg(z,p,k)
+%ZP2SS  Zero-pole to state-space conversion. Codegen support
+%[z,p,k,isSIMO] = parse_input(z,p,k);
+isSIMO = 0;
 
-%   Thanks to G.F. Franklin
-%   Copyright 1984-2008 The MathWorks, Inc.
-[z,p,k,isSIMO] = parse_input(z,p,k);
-     
-if isSIMO
-    % If it's multi-output, we can't use the nice algorithm
-    % that follows, so use the numerically unreliable method
-    % of going through polynomial form, and then return.
-    [num,den] = zp2tf(z,p,k); % Suppress compile-time diagnostics
-    [a,b,c,d] = tf2ss(num,den);
-    return
-end
+% if isSIMO
+%     % If it's multi-output, we can't use the nice algorithm
+%     % that follows, so use the numerically unreliable method
+%     % of going through polynomial form, and then return.
+%     [num,den] = zp2tf(z,p,k); % Suppress compile-time diagnostics
+%     [a,b,c,d] = tf2ss(num,den);
+%     return
+% end
 
 % Strip infinities and throw away.
-p = p(isfinite(p));
-z = z(isfinite(z));
+pF = p(isfinite(p));
+zF = z(isfinite(z));
 
 % Group into complex pairs
-np = length(p);
-nz = length(z);
-try
-    % z and p should have real elements and exact complex conjugate pair.
-    z = cplxpair(z,0);
-    p = cplxpair(p,0);
-catch
-    % If fail, revert to use the old default tolerance.
-    % The use of tolerance in checking for real entries and conjugate pairs
-    % may result in misinterpretation for edge cases. Please review the
-    % process of how z and p are generated.
-    z = cplxpair(z,1e6*nz*norm(z)*eps + eps);
-    p = cplxpair(p,1e6*np*norm(p)*eps + eps);
-end
+np = length(pF);
+nz = length(zF);
+% try
+%     % z and p should have real elements and exact complex conjugate pair.
+%     z = cplxpair(zF,0);
+%     p = cplxpair(pF,0);
+% catch
+%     % If fail, revert to use the old default tolerance.
+%     % The use of tolerance in checking for real entries and conjugate pairs
+%     % may result in misinterpretation for edge cases. Please review the
+%     % process of how z and p are generated.
+%     z = cplxpair(zF,1e6*nz*norm(zF)*eps + eps);
+%     p = cplxpair(pF,1e6*np*norm(pF)*eps + eps);
+% end
 
 % Initialize state-space matrices for running series
 a=[]; b=zeros(0,1); c=ones(1,0); d=1;
@@ -57,9 +39,9 @@ a=[]; b=zeros(0,1); c=ones(1,0); d=1;
 % at the end into state-space.
 %   H(s) = (s-z1)/(s-p1) = (s + num(2)) / (s + den(2))
 if rem(np,2) && rem(nz,2)
-    a = p(np);
+    a = pF(np);
     b = 1;
-    c = p(np) - z(nz);
+    c = pF(np) - zF(nz);
     d = 1;
     np = np - 1;
     nz = nz - 1;
@@ -69,7 +51,7 @@ end
 % end into state-space.
 %  H(s) = 1/(s-p1) = 1/(s + den(2)) 
 if rem(np,2)
-    a = p(np);
+    a = pF(np);
     b = 1;
     c = 1;
     d = 0;
@@ -80,9 +62,9 @@ end
 % end, along with a pole-pair into state-space.
 %   H(s) = (s+num(2))/(s^2+den(2)s+den(3)) 
 if rem(nz,2)
-    num = real(poly(z(nz)));
-    den = real(poly(p(np-1:np)));
-    wn = sqrt(prod(abs(p(np-1:np))));
+    num = real(poly(zF(nz)));
+    den = real(poly(pF(np-1:np)));
+    wn = sqrt(prod(abs(pF(np-1:np))));
     if wn == 0, wn = 1; end
     t = diag([1 1/wn]); % Balancing transformation
     a = t\[-den(2) -den(3); 1 0]*t;
@@ -100,9 +82,9 @@ end
 i = 1;
 while i < nz
     index = i:i+1;
-    num = real(poly(z(index)));
-    den = real(poly(p(index)));
-    wn = sqrt(prod(abs(p(index))));
+    num = real(poly(zF(index)));
+    den = real(poly(pF(index)));
+    wn = sqrt(prod(abs(pF(index))));
     if wn == 0, wn = 1; end
     t = diag([1 1/wn]); % Balancing transformation
     a1 = t\[-den(2) -den(3); 1 0]*t;
@@ -124,8 +106,8 @@ end
 % Take care of any left over unmatched pole pairs.
 %   H(s) = 1/(s^2+den(2)s+den(3))
 while i < np
-    den = real(poly(p(i:i+1)));
-    wn = sqrt(prod(abs(p(i:i+1))));
+    den = real(poly(pF(i:i+1)));
+    wn = sqrt(prod(abs(pF(i:i+1))));
     if wn == 0, wn = 1; end
     t = diag([1 1/wn]); % Balancing transformation
     a1 = t\[-den(2) -den(3); 1 0]*t;

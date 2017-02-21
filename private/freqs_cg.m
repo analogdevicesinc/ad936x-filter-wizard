@@ -1,45 +1,5 @@
-function [h,ww] = freqs(b,a,w)
-%FREQS Laplace-transform (s-domain) frequency response.
-%   H = FREQS(B,A,W) returns the complex frequency response vector H
-%   of the filter B/A:
-%                        nb-1         nb-2
-%            B(s)   b(1)s     +  b(2)s     + ... +  b(nb)
-%     H(s) = ---- = -------------------------------------
-%                        na-1         na-2
-%            A(s)   a(1)s     +  a(2)s     + ... +  a(na)
-%
-%   given the numerator and denominator coefficients in vectors B and A.
-%   The frequency response is evaluated at the points specified in
-%   vector W (in rad/s).  The magnitude and phase can be graphed by
-%   calling FREQS(B,A,W) with no output arguments.
-%
-%   [H,W] = FREQS(B,A) automatically picks a set of 200 frequencies W on
-%   which the frequency response is computed.  FREQS(B,A,N) picks N
-%   frequencies.
-%
-%   % Example 1:
-%   %   Find and graph the frequency response of the transfer function
-%   %   given by
-%   %   H(s) = ( 0.2*s^2 + 0.3*s + 1 )/( s^2 + 0.4s + 1 )
-%
-%   a = [1 0.4 1];      % Numerator coefficients
-%   b = [0.2 0.3 1];    % Denominator coefficients
-%   w = logspace(-1,1); % Frequency vector
-%   freqs(b,a,w)
-%
-%   % Example 2:
-%   %   Design a fifth-order analog lowpass Bessel filter with an
-%   %   approximate constant group delay up to 10,000 rad/s and plot
-%   %   the frequency response of the filter using freqs.
-%
-%   [b,a] = besself(5,10000);   % Bessel analog filter design
-%   freqs(b,a)                  % Plot frequency response
-%
-%   See also LOGSPACE, POLYVAL, INVFREQS, and FREQZ.
-
-% 	Author(s): J.N. Little, 6-26-86
-%   	   T. Krauss, 3-19-93, default plots and frequency vector
-%   Copyright 1988-2013 The MathWorks, Inc.
+function [h,ww] = freqs_cg(b,a,w)
+%FREQS Laplace-transform (s-domain) frequency response with codegen support
 
 narginchk(2,3);
 nargoutchk(0,2);
@@ -61,21 +21,22 @@ if nargin == 2,
   w = 200;
 end
 
-if length(w) == 1,
-  validateattributes(w,{'numeric'},{'scalar','positive','integer'},'freqs','N');
-  % Cast to enforce precision rules
-  w = double(w);
-  wlen = w;
-  w_long = freqint(b,a,wlen);
-  % need to interpolate long frequency vector:
-  xi = linspace(1,length(w_long),wlen).';
-  w = 10.^interp1(1:length(w_long),log10(w_long),xi,'linear');
-else
-  validateattributes(w,{'numeric'},{'vector'},'freqs','W');
-  % Cast to enforce precision rules
-  w = double(w);
-end
-
+% if length(w) == 1,
+%   validateattributes(w,{'numeric'},{'scalar','positive','integer'},'freqs','N');
+%   % Cast to enforce precision rules
+%   w = double(w);
+%   wlen = w;
+%   w_long = freqint(b,a,wlen);
+%   % need to interpolate long frequency vector:
+%   xi = linspace(1,length(w_long),wlen).';
+%   w = 10.^interp1(1:length(w_long),log10(w_long),xi,'linear');
+% else
+%   validateattributes(w,{'numeric'},{'vector'},'freqs','W');
+%   % Cast to enforce precision rules
+%   w = double(w);
+% end
+w = double(w);
+  
 s = 1i*w;
 hh = polyval(b,s) ./ polyval(a,s);
 
@@ -155,16 +116,19 @@ w = double(w);
 
 % end freqint
 
-function [b,a] = removeTrailingZero(b,a)
+function [bR,aR] = removeTrailingZero(b,a)
 
 b_len = numel(b);
 a_len = numel(a);
 b_lastnzidx = find(b,1,'last');
 a_lastnzidx = find(a,1,'last');
 trz_len = min(b_len-b_lastnzidx,a_len-a_lastnzidx);
-if trz_len > 0
-  b = b(1:b_len-trz_len);
-  a = a(1:a_len-trz_len);
+if trz_len(1) > 0
+    bR = b(1:b_len-trz_len(1));
+    aR = a(1:a_len-trz_len(1));
+else
+    bR = b;
+    aR = a;
 end
 
 
