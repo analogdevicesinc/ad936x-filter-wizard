@@ -1,5 +1,8 @@
 function [z,pV,k] = buttap_cg(n)
 %BUTTAP Butterworth analog lowpass filter prototype. Codegen support
+%
+% This function is based on 'butterap' by The MathWorks Inc.
+%#codegen
 
 % Cast to enforce precision rules
 nD = double(n);
@@ -14,4 +17,3 @@ else
     pV = pC;
 end
 k = real(prod(-pV));
-

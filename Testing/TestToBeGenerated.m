@@ -8,7 +8,7 @@ input = a.input;
 firtaps = a.firtaps;
 
 % Return preallocation and type def
-output = zeros(1,128);
+output = zeros(1,128,'int16');
 numTaps = 1; %#ok<NASGU>
 
 % Call generated version
@@ -21,5 +21,5 @@ coder.ceval('internal_design_filter_cg',...
 
 % Check outputs
 numTaps = 128 - sum(output==0); % output is always padded to 128
-r = isequal(output(1:numTaps),firtaps);
+r = isequal(output(1:numTaps),int16(firtaps));
 

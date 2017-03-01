@@ -1,142 +1,8 @@
-function [h,valid,err] = firpm_tfc(order, ff, amplitudes, frequencies, weights, varargin)
+function [h,valid,err] = firpm_cg(order, ff, amplitudes, frequencies, weights, varargin)
 %FIRPM Parks-McClellan optimal equiripple FIR filter design.
-%   B=FIRPM(N,F,A) returns a length N+1 linear phase (real, symmetric
-%   coefficients) FIR filter which has the best approximation to the
-%   desired frequency response described by F and A in the minimax sense. 
-%   F is a vector of frequency band edges in pairs, in ascending order
-%   between 0 and 1. 1 corresponds to the Nyquist frequency or half the
-%   sampling frequency. At least one frequency band must have a non-zero
-%   width. A is a real vector the same size as F which specifies the
-%   desired amplitude of the frequency response of the resultant filter B.
 %
-%   The desired response is the line connecting the points (F(k),A(k)) and
-%   (F(k+1),A(k+1)) for odd k; FIRPM treats the bands between F(k+1) and
-%   F(k+2) for odd k as "transition bands" or "don't care" regions. Thus
-%   the desired amplitude is piecewise linear with transition bands. The
-%   maximum error is minimized.
-%
-%   For filters with a gain other than zero at Fs/2, e.g., highpass
-%   and bandstop filters, N must be even.  Otherwise, N will be
-%   incremented by one. Alternatively, you can use a trailing 'h' flag to
-%   design a type 4 linear phase filter and avoid incrementing N.
-%
-%   B=FIRPM(N,F,A,W) uses the weights in W to weight the error. W has one
-%   entry per band (so it is half the length of F and A) which tells
-%   FIRPM how much emphasis to put on minimizing the error in each band
-%   relative to the other bands.
-%
-%   B=FIRPM(N,F,A,'Hilbert') and B=FIRPM(N,F,A,W,'Hilbert') design filters
-%   that have odd symmetry, that is, B(k) = -B(N+2-k) for k = 1, ..., N+1.
-%   A special case is a Hilbert transformer which has an approx. amplitude
-%   of 1 across the entire band, e.g. B=FIRPM(30,[.1 .9],[1 1],'Hilbert').
-%
-%   B=FIRPM(N,F,A,'differentiator') and B=FIRPM(N,F,A,W,'differentiator')
-%   also design filters with odd symmetry, but with a special weighting
-%   scheme for non-zero amplitude bands. The weight is assumed to be equal
-%   to the inverse of frequency times the weight W. Thus the filter has a
-%   much better fit at low frequency than at high frequency. This designs
-%   FIR differentiators.
-%
-%   B=FIRPM(...,{LGRID}), where {LGRID} is a one-by-one cell array
-%   containing an integer, controls the density of the frequency grid. The
-%   frequency grid size is roughly LGRID*N/2*BW, where BW is the fraction
-%   of the total band interval [0,1] covered by F. LGRID should be no less
-%   than its default of 16. Increasing LGRID often results in filters which
-%   are more exactly equiripple, at the expense of taking longer to
-%   compute.
-%
-%   [B,ERR]=FIRPM(...) returns the maximum ripple height ERR.
-%
-%   [B,ERR,RES]=FIRPM(...) returns a structure RES of optional results
-%   computed by FIRPM, and contains the following fields:
-%
-%      RES.fgrid: vector containing the frequency grid used in
-%                 the filter design optimization
-%        RES.des: desired response on fgrid
-%         RES.wt: weights on fgrid
-%          RES.H: actual frequency response on the grid
-%      RES.error: error at each point on the frequency grid (desired - actual)
-%      RES.iextr: vector of indices into fgrid of extremal frequencies
-%      RES.fextr: vector of extremal frequencies
-%
-%   FIRPM is now a "function function", similar to CFIRPM, allowing you
-%   to write a function which defines the desired frequency response.
-%
-%   B=FIRPM(N,F,@fresp,W) returns a length N+1 FIR filter which has the
-%   best approximation to the desired frequency response as returned by the
-%   function handle @fresp.  The function is called from within FIRPM using
-%   the syntax:
-%                    [DH,DW] = fresp(N,F,GF,W);
-%   where:
-%   N is the filter order.
-%   F is the vector of frequency band edges which must appear monotonically
-%     between 0 and +1, where 1 is the Nyquist  frequency.  The frequency
-%     bands span F(k) to F(k+1) for k odd; the intervals  F(k+1) to F(k+2)
-%     for k odd are "transition bands" or "don't care" regions during 
-%     optimization.
-%   GF is a vector of grid points which have been linearly interpolated
-%     over each specified frequency band by FIRPM, and determines the
-%     frequency grid at which the response function will be evaluated.
-%   W is a vector of real, positive weights, one per band, for use
-%     during optimization.  W is optional; if not specified, it is set
-%     to unity weighting before being passed to 'fresp'.
-%   DH and DW are the desired complex frequency response and
-%     optimization weight vectors, respectively, evaluated at each
-%     frequency in grid GF.
-%
-%   The predefined frequency response function handle for FIRPM is
-%   @firpmfrf, but you can write your own.  See the help for
-%   PRIVATE/FIRPMFRF for more information.
-%
-%   B=FIRPM(N,F,{@fresp,P1,P2,...},W) specifies optional arguments
-%   P1, P2, etc., to be passed to the response function handle @fresp.
-%
-%   B=FIRPM(N,F,A,W) is a synonym for B=FIRPM(N,F,{@firpmfrf,A},W),
-%   where A is a vector of response amplitudes at each band edge in F.
-%
-%   FIRPM normally designs symmetric (even) FIR filters. B=FIRPM(...,'h')
-%   and B=FIRPM(...,'d') design antisymmetric (odd) filters. Each frequency
-%   response function handle @fresp can tell FIRPM to design either an even
-%   or odd filter in the absence of the 'h' or 'd' flags.  This is done
-%   with:
-%         SYM = fresp('defaults',{N,F,[],W,P1,P2,...})
-%   FIRPM expects @fresp to return SYM = 'even' or SYM = 'odd'. If @fresp
-%   does not support this call, FIRPM assumes 'even' symmetry.
-%
-%   % Example of a length 31 lowpass filter:
-%   	h=firpm(30,[0 .1 .2 .5]*2,[1 1 0 0]);
-%
-%   % Example of a low-pass differentiator:
-%   	h=firpm(44,[0 .3 .4 1],[0 .2 0 0],'differentiator');
-%
-%   % Example of a type 4 highpass filter:
-%       h=firpm(25,[0 .4 .5 1],[0 0 1 1],'h');
-%
-%   See also FIRPMORD, CFIRPM, FIRLS, FIR1, FIR2, BUTTER, CHEBY1, CHEBY2,
-%            ELLIP, FREQZ, FILTER, DESIGNFILT.
-
-%   Author(s): L. Shure, 3-27-87
-%          L. Shure, 6-8-88, revised
-%          T. Krauss, 3-17-93, fixed hilbert bug 
-%          T. Krauss, 3-2-97, consolidated grid generation, function-function
-
-%   Copyright 1988-2013 The MathWorks, Inc.
-
-%   References:
-%     [1] "Programs for Digital Signal Processing", IEEE Press
-%          John Wiley & Sons, 1979, pg. 5.1-1.
-%     [2] "Selected Papers in Digital Signal Processing, II",
-%          IEEE Press, 1976, pg. 97.
-
-% Cast to enforce Precision rules
-%order = signal.internal.sigcasttofloat(order,'double','firpm','N','allownumeric');
-%ff = signal.internal.sigcasttofloat(ff,'double','firpm','F','allownumeric');
-
-%[nfilt,ff,grid,des,wt,ftype,sign_val,hilbert,neg] = firpminit(order, ff, aa, varargin{:});
-
-% amplitudes = aa{2};
-% frequencies = aa{3};
-% weights = aa{4};
+% This function is based on 'firpm' by The MathWorks Inc.
+%#codegen
 
 [grid,des,wt] = genWeights(order, ff, frequencies, weights, amplitudes);
 % Workaround
@@ -163,32 +29,9 @@ if neg && ~hilbert
 end
 
 
-% %
-% % arrange 'results' structure
-% %
-% if nargout > 2 
-%     res.fgrid = grid(:);
-%     res.des = des(:);
-%     res.wt = wt(:);
-%     res.H = freqz(h,1,res.fgrid*pi);
-%     if neg  % asymmetric impulse response
-%         linphase = exp(sqrt(-1)*(res.fgrid*pi*(order/2) - pi/2));
-%     else
-%         linphase = exp(sqrt(-1)*res.fgrid*pi*(order/2));
-%     end
-%     if hilbert
-%         res.error = real(des(:) + res.H.*linphase);
-%     else
-%         res.error = real(des(:) - res.H.*linphase);
-%     end
-%     res.iextr = iext(1:end-1);
-%     res.fextr = grid(res.iextr);  % extremal frequencies
-%     res.fextr = res.fextr(:);
-% end
-
-%% 
+%%
 function [grid,des,wt] = genWeights(filterOrder, bands, frequencies, weights, amplitudes)
-    
+
     lgrid = 16;
     grid = firpmgrid_cg(filterOrder+1,lgrid,bands,0,0);
 
@@ -692,4 +535,3 @@ for l=1:m
 end
 y=1/y;
 % EOF
-

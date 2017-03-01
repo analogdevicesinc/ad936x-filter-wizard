@@ -1,16 +1,8 @@
 function [a,b,c,d] = zp2ss_cg(z,p,k)
 %ZP2SS  Zero-pole to state-space conversion. Codegen support
-%[z,p,k,isSIMO] = parse_input(z,p,k);
-isSIMO = 0;
-
-% if isSIMO
-%     % If it's multi-output, we can't use the nice algorithm
-%     % that follows, so use the numerically unreliable method
-%     % of going through polynomial form, and then return.
-%     [num,den] = zp2tf(z,p,k); % Suppress compile-time diagnostics
-%     [a,b,c,d] = tf2ss(num,den);
-%     return
-% end
+%
+% This function is based on 'zp2ss' by The MathWorks Inc.
+%#codegen
 
 % Strip infinities and throw away.
 pF = p(isfinite(p));
@@ -49,18 +41,18 @@ end
 
 % If odd number of poles only, convert the pole at the
 % end into state-space.
-%  H(s) = 1/(s-p1) = 1/(s + den(2)) 
+%  H(s) = 1/(s-p1) = 1/(s + den(2))
 if rem(np,2)
     a = pF(np);
     b = 1;
     c = 1;
     d = 0;
     np = np - 1;
-end 
+end
 
 % If odd number of zeros only, convert the zero at the
 % end, along with a pole-pair into state-space.
-%   H(s) = (s+num(2))/(s^2+den(2)s+den(3)) 
+%   H(s) = (s+num(2))/(s^2+den(2)s+den(3))
 if rem(nz,2)
     num = real(poly(zF(nz)));
     den = real(poly(pF(np-1:np)));
@@ -75,7 +67,7 @@ if rem(nz,2)
     np = np - 2;
 end
 
-% Now we have an even number of poles and zeros, although not 
+% Now we have an even number of poles and zeros, although not
 % necessarily the same number - there may be more poles.
 %   H(s) = (s^2+num(2)s+num(3))/(s^2+den(2)s+den(3))
 % Loop through rest of pairs, connecting in series to build the model.
@@ -91,8 +83,8 @@ while i < nz
     b1 = t\[1; 0];
     c1 = [num(2)-den(2) num(3)-den(3)]*t;
     d1 = 1;
-    % [a,b,c,d] = series(a,b,c,d,a1,b1,c1,d1); 
-    % Next lines perform series connection 
+    % [a,b,c,d] = series(a,b,c,d,a1,b1,c1,d1);
+    % Next lines perform series connection
     ma1 = size(a,1);
     na2 = size(a1,2);
     a = [a zeros(ma1,na2); b1*c a1];
@@ -115,7 +107,7 @@ while i < np
     c1 = [0 1]*t;
     d1 = 0;
     % [a,b,c,d] = series(a,b,c,d,a1,b1,c1,d1);
-    % Next lines perform series connection 
+    % Next lines perform series connection
     ma1 = size(a,1);
     na2 = size(a1,2);
     a = [a zeros(ma1,na2); b1*c a1];

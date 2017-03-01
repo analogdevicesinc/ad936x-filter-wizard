@@ -69,7 +69,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             end
         end
         % Create MAT file for generated tests and generate tests
-        function GenTesMATtFiles(testCase)
+        function GenTestMATFiles(testCase)
             if ~testCase.passedCodegenDLL || ~testCase.settingsLoaded
                 error('Must generate code first and load settings');
             end
@@ -135,6 +135,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             end
             delete('TestToBeGenerated_tx_mex.*')
             delete('TestToBeGenerated_rx_mex.*')
+            delete('ad9361_settings_processed_test.mat')
         end
     end
     
@@ -163,23 +164,18 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
         function input = modifyInput(input,config)
             cFields = fields(config);
             for field = 1:length(cFields)
-                if strcmp(cFields{field},'txrx')
+                if strcmp(cFields{field},'txrx')% This field must be set by the user first
                     continue;
                 end
                 input = setfield(input, cFields{field}, getfield(config,cFields{field})); %#ok<SFLD,GFLD>
             end
         end
         
-        % Pass code to raspberry pi
-        function runOnPi()
-            
-        end
-        
     end
     
     methods % Non-Static Test Scaffolding
         
-        
+        % This will test the mexed designer with int_FIR=1
         function testFunctionGeneral(testCase,config)
             if ~testCase.passedCodegenMEX || ~testCase.settingsLoaded
                 error('Must generate code first and load settings');
@@ -203,10 +199,11 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 cgResultFirtaps = call_filter_designer_cg(input,true); % codegen mex
                 refResult = internal_design_filter(input); % reference
                 % Evaluate errors
-                testCase.verifyEqual(cgResultFirtaps,refResult.firtaps);
+                testCase.verifyEqual(cgResultFirtaps,int16(refResult.firtaps));
             end
             
         end
+        % This will test the mexed designer with int_FIR=0
         function testFunctionGeneralLengthCheck(testCase,config)
             if ~testCase.passedCodegenMEX || ~testCase.settingsLoaded
                 error('Must generate code first and load settings');
@@ -231,11 +228,11 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 refResult = internal_design_filter(input); % reference
                 % Evaluate errors
                 testCase.verifyEqual(length(cgResultFirtaps),length(refResult.firtaps));
-                testCase.verifyEqual(cgResultFirtaps,refResult.firtaps,'AbsTol',3);
+                testCase.verifyEqual(double(cgResultFirtaps),double(int16(refResult.firtaps)),'AbsTol',3);
             end
             
         end
-        
+        % This will test the generated DLL file with a mex wrapper
         function testGeneratedFunctionGeneral(testCase,config)
             if ~testCase.passedCodegenMEX || ~testCase.settingsLoaded
                 error('Must generate code first and load settings');
@@ -267,10 +264,50 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 else
                     firtaps = TestToBeGenerated_rx_mex();
                 end
-                testCase.verifyEqual(firtaps,refResult.firtaps);
+                testCase.verifyEqual(firtaps,int16(refResult.firtaps));
             end
             
         end
+        % This will test the generated DLL file with a mex wrapper with
+        % int_FIR=0
+        function testGeneratedFunctionGeneralLengthCheck(testCase,config)
+            if ~testCase.passedCodegenMEX || ~testCase.settingsLoaded
+                error('Must generate code first and load settings');
+            end
+            % Get settings
+            if strcmp(config.txrx,'tx')
+                txrx = testCase.ad9361_settings.tx;
+            else
+                txrx = testCase.ad9361_settings.rx;
+            end
+            frt = fields(txrx);
+            % Test all configurations LTE5-20
+            for s = 1:length(fields(txrx))
+                % Build input
+                str = char(frt{s});
+                in = getfield(txrx,str); %#ok<GFLD>
+                input = testCase.input_cooker(in);
+                % Update settings based on config
+                input = testCase.modifyInput(input,config);
+                % Save test data to file
+                filename = 'ad9361_settings_processed_test';
+                refResult = internal_design_filter(input); % reference
+                firtaps = refResult.firtaps; %#ok<NASGU>
+                % Save to file
+                save(filename, 'firtaps', 'input');
+                % Test
+                if strcmp(config.txrx,'tx')
+                    firtaps = TestToBeGenerated_tx_mex();
+                else
+                    firtaps = TestToBeGenerated_rx_mex();
+                end
+                % Evaluate errors
+                testCase.verifyEqual(length(firtaps),length(refResult.firtaps));
+                testCase.verifyEqual(double(firtaps),double(int16(refResult.firtaps)),'AbsTol',3);
+            end
+            
+        end
+        
         
     end
     
@@ -308,7 +345,14 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             config.txrx = 'rx';
             testCase.testGeneratedFunctionGeneral(config);
         end
-        
+        % Test DLL results with best length FIR
+        function testRXNonStandardFIRDLL(testCase)
+            config = struct;
+            config.txrx = 'rx';
+            config.int_FIR = 0;
+            testCase.testGeneratedFunctionGeneralLengthCheck(config);
+        end
+
         %%%% TX
         
         % Test MEX results with reference without EQ
@@ -336,6 +380,13 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             config = struct;
             config.txrx = 'tx';
             testCase.testGeneratedFunctionGeneral(config);
+        end
+        % Test DLL results with best length FIR
+        function testTXNonStandardFIRDLL(testCase)
+            config = struct;
+            config.txrx = 'tx';
+            config.int_FIR = 0;
+            testCase.testGeneratedFunctionGeneralLengthCheck(config);
         end
     end
     

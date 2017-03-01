@@ -1,8 +1,10 @@
 function [num, den, z, p] = butter_cg(n, Wn, varargin)
 %BUTTER_CG Butterworth digital and analog filter design.  Codegen support
+%
+% This function is based on 'butter' by The MathWorks Inc.
+%#codegen
 
-
-%[btype,analog,errStr,msgobj] = iirchk(Wn,varargin{:});
+% Set types we will only use
 btype = 1; analog = 1;
 
 if n>500
@@ -46,13 +48,13 @@ n = double(n);
 % step 4: Transform to lowpass, bandpass, highpass, or bandstop of desired Wn
 if btype == 1		% Lowpass
     [a,b,c,d] = lp2lp_cg(a,b,c,d,Wn);
-    
+
 elseif btype == 2	% Bandpass
     [a,b,c,d] = lp2bp(a,b,c,d,Wn,Bw);
-    
+
 elseif btype == 3	% Highpass
     [a,b,c,d] = lp2hp(a,b,c,d,Wn);
-    
+
 elseif btype == 4	% Bandstop
     [a,b,c,d] = lp2bs(a,b,c,d,Wn,Bw);
 end
@@ -79,7 +81,7 @@ else	% nargout <= 3
         den = poly(a);
         num = buttnum(btype,n,Wn,Bw,analog,den);
         % num = poly(a-b*c)+(d-1)*den;
-        
+
     end
 end
 
@@ -154,5 +156,3 @@ else
             z = exp(1i*Wn*( (-1).^(0:2*n-1)' ));
     end
 end
-
-

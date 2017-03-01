@@ -15,21 +15,13 @@
 % grpdelay
 % butter
 %
-% -Disabled features
-% Fixed-Point taps (mostly works)
-% grpdelay (half way done)
-%
 % -Never possible
 % Object generation
 % Hmiddle generation
 % Hanalog generation
 
-% QUESTIONS:
-% 457 and 465 what are the purposes of these conditionals?
-
 % Todo:
-% - Add comments, especially structural comments to segment code properly
-% - Set fractionalLength based on FSR of input
+% - Set fractionalLength based on FSR of inputs (ML has no doc on this)
 
 %
 % Inputs (structure containing the following fields)
@@ -49,10 +41,6 @@
 % Outputs (structure containing the following fields)
 % ===============================================
 % firtaps          = fixed point FIR coefficients
-%
-% Apass_actual     = actual passband ripple
-% Astop_actual     = actual stopband attentuation
-% delay            = actual delay used in phase equalization
 
 function [outputTaps] = internal_design_filter_cg(...
     Rdata,...
@@ -77,6 +65,21 @@ function [outputTaps] = internal_design_filter_cg(...
     wnom,...
     FIRdBmin,...
     int_FIR)
+%%%%%%%%%%%%%%%%%%%% Perform Input Checks
+
+% Scalar checks
+doubleTypes = {Rdata,Fpass,Fstop,caldiv,FIR,HB1,PLL_mult,Apass,Astop,...
+    phEQ,HB2,HB3,RFbw,DAC_div,converter_rate,PLL_rate,Fcenter,wnom,...
+    FIRdBmin,int_FIR};
+for t = 1:length(doubleTypes)
+    assert(isa(doubleTypes{t},'double') && ...
+        isreal(doubleTypes{t}) && ...
+        all(size(doubleTypes{t}) == [1,1]));
+end
+
+% String checks
+assert(isa(Type,'char') && isreal(Type) && all(size(Type) == [1,7])); % This is unused
+assert(isa(RxTx,'char') && isreal(RxTx) && all(size(RxTx) == [1,2]));
 
 
 %%%%%%%%%%%%%%%%%%%% Build processing struct
@@ -94,7 +97,7 @@ input.Astop = Astop;
 input.phEQ = phEQ;
 input.HB2 = HB2;
 input.HB3 = HB3;
-input.Type = Type;
+input.Type = Type; % Not used
 input.RxTx = RxTx;
 input.RFbw = RFbw;
 input.DAC_div = DAC_div;
@@ -111,32 +114,32 @@ input.int_FIR = int_FIR;
 %% Design analog filters
 if strcmp(input.RxTx, 'Rx')
     wTIA = input.wnom*(2.5/1.4);
-    
+
     % Define the analog filters (for design purpose)
     [b1,a1] = butter_cg(1,2*pi*wTIA,'s');  % 1st order
     [b2,a2] = butter_cg(3,2*pi*input.wnom,'s');    % 3rd order
-    
+
     % Define the digital filters with fixed coefficients
     allpass_coeff = 1;
     hb1_coeff = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
     hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
     hb3_coeff = 2^(-4)*[1 4 6 4 1];
     dec_int3_coeff = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 4041 1914 0 -580 -393 0 83 55];
-    
+
 else
     wreal = input.wnom*(5.0/1.6);
-    
+
     % Define the analog filters (for design purpose)
     [b1,a1] = butter_cg(3,2*pi*input.wnom,'s');     % 3rd order
     [b2,a2] = butter_cg(1,2*pi*wreal,'s');  % 1st order
-    
+
     % Define the digital filters with fixed coefficients
     allpass_coeff = 1;
     hb1_coeff = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
     hb2_coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
     hb3_coeff = 2^(-2)*[1 2 1];
     dec_int3_coeff = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
-    
+
 end
 
 %% Configure staging of filters
@@ -174,10 +177,10 @@ combinedResponse = generateCascadedResponseRx(enables,w,input.converter_rate,...
     hb1_coeff,...
     hb2_coeff,...
     hb3_coeff,...
-    dec_int3_coeff,[],[]);
+    dec_int3_coeff,[]);
 
 % Determine overall response with analog filters inline
-assert( strcmp(input.RxTx, 'Rx') || strcmp(input.RxTx, 'Tx'), 'RxTx must be set to Rx or Tx'); 
+assert( strcmp(input.RxTx, 'Rx') || strcmp(input.RxTx, 'Tx'), 'RxTx must be set to Rx or Tx');
 response = combinedResponse.*analogresp(input.RxTx,w,input.converter_rate,b1,a1,b2,a2);
 
 invariance = real(response).^2+imag(response).^2;
@@ -219,7 +222,7 @@ combinedResponse = generateCascadedResponseRx(enables,omega,input.converter_rate
     hb1_coeff,...
     hb2_coeff,...
     hb3_coeff,...
-    dec_int3_coeff,[],[]);
+    dec_int3_coeff,[]);
 
 % Determine overall response with analog filters inline
 assert( strcmp(input.RxTx, 'Rx') || strcmp(input.RxTx, 'Tx'), 'RxTx must be set to Rx or Tx');
@@ -253,7 +256,7 @@ combinedResponse = generateCascadedResponseRx(enables,omega2(Gpass+2:end),input.
     hb1_coeff,...
     hb2_coeff,...
     hb3_coeff,...
-    dec_int3_coeff,[],[]);
+    dec_int3_coeff,[]);
 
 assert( strcmp(input.RxTx, 'Rx') || strcmp(input.RxTx, 'Tx'), 'RxTx must be set to Rx or Tx');
 wg1 = abs(combinedResponse.*analogresp(input.RxTx,omega2(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
@@ -267,7 +270,8 @@ wg = max(wg2,wg3);
 grid = fg2;
 if input.phEQ == -1
     resp = abs(rgN);
-else resp = rgN;
+else
+    resp = rgN;
 end
 weight = [w wg];
 weight = weight/max(weight);
@@ -308,11 +312,11 @@ Astop_actual_vector = zeros(N/16,1);
 i = 1;
 
 %% Design filter
-while (1)    
-    
+while (1)
+
     if input.int_FIR
         ccoef = firpm_cg(N-1, [F1(1),F1(end),F2(1),F2(end)], [A1,A2], [F1,F2], [W1,W2]);
-    else 
+    else
         % Check different designs until we reach required ripple condition
         R = db2mag(-input.Astop); % Peak Ripple
         ccoef = 0; % Predef type
@@ -323,9 +327,9 @@ while (1)
                 break
             end
         end
-    end 
+    end
     M = length(ccoef);
-    
+
     if input.phEQ ~= -1
         sg = 0.5-grid(end:-1:1);
         sr = imag(resp(end:-1:1));
@@ -342,7 +346,7 @@ while (1)
             MN = M-1;
         end
         scoef = firpm_cg(MN, [F3(1),F3(end),F4(1),F4(end)], [A3,A4], [F3,F4], [W3,W4]);
-        
+
         for k = 1:length(scoef)
             scoef(k) = -scoef(k)*(-1)^(k-1);
         end
@@ -353,7 +357,7 @@ while (1)
 
     signed = true; wordlength = 16; fractionlength = 16; % TODO: Set fractionalLength based on FSR of input
     tap_store(i,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,fractionlength));
-    
+
     rg_pass = 0; %#ok<NASGU>
     rg_stop = 0; %#ok<NASGU>
     if strcmp(input.RxTx, 'Rx')
@@ -362,40 +366,39 @@ while (1)
             hb1_coeff,...
             hb2_coeff,...
             hb3_coeff,...
-            dec_int3_coeff,tap_store(i,1:M),[]);
+            dec_int3_coeff,tap_store(i,1:M));
         combinedResponseStop = generateCascadedResponseRx(enables,omega2(Gpass+2:end),input.converter_rate,...
             allpass_coeff,...
             hb1_coeff,...
             hb2_coeff,...
             hb3_coeff,...
-            dec_int3_coeff,tap_store(i,1:M),[]);
-        
+            dec_int3_coeff,tap_store(i,1:M));
+
         rg_pass = abs(analogresp('Rx',omega2(1:Gpass+1),input.converter_rate,b1,a1,b2,a2).*combinedResponsePass);
         rg_stop = abs(analogresp('Rx',omega2(Gpass+2:end),input.converter_rate,b1,a1,b2,a2).*combinedResponseStop);
-    else
+    else % TX
         combinedResponsePass = generateCascadedResponseRx(enables,omega2(1:Gpass+1),input.converter_rate,...
             allpass_coeff,...
             hb1_coeff,...
             hb2_coeff,...
             hb3_coeff,...
-            dec_int3_coeff,tap_store(i,1:M),[]);
-        
+            dec_int3_coeff,tap_store(i,1:M));
         combinedResponseStop = generateCascadedResponseRx(enables,omega2(Gpass+2:end),input.converter_rate,...
             allpass_coeff,...
             hb1_coeff,...
             hb2_coeff,...
             hb3_coeff,...
-            dec_int3_coeff,tap_store(i,1:M),[]);
-        
+            dec_int3_coeff,tap_store(i,1:M));
+
         rg_pass = abs(combinedResponsePass.*analogresp('Tx',omega2(1:Gpass+1),input.converter_rate,b1,a1,b2,a2));
         rg_stop = abs(combinedResponseStop.*analogresp('Tx',omega2(Gpass+2:end),input.converter_rate,b1,a1,b2,a2));
-        
+
     end
-    
+
     % quantitative values about actual passband and stopband
     Apass_actual_vector(i) = mag2db(max(rg_pass))-mag2db(min(rg_pass));
     Astop_actual_vector(i) = -mag2db(max(rg_stop));
-    
+
     if input.int_FIR == 0
         h = tap_store(1,1:M);
         Apass_actual = Apass_actual_vector(1);
@@ -452,7 +455,7 @@ firTapsPreScale(1:numTaps) = h;
 
 %gd2c = grpdelay(Hmd,omega1,clkFIR).*(1/clkFIR);
 % gd2 = grpdelay_cg(firTapsPreScale,1,omega1,clkFIR).'.*(1/clkFIR);
-% 
+%
 % if input.phEQ == -1
 %     groupdelay = gd1 + gd2;
 % else
@@ -492,13 +495,7 @@ end
 
 %% Scale taps
 bTFIR = 16 - aTFIR;
-firtaps = firTapsPreScale.*(2^bTFIR);
-% 
-% if length(firtaps) < 128
-%     firtaps = [firtaps,zeros(1,128-length(firtaps))];
-% end
-
-
+firtaps = int16(firTapsPreScale.*(2^bTFIR));
 
 %output = input;
 
@@ -514,7 +511,7 @@ firtaps = firTapsPreScale.*(2^bTFIR);
 % %output.Hm4 = Hm4;
 % %output.Hmd = Hmd;
 % output.enables = enables;
-% 
+%
 % % internal fields used by the GUI
 % %output.Hanalog = Hanalog;
 % output.Apass_actual = Apass_actual;
@@ -574,6 +571,3 @@ t(k) = (-1/360) * (((phase(k) - phase(k - 1))/(freq(k) - freq(k - 1))));
 
 function d = to_char(c)
 d = char(48+int8(c));
-
-        
-        
