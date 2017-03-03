@@ -129,7 +129,9 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
     methods(TestClassTeardown)
         function removeCodegenFiles(testCase)
             % Remove generated code
-            [~,~,~] = rmdir('codegen','s');
+            if testCase.passedCodegenDLL && testCase.passedCodegenMEX
+                [~,~,~] = rmdir('codegen','s');
+            end
             if ismac
                 delete([testCase.functionName,'.dylib']);
             end
