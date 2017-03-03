@@ -27,4 +27,3 @@ cfg.CustomSource = 'ex_main.cpp';
 cfg.CustomInclude = 'cpp';
 outputEXEName = 'designer';
 result = codegen('-config','cfg',functionName,'-O ','disable:openmp','-args', args,'-o',outputEXEName);
-2dntv
