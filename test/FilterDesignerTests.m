@@ -58,14 +58,14 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             input = process_input(inputVar); %#ok<NASGU>
             %% Call codegen
             %cfg = coder.config('dll','ecoder',true);
-            cfg = coder.config('dll');
+            cfg = coder.config('lib');
             cfg.TargetLang='C++';
             cfg.FilePartitionMethod='SingleFile';
             result = codegen('-config','cfg',testCase.functionName,'-O ','disable:openmp','-args',testCase.args2);
             testCase.passedCodegenDLL = result.summary.passed;
             testCase.verifyTrue(result.summary.passed);
             if testCase.passedCodegenDLL && ismac % Move library to root (rpath is buggy on mac)
-                !mv codegen/dll/internal_design_filter_cg/internal_design_filter_cg.dylib .
+                !mv codegen/lib/internal_design_filter_cg/internal_design_filter_cg.a .
             end
         end
         % Create MAT file for generated tests and generate tests
@@ -87,14 +87,14 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             cfg = coder.config('mex');
             cfg.TargetLang='C++';
             if ismac
-                cfg.CustomLibrary = [testCase.functionName,'.dylib'];
+                cfg.CustomLibrary = [testCase.functionName,'.a'];
             elseif isunix
-                cfg.CustomLibrary = [testCase.functionName,'.so'];
+                cfg.CustomLibrary = [testCase.functionName,'.a'];
             else
-                cfg.CustomLibrary = [testCase.functionName,'.dll'];
+                cfg.CustomLibrary = [testCase.functionName,'.lib'];
             end
             additionalSource = {[testCase.functionName,'.h']};
-            cfg.CustomInclude = ['codegen/dll/',testCase.functionName,'/'];
+            cfg.CustomInclude = ['codegen/lib/',testCase.functionName,'/'];
             result = codegen('-config','cfg','TestToBeGenerated',...
                 additionalSource{:},'-o','TestToBeGenerated_rx_mex');
             testCase.verifyTrue(result.summary.passed);
@@ -110,14 +110,14 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             cfg = coder.config('mex');
             cfg.TargetLang='C++';
             if ismac
-                cfg.CustomLibrary = [testCase.functionName,'.dylib'];
+                cfg.CustomLibrary = [testCase.functionName,'.a'];
             elseif isunix
-                cfg.CustomLibrary = [testCase.functionName,'.so'];
+                cfg.CustomLibrary = [testCase.functionName,'.a'];
             else
-                cfg.CustomLibrary = [testCase.functionName,'.dll'];
+                cfg.CustomLibrary = [testCase.functionName,'.lib'];
             end
             additionalSource = {[testCase.functionName,'.h']};
-            cfg.CustomInclude = ['codegen/dll/',testCase.functionName,'/'];
+            cfg.CustomInclude = ['codegen/lib/',testCase.functionName,'/'];
             result = codegen('-config','cfg','TestToBeGenerated',...
                 additionalSource{:},'-o','TestToBeGenerated_tx_mex');
             testCase.verifyTrue(result.summary.passed);
@@ -133,7 +133,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 [~,~,~] = rmdir('codegen','s');
             end
             if ismac
-                delete([testCase.functionName,'.dylib']);
+                delete([testCase.functionName,'.a']);
             end
             delete('TestToBeGenerated_tx_mex.*')
             delete('TestToBeGenerated_rx_mex.*')
