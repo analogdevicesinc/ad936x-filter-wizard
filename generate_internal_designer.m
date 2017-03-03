@@ -1,6 +1,6 @@
 % Example generation of code for internal_filter_designer_cg.m
 
-addpath(genpath('Testing')); % Grab helper functions to manage structs
+addpath(genpath('test')); % Grab helper functions to manage structs
 a = load('ad9361_settings.mat');
 inputVar = a.ad9361_settings.tx.LTE5;
 % Fill out necessary fields
@@ -27,3 +27,4 @@ cfg.CustomSource = 'ex_main.cpp';
 cfg.CustomInclude = 'cpp';
 outputEXEName = 'designer';
 result = codegen('-config','cfg',functionName,'-O ','disable:openmp','-args', args,'-o',outputEXEName);
+2dntv
