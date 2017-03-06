@@ -12,7 +12,7 @@ functionName = 'internal_design_filter_cg';
 % This will generate code in the codegen folder and compile a dll/so/dylib
 % with the necessary headers
 cfg = coder.config('dll');
-cfg.TargetLang = 'C++';
+cfg.TargetLang = 'C';
 cfg.FilePartitionMethod = 'SingleFile';
 cfg.GenCodeOnly = true;
 outputLIBName = 'libinternal_filter_designer';
