@@ -14,16 +14,7 @@ functionName = 'internal_design_filter_cg';
 cfg = coder.config('dll');
 cfg.TargetLang = 'C++';
 cfg.FilePartitionMethod = 'SingleFile';
+cfg.GenCodeOnly = true;
 outputLIBName = 'libinternal_filter_designer';
 result = codegen('-config','cfg',functionName,'-O ','disable:openmp','-args', args,'-o',outputLIBName);
 
-%% Build executable
-% This will generate code in the codegen folder and compile an exe with the
-% ex_main.cpp file provided in the 'cpp' folder
-cfg = coder.config('exe');
-cfg.TargetLang = 'C++';
-cfg.FilePartitionMethod = 'SingleFile';
-cfg.CustomSource = 'ex_main.cpp';
-cfg.CustomInclude = 'cpp';
-outputEXEName = 'designer';
-result = codegen('-config','cfg',functionName,'-O ','disable:openmp','-args', args,'-o',outputEXEName);
