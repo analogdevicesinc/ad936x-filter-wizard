@@ -18,8 +18,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
     %  test.run()
     
     properties
-        args = '{Rdata, Fpass,Fstop,caldiv,FIR,HB1,PLL_mult,Apass,Astop,phEQ,HB2,HB3,Type,RxTx,RFbw,DAC_div,converter_rate,PLL_rate,Fcenter,wnom,FIRdBmin,int_FIR}';
-        args2 = '{input.Rdata, input.Fpass, input.Fstop, input.caldiv, input.FIR, input.HB1, input.PLL_mult, input.Apass, input.Astop, input.phEQ, input.HB2, input.HB3, input.Type, input.RxTx, input.RFbw, input.DAC_div, input.converter_rate, input.PLL_rate, input.Fcenter, input.wnom, input.FIRdBmin, input.int_FIR}';
+        args = '{input.Rdata, input.Fpass, input.Fstop, input.caldiv, input.FIR, input.HB1, input.PLL_mult, input.Apass, input.Astop, input.phEQ, input.HB2, input.HB3, input.Type, input.RxTx, input.RFbw, input.DAC_div, input.converter_rate, input.PLL_rate, input.Fcenter, input.wnom, input.FIRdBmin, input.int_FIR}';
         functionName = 'internal_design_filter_cg';
         passedCodegenMEX = false;
         passedCodegenDLL = false;
@@ -42,10 +41,9 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             % Fill out necessary fields
             input = process_input(inputVar); %#ok<NASGU>
             %% Call codegen
-            %cfg = coder.config('mex','ecoder',true);
             cfg = coder.config('mex');
             cfg.TargetLang='C++';
-            result = codegen('-config','cfg',testCase.functionName,'-args',testCase.args2);
+            result = codegen('-config','cfg',testCase.functionName,'-args',testCase.args);
             testCase.passedCodegenMEX = result.summary.passed;
             testCase.verifyTrue(result.summary.passed);
         end
@@ -57,11 +55,10 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             % Fill out necessary fields
             input = process_input(inputVar); %#ok<NASGU>
             %% Call codegen
-            %cfg = coder.config('dll','ecoder',true);
             cfg = coder.config('lib');
             cfg.TargetLang='C++';
             cfg.FilePartitionMethod='SingleFile';
-            result = codegen('-config','cfg',testCase.functionName,'-O ','disable:openmp','-args',testCase.args2);
+            result = codegen('-config','cfg',testCase.functionName,'-O ','disable:openmp','-args',testCase.args);
             testCase.passedCodegenDLL = result.summary.passed;
             testCase.verifyTrue(result.summary.passed);
             if testCase.passedCodegenDLL && ismac % Move library to root (rpath is buggy on mac)

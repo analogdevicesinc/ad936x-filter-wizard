@@ -8,9 +8,9 @@ input = process_input(inputVar);
 args = '{input.Rdata, input.Fpass, input.Fstop, input.caldiv, input.FIR, input.HB1, input.PLL_mult, input.Apass, input.Astop, input.phEQ, input.HB2, input.HB3, input.Type, input.RxTx, input.RFbw, input.DAC_div, input.converter_rate, input.PLL_rate, input.Fcenter, input.wnom, input.FIRdBmin, input.int_FIR}';
 functionName = 'internal_design_filter_cg';
 
-%% Build library
-% This will generate code in the codegen folder and compile a dll/so/dylib
-% with the necessary headers
+%% Generate code
+% This will generate code in the codegen folder which can be compiled into 
+% a dll/so/dylib with the necessary headers
 cfg = coder.config('dll');
 cfg.TargetLang = 'C';
 cfg.FilePartitionMethod = 'SingleFile';

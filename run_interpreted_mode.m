@@ -1,5 +1,5 @@
 %% Generate example coefficients in interpreted mode
-
+addpath(genpath('test')); % Grab helper functions to manage structs
 % Get example config
 a = load('ad9361_settings.mat');
 in = a.ad9361_settings.tx.LTE5;

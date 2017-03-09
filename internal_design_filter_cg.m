@@ -8,39 +8,47 @@
 % When calling this function utilize the function "process_input" to make
 % sure all the necessary fields exist
 %
-% -Functions requiring modification or replacement
-% freqz
-% freqs
-% fdesign
-% grpdelay
-% butter
-%
-% -Never possible
-% Object generation
-% Hmiddle generation
-% Hanalog generation
-
 % Todo:
 % - Set fractionalLength based on FSR of inputs (ML has no doc on this)
 
 %
-% Inputs (structure containing the following fields)
+% Inputs
 % ============================================
-% Rdata      = input/output sample data rate (in Hz)
+% Rdata      = Input/output sample data rate (in Hz)
+% Fpass      = Passband frequency (in Hz)
+% Fstop      = Stopband frequency (in Hz)
+% caldiv     = The actual discrete register value that describes the
+%              rolloff for the analog filters
 % FIR        = FIR interpolation/decimation factor
+% HB1        = HB1 interpolation/decimation rates
 % PLL_mult   = PLL multiplication
-% Fpass      = passband frequency (in Hz)
-% Fstop      = stopband frequency (in Hz)
-% Apass      = max ripple allowed in passband (in dB)
-% Astop      = min attenuation in stopband (in dB)
-% FIRdBmin   = min rejection that FIR is required to have (in dB)
-% phEQ       = phase equalization on (not -1)/off (-1)
-% int_FIR    = use AD9361 FIR on (1)/off (0)
+% Apass      = Max ripple allowed in passband (in dB)
+% Astop      = Min attenuation in stopband (in dB)
+% phEQ       = Phase equalization on (not -1)/off (-1)
+% HB2        = HB2 interpolation/decimation rates
+% HB3        = HB3 interpolation/decimation rates
+% Type       = The type of filter required. one of:
+%              'Lowpass' (default,and only support)
+%              'Bandpass' (Not implemented)
+%              'Equalize' (Not implemented)
+%              'Root Raised Cosine' (Not implemented)
+% RxTx       = Is this 'Rx' or 'Tx'?.
+% RFbw
+% DAC_div    = The ADC/DAC ratio, for Rx channels, this is
+%              always '1', for Tx, it is either '1' or '2'
+% converter_rate = Rate of converter
+% PLL_rate   = the PLL rate in Hz
+% Fcenter    = Center Frequency in Hz (only used for Bandpass),
+%              otherwise 0
 % wnom       = analog cutoff frequency (in Hz)
+% FIRdBmin   = min rejection that FIR is required to have (in dB)
+% int_FIR    = use AD9361 FIR on (1)/off (0)
 %
-% Outputs (structure containing the following fields)
+% Outputs
 % ===============================================
 % firtaps          = fixed point FIR coefficients
+
+%#codegen
 
 function [outputTaps] = internal_design_filter_cg(...
     Rdata,...
@@ -107,9 +115,6 @@ input.Fcenter = Fcenter;
 input.wnom = wnom;
 input.FIRdBmin = FIRdBmin;
 input.int_FIR = int_FIR;
-
-
-%%%%%%%%%%%%%%%%%%%% RX PATH
 
 %% Design analog filters
 if strcmp(input.RxTx, 'Rx')
@@ -276,7 +281,7 @@ end
 weight = [w wg];
 weight = weight/max(weight);
 
-% design FIR filter
+%% Set up design for FIR filter
 cr = real(resp);
 F1 = grid(1:Gpass+1)*2;
 F2 = grid(Gpass+2:end)*2;
@@ -329,7 +334,7 @@ while (1)
         end
     end
     M = length(ccoef);
-
+    % Enable phase equalization and apply update to taps
     if input.phEQ ~= -1
         sg = 0.5-grid(end:-1:1);
         sr = imag(resp(end:-1:1));
@@ -401,18 +406,18 @@ while (1)
 
     if input.int_FIR == 0
         h = tap_store(1,1:M);
-        Apass_actual = Apass_actual_vector(1);
-        Astop_actual = Astop_actual_vector(1);
+        %Apass_actual = Apass_actual_vector(1);
+        %Astop_actual = Astop_actual_vector(1);
         break
     elseif Apass_actual_vector(1) > input.Apass || Astop_actual_vector(1) < input.Astop
         h = tap_store(1,1:N);
-        Apass_actual = Apass_actual_vector(1);
-        Astop_actual = Astop_actual_vector(1);
+        %Apass_actual = Apass_actual_vector(1);
+        %Astop_actual = Astop_actual_vector(1);
         break
     elseif Apass_actual_vector(i) > input.Apass || Astop_actual_vector(i) < input.Astop
         h = tap_store(i-1,1:N+16);
-        Apass_actual = Apass_actual_vector(i-1);
-        Astop_actual = Astop_actual_vector(i-1);
+        %Apass_actual = Apass_actual_vector(i-1);
+        %Astop_actual = Astop_actual_vector(i-1);
         break
     else
         N = N-16;
@@ -465,33 +470,33 @@ firTapsPreScale(1:numTaps) = h;
 
 %% Determine Gains
 aTFIR = 1 + ceil(log2(max(firTapsPreScale)));
-switch aTFIR
-    case 2
-        gain = 6;
-    case 1
-        gain = 0;
-    case 0
-        gain = -6;
-    otherwise
-        gain = -12;
-end
-
-if strcmp(input.RxTx, 'Rx')
-    if aTFIR > 2
-        gain = 6;
-    end
-else
-    if input.FIR == 2
-        gain = gain+6;
-    elseif input.FIR == 4
-        gain = gain+12;
-    end
-    if gain > 0
-        gain = 0;
-    elseif gain < -6
-        gain = -6;
-    end
-end
+% switch aTFIR
+%     case 2
+%         gain = 6;
+%     case 1
+%         gain = 0;
+%     case 0
+%         gain = -6;
+%     otherwise
+%         gain = -12;
+% end
+% 
+% if strcmp(input.RxTx, 'Rx')
+%     if aTFIR > 2
+%         gain = 6;
+%     end
+% else
+%     if input.FIR == 2
+%         gain = gain+6;
+%     elseif input.FIR == 4
+%         gain = gain+12;
+%     end
+%     if gain > 0
+%         gain = 0;
+%     elseif gain < -6
+%         gain = -6;
+%     end
+% end
 
 %% Scale taps
 bTFIR = 16 - aTFIR;
@@ -535,7 +540,7 @@ output = f-fs*floor(f/fs+0.5);
 
 % coerces the normalized cutoff frequency passed between 0.0 and 1.0
 % for digital Butterworth filter designs
-function Wn = coerce_cutoff(freq)
+function Wn = coerce_cutoff(freq) %#ok<DEFNU>
 Wn = freq;
 if Wn < 0.0
     Wn = 0.0 + eps;
@@ -551,7 +556,7 @@ else
     dBoutput = 0;
 end
 
-function t = group_delay(freq,phase)
+function t = group_delay(freq,phase) %#ok<DEFNU>
 % calculates the group delay from frequency data (in Hz) and phase data (in radians)
 
 k = length(phase);
