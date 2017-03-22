@@ -115,7 +115,7 @@ end
 
 % import various value bounds
 rate_bounds;
-handles.bounds = bounds;
+handles.bounds = boundsAD;
 
 new = 0;
 handles.freq_units = 3;

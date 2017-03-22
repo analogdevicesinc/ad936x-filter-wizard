@@ -105,7 +105,7 @@ end
 if ~isfield(input, 'Rdata')
     if isfield(input, 'PLL_rate')
         input.Rdata = input.PLL_rate;
-        while input.Rdata > bounds.MAX_DATA_RATE / 2
+        while input.Rdata > boundsAD.MAX_DATA_RATE / 2
             input.Rdata = input.Rdata / 2;
         end
     else
@@ -118,17 +118,17 @@ else
     end
 end
 
-if input.Rdata > bounds.MAX_DATA_RATE
-    input.Rdata = bounds.MAX_DATA_RATE;
+if input.Rdata > boundsAD.MAX_DATA_RATE
+    input.Rdata = boundsAD.MAX_DATA_RATE;
 end
-if input.Rdata < bounds.MIN_DATA_RATE
-    input.Rdata = bounds.MIN_DATA_RATE;
+if input.Rdata < boundsAD.MIN_DATA_RATE
+    input.Rdata = boundsAD.MIN_DATA_RATE;
 end
 
-input = autoselect_rates(input, bounds, false);
+input = autoselect_rates(input, boundsAD, false);
 % If PLL rate bounds aren't met, enable 3x dec/int for HB3.
-if ((input.PLL_rate > bounds.MAX_BBPLL_FREQ) || (input.PLL_rate < bounds.MIN_BBPLL_FREQ))
-    input = autoselect_rates(input, bounds, true);
+if ((input.PLL_rate > boundsAD.MAX_BBPLL_FREQ) || (input.PLL_rate < boundsAD.MIN_BBPLL_FREQ))
+    input = autoselect_rates(input, boundsAD, true);
 end
 
 if strcmp(input.Type, 'Lowpass')
@@ -190,11 +190,11 @@ end
 
 cooked = input;
 
-function input = autoselect_rates(input, bounds, dec_int3)
+function input = autoselect_rates(input, boundsAD, dec_int3)
 if strcmp(input.RxTx, 'Rx')
-    max_HB = bounds.MAX_RX;
+    max_HB = boundsAD.MAX_RX;
 else
-    max_HB = bounds.MAX_TX;
+    max_HB = boundsAD.MAX_TX;
 end
 
 if ~isfield(input, 'DAC_div')
@@ -214,8 +214,8 @@ if dec_int3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(inp
     end
     input.HB2 = fastest_FIR([2 1], max_HB.HB2, 0, input.Rdata * input.HB3);
     input.HB1 = fastest_FIR([2 1], max_HB.HB1, 0, input.Rdata * input.HB3 * input.HB2);
-    input.FIR = fastest_FIR([4 2 1], bounds.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
-    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], bounds.MAX_BBPLL_FREQ, bounds.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
+    input.FIR = fastest_FIR([4 2 1], boundsAD.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
+    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], boundsAD.MAX_BBPLL_FREQ, boundsAD.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
 end
 
 input.converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;
