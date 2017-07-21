@@ -171,6 +171,18 @@ for i = 1:2:length(varargin)
         handles.helpcallback = str2func(varargin{i + 1});
     elseif strcmpi(varargin{i}, 'CallbackObj')
         handles.callbackObj = varargin{i + 1};
+    elseif strcmpi(varargin{i}, 'SetDevice')
+        % Set default device
+        switch lower(varargin{i + 1})
+            case 'ad9361'
+                handles.device.Children(15).Value = 1;                        
+            case 'ad9364'
+                handles.device.Children(15).Value = 2;        
+            case 'pluto'
+                handles.device.Children(15).Value = 3; 
+            otherwise
+                error('Unknown default device');
+        end
     else
         error('Unknown input to function');
     end
