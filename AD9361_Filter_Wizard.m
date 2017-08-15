@@ -123,7 +123,7 @@ handles.freq_units = 3;
 handles.applycallback = {};
 
 % inputs need to be name/value _pairs_
-if rem(length(varargin),2)
+if rem(length(varargin),2) && ~strcmp(varargin{1},'ADIFilterObject')
     error('myApp:argChk', 'Wrong number of input arguments')
 end
 
@@ -171,6 +171,29 @@ for i = 1:2:length(varargin)
         handles.helpcallback = str2func(varargin{i + 1});
     elseif strcmpi(varargin{i}, 'CallbackObj')
         handles.callbackObj = varargin{i + 1};
+    elseif strcmpi(varargin{i}, 'ADIFilterObject')
+        new = 1; % Test designer not to overwrite settings
+        input = varargin{i + 1};
+        set(handles.which_device,'Value',input.which_device);
+        if strcmp(input.RxTx,'Tx')
+            handles.tx = input;
+            if nargin==6
+                handles.rx = varargin{i + 2};
+                break
+            else
+                % Build default settings with Tx rate
+                handles.rx = cook_input(struct('TxRx','Rx','Rdata',input.Rdata));
+            end
+        else
+            handles.rx = input;
+            if nargin==6
+                handles.tx = varargin{i + 2};
+                break
+            else
+                % Build default settings with Rx rate
+                handles.tx = cook_input(struct('TxRx','Tx','Rdata',input.Rdata));
+            end
+        end
     else
         error('Unknown input to function');
     end
@@ -2235,6 +2258,9 @@ if get(handles.filter_type, 'Value') == 1
 else
     filter = handles.tx;
 end
+
+% Add device type
+filter.which_device = get(handles.which_device,'Value');
 
 if (~isempty(handles.applycallback))
     handles.applycallback(handles.callbackObj, filter);
