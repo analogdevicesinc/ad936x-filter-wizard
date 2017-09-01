@@ -89,6 +89,12 @@ if strcmp(input.RxTx, 'Rx')
     Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd2,Hd1);
     
+    % Define the Pluto DEC8 filter
+    ast = 80;
+    n = 128;
+    f = fdesign.decimator(8, 'Nyquist', 8, 'N,Ast', n, ast);
+    hf = design(f,'SystemObject',true);
+    
     % Define the digital filters with fixed coefficients
     allpass_coeff = 1;
     hb1_coeff = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
@@ -112,6 +118,13 @@ else
     [sos2,g2] = zp2sos(z2,p2,k2);
     Hd2=dsp.BiquadFilter('SOSMatrix',sos2,'ScaleValues',g2);
     Hanalog = cascade(Hd1,Hd2);
+    
+    % Define the Pluto INT8 filter
+    ast = 80;
+    n = 128;
+    f = fdesign.interpolator(8,'Nyquist', 8,'N,Ast', n, ast);
+    hf = design(f,'kaiserwin','SystemObject',true);
+    hf.Numerator = hf.Numerator./8;
     
     % Define the digital filters with fixed coefficients
     allpass_coeff = 1;
@@ -216,6 +229,16 @@ if strcmp(input.RxTx, 'Rx')
 else
     Hm4.CustomAccumulatorDataType=numerictype([],20,18);
 end
+
+hf.FullPrecisionOverride = false;
+hf.OutputDataType='Custom';
+hf.CustomOutputDataType=numerictype([],16,15);
+hf.CoefficientsDataType='Custom';
+hf.CustomCoefficientsDataType=numerictype([],16,15);
+hf.ProductDataType='Custom';
+hf.CustomProductDataType=numerictype([],16,15);
+hf.AccumulatorDataType = 'Custom';
+hf.CustomAccumulatorDataType=numerictype([],16,15);
 
 hb1 = input.HB1;
 hb2 = input.HB2;
