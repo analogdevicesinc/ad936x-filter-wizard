@@ -1135,7 +1135,7 @@ filter_input.PLL_rate = PLL_rate;
 filter_input.dBstop_FIR = sel.FIRdBmin;
 filter_input.wnom = value2Hz(handles, handles.freq_units, str2double(get(handles.Fcutoff, 'String')));
 filter_input.int_FIR = get(handles.Use_FIR, 'Value');
-filter_input.pluto_filter = 1;
+filter_input.FPGAfilter = get(handles.use_FPGAfilter, 'Value');
 filter_input.RFbw = RFbw;
 
 plot_buttons_off(handles);

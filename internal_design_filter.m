@@ -621,6 +621,11 @@ output.Hm3 = Hm3;
 output.Hm4 = Hm4;
 output.Hmd = Hmd;
 output.enables = enables;
+if isfield(input,'FPGAfilter')
+    output.FPGAfilter = input.FPGAfilter;
+else
+    output.FPGAfilter = false;
+end
 
 % internal fields used by the GUI
 output.Hanalog = Hanalog;
