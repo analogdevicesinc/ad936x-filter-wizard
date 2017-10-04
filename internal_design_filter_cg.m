@@ -50,7 +50,7 @@
 
 %#codegen
 
-function [outputTaps] = internal_design_filter_cg(...
+function [outputTaps,numOutputTaps] = internal_design_filter_cg(...
     Rdata,...
     Fpass,...
     Fstop,...
@@ -532,6 +532,7 @@ firtaps = int16(firTapsPreScale.*(2^bTFIR));
 
 %% For codegen only output taps
 outputTaps = firtaps;
+numOutputTaps = length(h);
 
 
 function output = alias_b(f,fs)
