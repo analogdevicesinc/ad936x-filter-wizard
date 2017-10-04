@@ -360,8 +360,7 @@ while (1)
     end
     tap_store(i,1:M)=ccoef+scoef; % scoef ==0 when no EQ
 
-    signed = true; wordlength = 16; fractionlength = 16; % TODO: Set fractionalLength based on FSR of input
-    tap_store(i,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,fractionlength));
+    tap_store(i,1:M) = determineBestFractionLength(tap_store,i,M);
 
     rg_pass = 0; %#ok<NASGU>
     rg_stop = 0; %#ok<NASGU>
@@ -576,3 +575,47 @@ t(k) = (-1/360) * (((phase(k) - phase(k - 1))/(freq(k) - freq(k - 1))));
 
 function d = to_char(c)
 d = char(48+int8(c));
+
+function taps = determineBestFractionLength(tap_store,i,M)
+    % Codegen workaround for fixed fi call requirements
+    signed = true; wordlength = 16;
+    org = tap_store(i,1:M);
+    e = zeros(16,1);
+    k=1;
+    r  = zeros(16,M);
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,1));
+    e(1) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,2));
+    e(2) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,3));
+    e(3) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,4));
+    e(4) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,5));
+    e(5) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,6));
+    e(6) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,7));
+    e(7) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,8));
+    e(8) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,9));
+    e(9) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,10));
+    e(10) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,11));
+    e(11) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,12));
+    e(12) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,13));
+    e(13) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,14));
+    e(14) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,15));
+    e(15) = sum(abs(r(k,1:M)-org));k = k+1;
+    r(k,1:M) = double(fi(tap_store(i,1:M),signed,wordlength,16));
+    e(16) = sum(abs(r(k,1:M)-org));k = k+1;
+    [~,fractionLength] = min(e);
+    taps = r(fractionLength,1:M);
+
+

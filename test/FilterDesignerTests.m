@@ -198,7 +198,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 cgResultFirtaps = call_filter_designer_cg(input,true); % codegen mex
                 refResult = internal_design_filter(input); % reference
                 % Evaluate errors
-                testCase.verifyEqual(cgResultFirtaps,int16(refResult.firtaps));
+                testCase.verifyEqual(double(cgResultFirtaps),refResult.firtaps,'AbsTol',2);
             end
             
         end
@@ -373,6 +373,12 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             config.txrx = 'tx';
             config.int_FIR = 0;
             testCase.testFunctionGeneralLengthCheck(config);
+        end
+        % Test MEX results with reference without EQ
+        function testTXGenericMEX(testCase)
+            config = cook_input(struct('Rdata',60e6,'RxTx','Tx'));
+            config.txrx = 'tx';
+            testCase.testFunctionGeneral(config);
         end
         % Test DLL results with standard setting
         function testTXDLL(testCase)

@@ -34,12 +34,12 @@ switch enables
         
     case '2121' % Hb3,Hb1
         d1 = freqz_cg(us(hb1_coeff,2),1,wd,Fs);
-        d2 = freqz_cg(us(hb2_coeff,1),1,wd,Fs);
+        d2 = freqz_cg(us(hb3_coeff,1),1,wd,Fs);
         combinedResponse = d1.*d2;
         stages = 2;
         
     case '1221' % Hb3,Hb2
-        d1 = freqz_cg(us(hb1_coeff,2),1,wd,Fs);
+        d1 = freqz_cg(us(hb2_coeff,2),1,wd,Fs);
         d2 = freqz_cg(us(hb3_coeff,1),1,wd,Fs);
         combinedResponse = d1.*d2;
         stages = 2;
