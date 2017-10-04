@@ -6,10 +6,14 @@ function [output,r] = TestToBeGenerated()
 a = load('ad9361_settings_processed_test.mat');
 input = a.input;
 firtaps = a.firtaps;
+fprintf('Taps loaded\n');
 
 % Return preallocation and type def
 output = zeros(1,128,'int16');
 numTaps = 1; %#ok<NASGU>
+
+% Initialize generated designer
+coder.ceval('internal_design_filter_cg_initialize');
 
 % Call generated version
 coder.ceval('internal_design_filter_cg',...
@@ -18,6 +22,11 @@ coder.ceval('internal_design_filter_cg',...
     input.HB2, input.HB3, input.Type,input.RxTx, input.RFbw, ...
     input.DAC_div, input.converter_rate, input.PLL_rate, input.Fcenter,...
     input.wnom, input.FIRdBmin, input.int_FIR, coder.wref(output));
+
+% Teardown generated designer
+coder.ceval('internal_design_filter_cg_terminate');
+
+fprintf('Designer Complete\n');
 
 % Check outputs
 numTaps = 128 - sum(output==0); % output is always padded to 128

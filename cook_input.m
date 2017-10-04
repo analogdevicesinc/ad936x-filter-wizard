@@ -77,8 +77,8 @@
 
 function cooked = cook_input(input)
 
-% import various value bounds
-rate_bounds;
+% import various value bounds9361
+bounds9361 = rate_bounds;
 
 if ~isstruct(input)
     input = struct;
@@ -109,7 +109,7 @@ end
 if ~isfield(input, 'Rdata')
     if isfield(input, 'PLL_rate')
         input.Rdata = input.PLL_rate;
-        while input.Rdata > bounds.MAX_DATA_RATE / 2
+        while input.Rdata > bounds9361.MAX_DATA_RATE / 2
             input.Rdata = input.Rdata / 2;
         end
     else
@@ -122,26 +122,26 @@ else
     end
 end
 
-if input.Rdata > bounds.MAX_DATA_RATE
-    input.Rdata = bounds.MAX_DATA_RATE;
+if input.Rdata > bounds9361.MAX_DATA_RATE
+    input.Rdata = bounds9361.MAX_DATA_RATE;
 end
-if input.Rdata < bounds.MIN_DATA_RATE
-    input.Rdata = bounds.MIN_DATA_RATE;
+if input.Rdata < bounds9361.MIN_DATA_RATE
+    input.Rdata = bounds9361.MIN_DATA_RATE;
 end
 
-input = autoselect_rates(input, bounds, false);
+input = autoselect_rates(input, bounds9361, false);
 
-pll_out_of_bounds = ((input.PLL_rate > bounds.MAX_BBPLL_FREQ) || (input.PLL_rate < bounds.MIN_BBPLL_FREQ));
+pll_out_of_bounds = ((input.PLL_rate > bounds9361.MAX_BBPLL_FREQ) || (input.PLL_rate < bounds9361.MIN_BBPLL_FREQ));
 converter_out_of_bounds = 0;
 if strcmp(input.RxTx, 'Rx')
-    converter_out_of_bounds = (input.converter_rate > bounds.MAX_ADC_CLK || input.converter_rate < bounds.MIN_ADC_CLK);
+    converter_out_of_bounds = (input.converter_rate > bounds9361.MAX_ADC_CLK || input.converter_rate < bounds9361.MIN_ADC_CLK);
 elseif strcmp(input.RxTx, 'Tx')
-    converter_out_of_bounds = (input.converter_rate > bounds.MAX_DAC_CLK || input.converter_rate < bounds.MIN_DAC_CLK);
+    converter_out_of_bounds = (input.converter_rate > bounds9361.MAX_DAC_CLK || input.converter_rate < bounds9361.MIN_DAC_CLK);
 end
 
-% If PLL or converter rate bounds aren't met, enable 3x dec/int for HB3.
+% If PLL or converter rate bounds9361 aren't met, enable 3x dec/int for HB3.
 if (pll_out_of_bounds || converter_out_of_bounds)
-    input = autoselect_rates(input, bounds, true);
+    input = autoselect_rates(input, bounds9361, true);
 end
 
 if strcmp(input.Type, 'Lowpass')
@@ -150,12 +150,12 @@ if strcmp(input.Type, 'Lowpass')
         % works out to 2560000. Actual number is 2250000
         input.Fpass = input.Rdata / 3;
     end
-
+    
     if ~isfield(input, 'Fstop')
         % Asssume that Fstop is 1.25 Fpass, again close to LTE5
         input.Fstop = input.Fpass * 1.25;
     end
-
+    
     if ~isfield(input, 'Fcenter')
         input.Fcenter = 0;
     end
@@ -203,11 +203,11 @@ end
 
 cooked = input;
 
-function input = autoselect_rates(input, bounds, dec_int3)
+function input = autoselect_rates(input, bounds9361, dec_int3)
 if strcmp(input.RxTx, 'Rx')
-    max_HB = bounds.MAX_RX;
+    max_HB = bounds9361.MAX_RX;
 else
-    max_HB = bounds.MAX_TX;
+    max_HB = bounds9361.MAX_TX;
 end
 
 if ~isfield(input, 'DAC_div')
@@ -227,8 +227,8 @@ if dec_int3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(inp
     end
     input.HB2 = fastest_FIR([2 1], max_HB.HB2, 0, input.Rdata * input.HB3);
     input.HB1 = fastest_FIR([2 1], max_HB.HB1, 0, input.Rdata * input.HB3 * input.HB2);
-    input.FIR = fastest_FIR([4 2 1], bounds.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
-    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], bounds.MAX_BBPLL_FREQ, bounds.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
+    input.FIR = fastest_FIR([4 2 1], bounds9361.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
+    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], bounds9361.MAX_BBPLL_FREQ, bounds9361.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
 end
 
 input.converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;
