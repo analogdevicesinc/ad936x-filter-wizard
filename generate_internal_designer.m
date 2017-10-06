@@ -15,6 +15,7 @@ cfg = coder.config('dll');
 cfg.TargetLang = 'C';
 cfg.FilePartitionMethod = 'SingleFile';
 cfg.GenCodeOnly = true;
+cfg.EnableAutoExtrinsicCalls = false;
 outputLIBName = 'libinternal_filter_designer';
 result = codegen('-config','cfg',functionName,'-O ','disable:openmp','-args', args,'-o',outputLIBName);
 

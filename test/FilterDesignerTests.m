@@ -227,7 +227,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 refResult = internal_design_filter(input); % reference
                 % Evaluate errors
                 testCase.verifyEqual(length(cgResultFirtaps),length(refResult.firtaps));
-                testCase.verifyEqual(double(cgResultFirtaps),double(int16(refResult.firtaps)),'AbsTol',3);
+                testCase.verifyEqual(double(cgResultFirtaps),double(int16(refResult.firtaps)),'AbsTol',2);
             end
             
         end
@@ -302,7 +302,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 end
                 % Evaluate errors
                 testCase.verifyEqual(length(firtaps),length(refResult.firtaps));
-                testCase.verifyEqual(double(firtaps),double(int16(refResult.firtaps)),'AbsTol',3);
+                testCase.verifyEqual(double(firtaps),double(int16(refResult.firtaps)),'AbsTol',2);
             end
             
         end
@@ -337,6 +337,22 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             config.txrx = 'rx';
             config.int_FIR = 0;
             testCase.testFunctionGeneralLengthCheck(config);
+        end
+        % Test MEX results with reference without EQ
+        function testRXGenericMEX(testCase)
+            config = cook_input(struct('Rdata',61.44e6,'RxTx','Rx'));
+            config.txrx = 'rx';
+            testCase.testFunctionGeneral(config);
+        end
+        % Test MEX results with reference without EQ at many different
+        % rates
+        function testRXManyRatesMEX(testCase)
+            rates = [1,10:10:60].*1e6;
+            for rate = rates
+                config = cook_input(struct('Rdata',rate,'RxTx','Rx'));
+                config.txrx = 'rx';
+                testCase.testFunctionGeneral(config);
+            end
         end
         % Test DLL results with standard setting
         function testRXDLL(testCase)
@@ -376,9 +392,19 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
         end
         % Test MEX results with reference without EQ
         function testTXGenericMEX(testCase)
-            config = cook_input(struct('Rdata',60e6,'RxTx','Tx'));
+            config = cook_input(struct('Rdata',61.44e6,'RxTx','Tx'));
             config.txrx = 'tx';
             testCase.testFunctionGeneral(config);
+        end
+        % Test MEX results with reference without EQ at many different
+        % rates
+        function testTXManyRatesMEX(testCase)
+            rates = [1,10:10:60].*1e6;
+            for rate = rates
+                config = cook_input(struct('Rdata',rate,'RxTx','Tx'));
+                config.txrx = 'tx';
+                testCase.testFunctionGeneral(config);
+            end
         end
         % Test DLL results with standard setting
         function testTXDLL(testCase)

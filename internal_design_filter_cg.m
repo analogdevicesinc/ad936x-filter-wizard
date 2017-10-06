@@ -50,7 +50,7 @@
 
 %#codegen
 
-function [outputTaps,numOutputTaps] = internal_design_filter_cg(...
+function [outputTaps,numOutputTaps,filterGain] = internal_design_filter_cg(...
     Rdata,...
     Fpass,...
     Fstop,...
@@ -469,35 +469,36 @@ firTapsPreScale(1:numTaps) = h;
 
 %% Determine Gains
 aTFIR = 1 + ceil(log2(max(firTapsPreScale)));
-% switch aTFIR
-%     case 2
-%         gain = 6;
-%     case 1
-%         gain = 0;
-%     case 0
-%         gain = -6;
-%     otherwise
-%         gain = -12;
-% end
-% 
-% if strcmp(input.RxTx, 'Rx')
-%     if aTFIR > 2
-%         gain = 6;
-%     end
-% else
-%     if input.FIR == 2
-%         gain = gain+6;
-%     elseif input.FIR == 4
-%         gain = gain+12;
-%     end
-%     if gain > 0
-%         gain = 0;
-%     elseif gain < -6
-%         gain = -6;
-%     end
-% end
+switch aTFIR
+    case 2
+        gain = 6;
+    case 1
+        gain = 0;
+    case 0
+        gain = -6;
+    otherwise
+        gain = -12;
+end
+
+if strcmp(input.RxTx, 'Rx')
+    if aTFIR > 2
+        gain = 6;
+    end
+else
+    if input.FIR == 2
+        gain = gain+6;
+    elseif input.FIR == 4
+        gain = gain+12;
+    end
+    if gain > 0
+        gain = 0;
+    elseif gain < -6
+        gain = -6;
+    end
+end
 
 %% Scale taps
+firTapsPreScale = determineBestFractionLength(firTapsPreScale,1,128);
 bTFIR = 16 - aTFIR;
 firtaps = int16(firTapsPreScale.*(2^bTFIR));
 
@@ -533,6 +534,7 @@ firtaps = int16(firTapsPreScale.*(2^bTFIR));
 %% For codegen only output taps
 outputTaps = firtaps;
 numOutputTaps = length(h);
+filterGain = gain;
 
 
 function output = alias_b(f,fs)

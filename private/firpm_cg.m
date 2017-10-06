@@ -35,19 +35,21 @@ function [grid,des,wt] = genWeights(filterOrder, bands, frequencies, weights, am
     lgrid = 16;
     grid = firpmgrid_cg(filterOrder+1,lgrid,bands,0,0);
 
-    orgFreqIndx = frequencies;
+%     orgFreqIndx = frequencies;
+% 
+%     positionsOfNewFreqIndx = zeros(size(grid));
+%     for ind = 1:length(positionsOfNewFreqIndx)
+% 
+%         [~,indx] = min( abs(orgFreqIndx-grid(ind)) );
+% 
+%         positionsOfNewFreqIndx(ind) = indx;
+%     end
+% 
+%     wt = weights(positionsOfNewFreqIndx);
+%     des = amplitudes(positionsOfNewFreqIndx);
 
-    positionsOfNewFreqIndx = zeros(size(grid));
-    for ind = 1:length(positionsOfNewFreqIndx)
-
-        [~,indx] = min( abs(orgFreqIndx-grid(ind)) );
-
-        positionsOfNewFreqIndx(ind) = indx;
-    end
-
-    wt = weights(positionsOfNewFreqIndx);
-    des = amplitudes(positionsOfNewFreqIndx);
-
+des = interp1(frequencies, amplitudes, grid);
+wt = interp1(frequencies, weights, grid);
 
 %%
 function [h,dev,valid]  = remezm(nfilt,edge,grid,des,wt,neg)

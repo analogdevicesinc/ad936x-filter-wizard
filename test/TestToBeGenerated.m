@@ -10,6 +10,7 @@ firtaps = a.firtaps;
 % Return preallocation and type def
 output = zeros(1,128,'int16');
 numOutputTaps = 1;
+filterGain = 0;
 
 % Initialize generated designer
 coder.ceval('internal_design_filter_cg_initialize');
@@ -21,7 +22,7 @@ coder.ceval('internal_design_filter_cg',...
     input.HB2, input.HB3, input.Type,input.RxTx, input.RFbw, ...
     input.DAC_div, input.converter_rate, input.PLL_rate, input.Fcenter,...
     input.wnom, input.FIRdBmin, input.int_FIR, coder.wref(output), ...
-    coder.wref(numOutputTaps));
+    coder.wref(numOutputTaps),coder.wref(filterGain));
 
 % Teardown generated designer
 coder.ceval('internal_design_filter_cg_terminate');

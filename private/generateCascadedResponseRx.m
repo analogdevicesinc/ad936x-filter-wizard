@@ -89,5 +89,6 @@ end
 
 function u = us(o,n)
 u = upsample(o,n);
+u = u(1:end-n+1);
 end
 
