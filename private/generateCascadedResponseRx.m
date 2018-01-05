@@ -54,22 +54,22 @@ switch enables
     case '1113' % Dec/Int3
         combinedResponse = freqz_cg(us(dec_int3_coeff,1),1,wd,Fs);
         stages = 1;
-        
+    % RECHECK ALL DEC BY 3    
     case '2113' % Dec/Int3,Hb1
-        d1 = freqz_cg(us(hb1_coeff,2),1,wd,Fs);
+        d1 = freqz_cg(us(hb1_coeff,3),1,wd,Fs);
         d2 = freqz_cg(us(dec_int3_coeff,1),1,wd,Fs);
         combinedResponse = d1.*d2;
         stages = 2;
         
     case '1213' % Dec/Int3,Hb2
-        d1 = freqz_cg(us(hb2_coeff,2),1,wd,Fs);
+        d1 = freqz_cg(us(hb2_coeff,3),1,wd,Fs);
         d2 = freqz_cg(us(dec_int3_coeff,1),1,wd,Fs);
         combinedResponse = d1.*d2;
         stages = 2;
         
-    case '2213' % Dec/Int3,Hb2,Hb1
-        d1 = freqz_cg(us(hb1_coeff,4),1,wd,Fs);
-        d2 = freqz_cg(us(hb2_coeff,2),1,wd,Fs);
+    case '2213' % Dec/Int3,Hb2,Hb1 {Hm4,Hm2c34,Hm1}
+        d1 = freqz_cg(us(hb1_coeff,6),1,wd,Fs);
+        d2 = freqz_cg(us(hb2_coeff,3),1,wd,Fs);
         d3 = freqz_cg(us(dec_int3_coeff,1),1,wd,Fs);
         combinedResponse = d1.*d2.*d3;
         stages = 3;
