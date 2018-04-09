@@ -17,5 +17,6 @@ cfg.FilePartitionMethod = 'SingleFile';
 cfg.GenCodeOnly = true;
 cfg.EnableAutoExtrinsicCalls = false;
 outputLIBName = 'libinternal_filter_designer';
+cfg.HardwareImplementation.TargetHWDeviceType = 'Intel->x86-64 (Linux 64)'; %'Generic->32-bit Embedded Processor';
 result = codegen('-config','cfg',functionName,'-O ','disable:openmp','-args', args,'-o',outputLIBName);
 

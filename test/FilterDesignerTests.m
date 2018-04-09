@@ -24,6 +24,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
         passedCodegenDLL = false;
         settingsLoaded = false;
         ad9361_settings = [];
+        TargetHWDeviceType = [];
     end
     
     methods(TestClassSetup)
@@ -32,6 +33,16 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             a = load('ad9361_settings.mat');
             testCase.ad9361_settings = a.ad9361_settings;
             testCase.settingsLoaded = true;
+        end
+        % Set codegen configuration
+        function setCodegenConfig(testCase)
+           if ismac
+               testCase.TargetHWDeviceType = 'Intel->x86-64 (Mac OS X)';
+           elseif ispc
+               testCase.TargetHWDeviceType = 'Intel->x86-64 (Windows64)';
+           else
+               testCase.TargetHWDeviceType = 'Intel->x86-64 (Linux 64)';
+           end
         end
         % Test Codegen of MEX Target
         function testCodegenBuildMEX(testCase)
@@ -58,6 +69,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             cfg = coder.config('lib');
             cfg.TargetLang='C++';
             cfg.FilePartitionMethod='SingleFile';
+            cfg.HardwareImplementation.TargetHWDeviceType = testCase.TargetHWDeviceType;
             result = codegen('-config','cfg',testCase.functionName,'-O ','disable:openmp','-args',testCase.args);
             testCase.passedCodegenDLL = result.summary.passed;
             testCase.verifyTrue(result.summary.passed);
