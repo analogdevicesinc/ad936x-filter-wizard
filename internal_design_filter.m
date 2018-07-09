@@ -473,8 +473,10 @@ while (1)
     tap_store(i,1:M)=ccoef+scoef;
     
     Hmd = dec_int_func(input.FIR,tap_store(i,1:M));
-    if ~isempty(ver('fixedpoint')) && license('test','fixed_point_toolbox') && license('checkout','fixed_point_toolbox')
-        Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
+    if ~isempty(ver('fixedpoint')) % Make sure fixed-point toolbox is installed
+        if license('test','fixed_point_toolbox') % Try to checkout a license
+            Hmd.Numerator = double(fi(Hmd.Numerator,true,16));
+        end
     end
     if strcmp(input.RxTx, 'Rx')
         if strcmp(enables,'1111') || strcmp(enables,'2111') || strcmp(enables,'1211') || strcmp(enables,'1121') || strcmp(enables,'1113')
