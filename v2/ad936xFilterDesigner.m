@@ -111,20 +111,21 @@ classdef ad936xFilterDesigner < ad936x
     end
     
     methods
-        function obj = FilterDesignerCurrent()
+        function obj = ad936xFilterDesigner()
         end
         
-        function [found, h, numTaps, firTapsPreScale,stats] = designFilter(obj,type)
+        function [found, firTapsInt, numTaps, firTapsPreScale,stats] = designFilter(obj,type)
             if obj.ValidConfiguration
+                CheckDesignerConfiguration(obj,strcmpi('Tx',type));
                 availableTaps = 16:16:obj.AvailableFIRTaps;
                 delay = obj.createObjective(type);
-                [found, h, numTaps, firTapsPreScale,stats] = obj.designer(type, availableTaps);
+                [found, firTapsInt, numTaps, firTapsPreScale,stats] = obj.designer(type, availableTaps);
                 % Collect stats from design
                 stats.DelayVarianceNanoSeconds = delay;
                 stats.UsedTaps = numTaps;
             else
                 found = false; %#ok<*NASGU>
-                h = int16([]);
+                firTapsInt = int16([]);
                 numTaps = 0;
                 firTapsPreScale = [];
                 stats = [];
@@ -135,6 +136,17 @@ classdef ad936xFilterDesigner < ad936x
     end
     
     methods (Access = protected, Hidden)
+        
+        function CheckDesignerConfiguration(obj,isTx)
+            if isTx
+                assert(obj.TxFpass < obj.TxFstop, 'TxFpass must be less than TxFstop');
+                assert(obj.TxFstop < obj.DataRate/2, 'TxFstop must be less than DataRate/2');
+            else
+                assert(obj.RxFpass < obj.RxFstop, 'RxFpass must be less than RxFstop');
+                assert(obj.RxFstop < obj.DataRate/2, 'RxFstop must be less than DataRate/2');
+            end
+        end
+        
         function [found, firtaps, numTaps, firTapsPreScale, stats] = designer(obj,type,availableTaps)
             
             found = false;
@@ -296,7 +308,6 @@ classdef ad936xFilterDesigner < ad936x
             else
                 delay = phEQ*(1e-9);
             end
-            
             
             %% Build requirements for FIR
             clkFIR = obj.DataRate*FIR;
