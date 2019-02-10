@@ -9,7 +9,7 @@ classdef ad936x < handle
     properties
         %ChipType Chip Type
         %   Target AD936X variant for filter. Possible options are:
-        %   {'AD9361','AD9363','AD9364','Pluto'}
+        %   'AD9361','AD9363','AD9364','Pluto'
         ChipType = 'AD9361';
         %DataRate Data Rate
         %   Complex data rate in Samples per second at output of FIR on
@@ -74,7 +74,6 @@ classdef ad936x < handle
     end
     
     properties (Dependent, Hidden)
-        
         RxRateHB1
         RxRateHB2
         RxRateHB3
@@ -91,6 +90,8 @@ classdef ad936x < handle
         
         CALDividerTx
         CALDividerRx
+        
+        ChipTypeLimit
     end
     
     properties (Hidden)
@@ -124,7 +125,6 @@ classdef ad936x < handle
         TxBBLPFDen
         TxSecLPFNum
         TxSecLPFDen
-        
     end
     
     properties (Constant, Hidden)
@@ -137,7 +137,8 @@ classdef ad936x < handle
         MinDACRate    = 25000000; % (MaxADCRate/2)
         MaxDataRate   = 61440000;
         MaxDataRateAD9363   = 20e6;
-        MinDataRate   = 715000000/(48*(2^6));
+        %MinDataRate   = 715000000/(48*(2^6));
+        MinDataRate   = 25000000/48;
         MaxFIR        = 61440000*2;
         MaxRxHB1      = 245760000;
         MaxRxHB2      = 320000000;
@@ -147,14 +148,19 @@ classdef ad936x < handle
         MaxTxHB3      = 320000000;
         % Define the digital filters with fixed coefficients
         AllPassCoeff = 1;
-        RxHB1Coeff = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 0 -8];
+        RxHB1Coeff = 2^(-11)*[-8 0 42 0 -147 0 619 1013 619 0 -147 0 42 ...
+            0 -8];
         RxHB2Coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
         RxHB3Coeff = 2^(-4)*[1 4 6 4 1];
-        RxHB3CoeffDec3 = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 4041 1914 0 -580 -393 0 83 55];
-        TxHB1Coeff = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 -1155 0 313 0 -53];
+        RxHB3CoeffDec3 = 2^(-14)*[55 83 0 -393 -580 0 1914 4041 5120 ...
+            4041 1914 0 -580 -393 0 83 55];
+        TxHB1Coeff = 2^(-14)*[-53 0 313 0 -1155 0 4989 8192 4989 0 ...
+            -1155 0 313 0 -53];
         TxHB2Coeff = 2^(-8)*[-9 0 73 128 73 0 -9];
         TxHB3Coeff = 2^(-2)*[1 2 1];
-        TxHB3CoeffInt3 = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 479 0 -12 -156 0 -19 36];
+        TxHB3CoeffInt3 = (1/3)*2^(-13)*[36 -19 0 -156 -12 0 479 223 0 ...
+            -1215 -993 0 3569 6277 8192 6277 3569 0 -993 -1215 0 223 ...
+            479 0 -12 -156 0 -19 36];
         % Halfband numerical behavior descriptions
         HB1ConfigRx = struct(...
             'FullPrecisionOverride',false,...
@@ -238,6 +244,11 @@ classdef ad936x < handle
             'CustomAccumulatorDataType',numerictype([],20,18));
     end
     
+    properties(Hidden, Constant=true)
+        ChipTypeSet = matlab.system.StringSet({'AD9361','AD9363',...
+            'AD9364','Pluto'});
+    end
+    
     methods
         % Constructor
         function obj = ad936x(varargin)
@@ -247,38 +258,44 @@ classdef ad936x < handle
         
         %% Validate user tunable parameters
         function set.DataRate(obj, val)
-            if ~strcmp(obj.ChipType,'AD9363') %#ok<MCSUP>
+            if ~strcmp(obj.ChipTypeLimit,'AD9363') %#ok<MCSUP>
                 validateattributes(val, {'numeric'}, ...
-                    {'scalar', 'real','integer', 'positive', 'nonnan', 'finite','>=',obj.MinDataRate,'<=',obj.MaxDataRate}, ...
+                    {'scalar', 'real','integer', 'positive', 'nonnan',...
+                    'finite','>=',obj.MinDataRate,'<=',obj.MaxDataRate},...
                     '', 'DataRate');
             else
                 validateattributes(val, {'numeric'}, ...
-                    {'scalar', 'real','integer', 'positive', 'nonnan', 'finite','>=',obj.MinDataRate,'<=',obj.MaxDataRateAD9363}, ...
-                    '', 'DataRate');
+                    {'scalar', 'real','integer', 'positive', 'nonnan',...
+                    'finite','>=',obj.MinDataRate,'<=',...
+                    obj.MaxDataRateAD9363},'', 'DataRate');
                 
             end
             obj.DataRate = val;
         end
         function set.RxAnalogCuttoffFrequency(obj, val)
-            if ~strcmp(obj.ChipType,'AD9363') %#ok<MCSUP>
+            if ~strcmp(obj.ChipTypeLimit,'AD9363') %#ok<MCSUP>
                 validateattributes(val, {'numeric'}, ...
-                    {'scalar', 'real','positive', 'nonnan', 'finite','>=',200000,'<=',56000000}, ...
+                    {'scalar', 'real','positive', 'nonnan', 'finite',...
+                    '>=',200000,'<=',56000000}, ...
                     '', 'RxAnalogCuttoffFrequency');
             else
                 validateattributes(val, {'numeric'}, ...
-                    {'scalar', 'real','positive', 'nonnan', 'finite','>=',200000,'<=',20000000}, ...
+                    {'scalar', 'real','positive', 'nonnan', 'finite',...
+                    '>=',200000,'<=',20000000}, ...
                     '', 'RxAnalogCuttoffFrequency');
             end
             obj.RxAnalogCuttoffFrequency = val;
         end
         function set.TxAnalogCuttoffFrequency(obj, val)
-            if ~strcmp(obj.ChipType,'AD9363') %#ok<MCSUP>
+            if ~strcmp(obj.ChipTypeLimit,'AD9363') %#ok<MCSUP>
                 validateattributes(val, {'numeric'}, ...
-                    {'scalar', 'real', 'positive', 'nonnan', 'finite','>=',200000,'<=',40000000}, ...
+                    {'scalar', 'real', 'positive', 'nonnan', 'finite',...
+                    '>=',200000,'<=',40000000}, ...
                     '', 'TxAnalogCuttoffFrequency');
             else
                 validateattributes(val, {'numeric'}, ...
-                    {'scalar', 'real', 'positive', 'nonnan', 'finite','>=',200000,'<=',20000000}, ...
+                    {'scalar', 'real', 'positive', 'nonnan', 'finite',...
+                    '>=',200000,'<=',20000000}, ...
                     '', 'TxAnalogCuttoffFrequency');
                 
             end
@@ -378,6 +395,14 @@ classdef ad936x < handle
             value = calculate_rfbw(obj.PLLRate, obj.CALDividerTx, 'Tx', true);
         end
         
+        function value = get.ChipTypeLimit(obj)
+           switch obj.ChipType
+               case {'AD9361','AD9364'}
+                   value = 'AD9361';
+               otherwise
+                   value = 'AD9363';
+           end
+        end
         
         function value = get.AvailableFIRTaps(obj)
             % RX
@@ -538,6 +563,11 @@ classdef ad936x < handle
         % Path Rate Validations
         function [valid,v] = validatePathRates(obj)
             valid = struct;
+            if strcmp(obj.ChipTypeLimit,'AD9361')
+                valid.DataRate = obj.rangeCheck(obj.DataRate,'Data Rate',obj.MinDataRate,obj.MaxDataRate);
+            else
+                valid.DataRate = obj.rangeCheck(obj.DataRate,'Data Rate',obj.MinDataRate,obj.MaxDataRateAD9363);
+            end
             valid.ADCRate = obj.rangeCheck(obj.ADCRate,'ADC Rate',obj.MinADCRate,obj.MaxADCRate);
             % Rates into stage
             valid.RxRateHB3 = obj.rangeCheck(obj.RxRateHB3,'Rx HB3',0,obj.MaxRxHB3);
@@ -551,8 +581,13 @@ classdef ad936x < handle
             valid.TxRateHB1 = obj.rangeCheck(obj.TxRateHB1,'Tx HB1',0,obj.MaxTxHB1);
             valid.TxRateFIR = obj.rangeCheck(obj.TxRateFIR,'Tx FIR',0,obj.MaxFIR);
             valid.PLLRate = obj.rangeCheck(obj.PLLRate,'PLL Rate',obj.MinBBPLLRate,obj.MaxBBPLLRate);
-            v = valid.ADCRate.pass && valid.RxRateHB3.pass && valid.RxRateHB2.pass && valid.RxRateHB1.pass && valid.RxRateFIR.pass;
-            v = v && valid.DACRate.pass && valid.TxRateHB3.pass && valid.TxRateHB2.pass && valid.TxRateHB1.pass && valid.TxRateFIR.pass;
+            v = valid.DataRate.pass;
+            v = v && valid.ADCRate.pass && valid.RxRateHB3.pass && ...
+                valid.RxRateHB2.pass && valid.RxRateHB1.pass && ...
+                valid.RxRateFIR.pass;
+            v = v && valid.DACRate.pass && valid.TxRateHB3.pass && ...
+                valid.TxRateHB2.pass && valid.TxRateHB1.pass && ...
+                valid.TxRateFIR.pass;
             v = v && valid.PLLRate.pass;
         end
 

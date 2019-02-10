@@ -115,6 +115,19 @@ classdef ad936xFilterDesigner < ad936x
         end
         
         function [found, firTapsInt, numTaps, firTapsPreScale,stats] = designFilter(obj,type)
+            %designFilter Method to design FIR filter based on the current
+            %   device configuration. The only required input is the type
+            %   of filter which can be either 'Rx' or 'Tx'. The outputs
+            %   are:
+            %       found: boolean determining if the designed filter meets
+            %              requested specifications
+            %       firTapsInt: Array of the generate FIR taps of type 
+            %              int16 in a [1x128] array
+            %       numTaps: Number of taps of the 128 which are to be used
+            %       firTapsPreScale: Array of the generate FIR taps of type 
+            %              double in a [1x128] array before scaling for 
+            %              int16 type
+            %       stats: Struct of information about designed filter
             if obj.ValidConfiguration
                 CheckDesignerConfiguration(obj,strcmpi('Tx',type));
                 availableTaps = 16:16:obj.AvailableFIRTaps;
