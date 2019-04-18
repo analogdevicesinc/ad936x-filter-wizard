@@ -50,7 +50,9 @@
 
 %#codegen
 
-function [outputTaps,numOutputTaps,filterGain] = internal_design_filter_cg(...
+function [outputTaps,numOutputTaps,filterGain,Apass_actual,Astop_actual,...
+    maxInFS,maxIndB]...
+    = internal_design_filter_cg(...
     Rdata,...
     Fpass,...
     Fstop,...
@@ -72,7 +74,8 @@ function [outputTaps,numOutputTaps,filterGain] = internal_design_filter_cg(...
     Fcenter,...
     wnom,...
     FIRdBmin,...
-    int_FIR)
+    int_FIR,...
+    maxTaps)
 %%%%%%%%%%%%%%%%%%%% Perform Input Checks
 
 % Scalar checks
@@ -291,25 +294,26 @@ W1 = weight(1:Gpass+1);
 W2 = weight(Gpass+2:end);
 
 % Determine the number of taps for FIR
-if strcmp(input.RxTx, 'Rx')
-    if hb3 == 1
-        N = min(16*floor(input.converter_rate/(input.Rdata)),128);
-    else
-        N = min(16*floor(input.converter_rate/(2*input.Rdata)),128);
-    end
-else
-    switch input.FIR
-        case 1
-            Nmax = 64;
-        case 2
-            Nmax = 128;
-        case 4
-            Nmax = 128;
-        otherwise
-            error('Wrong FIR Type');
-    end
-    N = min(16*floor(input.converter_rate*input.DAC_div/(2*input.Rdata)),Nmax);
-end
+% if strcmp(input.RxTx, 'Rx')
+%     if hb3 == 1
+%         N = min(16*floor(input.converter_rate/(input.Rdata)),128);
+%     else
+%         N = min(16*floor(input.converter_rate/(2*input.Rdata)),128);
+%     end
+% else
+%     switch input.FIR
+%         case 1
+%             Nmax = 64;
+%         case 2
+%             Nmax = 128;
+%         case 4
+%             Nmax = 128;
+%         otherwise
+%             error('Wrong FIR Type');
+%     end
+%     N = min(16*floor(input.converter_rate*input.DAC_div/(2*input.Rdata)),Nmax);
+% end
+N = maxTaps;
 
 tap_store = zeros(N/16,N);
 Apass_actual_vector = zeros(N/16,1);
@@ -405,18 +409,18 @@ while (1)
 
     if input.int_FIR == 0
         h = tap_store(1,1:M);
-        %Apass_actual = Apass_actual_vector(1);
-        %Astop_actual = Astop_actual_vector(1);
+        Apass_actual = Apass_actual_vector(1);
+        Astop_actual = Astop_actual_vector(1);
         break
     elseif Apass_actual_vector(1) > input.Apass || Astop_actual_vector(1) < input.Astop
         h = tap_store(1,1:N);
-        %Apass_actual = Apass_actual_vector(1);
-        %Astop_actual = Astop_actual_vector(1);
+        Apass_actual = Apass_actual_vector(1);
+        Astop_actual = Astop_actual_vector(1);
         break
     elseif Apass_actual_vector(i) > input.Apass || Astop_actual_vector(i) < input.Astop
         h = tap_store(i-1,1:N+16);
-        %Apass_actual = Apass_actual_vector(i-1);
-        %Astop_actual = Astop_actual_vector(i-1);
+        Apass_actual = Apass_actual_vector(i-1);
+        Astop_actual = Astop_actual_vector(i-1);
         break
     else
         N = N-16;
@@ -502,6 +506,11 @@ firTapsPreScale = determineBestFractionLength(firTapsPreScale,1,128);
 bTFIR = 16 - aTFIR;
 firtaps = int16(firTapsPreScale.*(2^bTFIR));
 
+%% Determine max possible inputs
+dn = freqz_cg(double(firTapsPreScale),1,omega2,input.converter_rate);
+maxInFS = 1.0 / max(abs(dn));
+maxIndB = 20 * log10(maxInFS);
+
 %output = input;
 
 % %% Non-codegen outputs
@@ -533,8 +542,8 @@ firtaps = int16(firTapsPreScale.*(2^bTFIR));
 
 %% For codegen only output taps
 outputTaps = firtaps;
-numOutputTaps = length(h);
-filterGain = gain;
+numOutputTaps = (length(h));
+filterGain = (gain);
 
 
 function output = alias_b(f,fs)

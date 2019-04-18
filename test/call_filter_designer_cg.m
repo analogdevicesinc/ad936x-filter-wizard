@@ -1,4 +1,4 @@
-function  [output,numTaps,filterGain] = call_filter_designer_cg(input,mex)
+function  [output,numTaps,filterGain,pass,stop] = call_filter_designer_cg(input,mex)
 
 % Extract struct elements so we can call the generated designer which has a
 % fixed input requirement
@@ -6,9 +6,36 @@ function  [output,numTaps,filterGain] = call_filter_designer_cg(input,mex)
 % Fill out necessary fields
 input = process_input(input);
 
+if input.HB3 == 2
+    hb3 = 2;
+elseif input.HB3 == 3
+    hb3 = 1;
+else
+    hb3 = 1;
+end
+if strcmp(input.RxTx, 'Rx')
+    if hb3 == 1
+        N = min(16*floor(input.converter_rate/(input.Rdata)),128);
+    else
+        N = min(16*floor(input.converter_rate/(2*input.Rdata)),128);
+    end
+else
+    switch input.FIR
+        case 1
+            Nmax = 64;
+        case 2
+            Nmax = 128;
+        case 4
+            Nmax = 128;
+        otherwise
+            error('Wrong FIR Type');
+    end
+    N = min(16*floor(input.converter_rate*input.DAC_div/(2*input.Rdata)),Nmax);
+end
+
 % Call function
 if mex
-    [output,numTaps,filterGain] = internal_design_filter_cg_mex(...
+    [output,numTaps,filterGain,pass,stop] = internal_design_filter_cg_mex(...
         input.Rdata,...
         input.Fpass,...
         input.Fstop,...
@@ -30,9 +57,10 @@ if mex
         input.Fcenter,...
         input.wnom,...
         input.FIRdBmin,...
-        input.int_FIR);
+        input.int_FIR,...
+        N);
 else
-    [output,numTaps,filterGain] = internal_design_filter_cg(...
+    [output,numTaps,filterGain,pass,stop] = internal_design_filter_cg(...
         input.Rdata,...
         input.Fpass,...
         input.Fstop,...
@@ -54,5 +82,6 @@ else
         input.Fcenter,...
         input.wnom,...
         input.FIRdBmin,...
-        input.int_FIR);
+        input.int_FIR,...
+        N);
 end

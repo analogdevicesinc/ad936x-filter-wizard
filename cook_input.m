@@ -220,15 +220,7 @@ end
 
 if dec_int3 || (~isfield(input, 'FIR') && ~isfield(input, 'HB1') && ~isfield(input, 'HB2') && ~isfield(input, 'HB3') && ~isfield(input, 'PLL_mult'))
     % Everything is blank, run as fast as possible
-    if dec_int3
-        input.HB3 = fastest_FIR([3 2 1], max_HB.HB3, 0, input.Rdata);
-    else
-        input.HB3 = fastest_FIR([2 1], max_HB.HB3, 0, input.Rdata);
-    end
-    input.HB2 = fastest_FIR([2 1], max_HB.HB2, 0, input.Rdata * input.HB3);
-    input.HB1 = fastest_FIR([2 1], max_HB.HB1, 0, input.Rdata * input.HB3 * input.HB2);
-    input.FIR = fastest_FIR([4 2 1], bounds9361.MAX_FIR, 0, input.Rdata * input.HB3 * input.HB2 * input.HB1);
-    input.PLL_mult = fastest_FIR([64 32 16 8 4 2 1], bounds9361.MAX_BBPLL_FREQ, bounds9361.MIN_BBPLL_FREQ, input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3 * input.DAC_div);
+    input = auto_fast_rates(input);
 end
 
 input.converter_rate = input.Rdata * input.FIR * input.HB1 * input.HB2 * input.HB3;

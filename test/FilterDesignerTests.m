@@ -18,7 +18,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
     %  test.run()
     
     properties
-        args = '{input.Rdata, input.Fpass, input.Fstop, input.caldiv, input.FIR, input.HB1, input.PLL_mult, input.Apass, input.Astop, input.phEQ, input.HB2, input.HB3, input.Type, input.RxTx, input.RFbw, input.DAC_div, input.converter_rate, input.PLL_rate, input.Fcenter, input.wnom, input.FIRdBmin, input.int_FIR}';
+        args = '{input.Rdata, input.Fpass, input.Fstop, input.caldiv, input.FIR, input.HB1, input.PLL_mult, input.Apass, input.Astop, input.phEQ, input.HB2, input.HB3, input.Type, input.RxTx, input.RFbw, input.DAC_div, input.converter_rate, input.PLL_rate, input.Fcenter, input.wnom, input.FIRdBmin, input.int_FIR, maxTaps}';
         functionName = 'internal_design_filter_cg';
         passedCodegenMEX = false;
         passedCodegenDLL = false;
@@ -51,6 +51,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             inputVar = testCase.ad9361_settings.tx.LTE5;
             % Fill out necessary fields
             input = process_input(inputVar); %#ok<NASGU>
+            maxTaps = 128; %#ok<NASGU>
             %% Call codegen
             cfg = coder.config('mex');
             cfg.TargetLang='C++';
@@ -65,6 +66,7 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
             inputVar = testCase.ad9361_settings.tx.LTE5;
             % Fill out necessary fields
             input = process_input(inputVar); %#ok<NASGU>
+            maxTaps = 128; %#ok<NASGU>
             %% Call codegen
             cfg = coder.config('lib');
             cfg.TargetLang='C++';
@@ -271,11 +273,13 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 save(filename, 'firtaps', 'input');
                 % Test
                 if strcmp(config.txrx,'tx')
-                    firtaps = TestToBeGenerated_tx_mex();
+                    [firtaps,~,Apass,Astop] = TestToBeGenerated_tx_mex();
                 else
-                    firtaps = TestToBeGenerated_rx_mex();
+                    [firtaps,~,Apass,Astop] = TestToBeGenerated_rx_mex();
                 end
-                testCase.verifyEqual(firtaps,int16(refResult.firtaps));
+                testCase.verifyEqual(double(firtaps),refResult.firtaps,'AbsTol',2);
+                testCase.verifyEqual(Apass,refResult.Apass_actual,'RelTol',0.1);
+                testCase.verifyEqual(Astop,refResult.Astop_actual,'RelTol',0.1);
             end
             
         end
@@ -416,6 +420,17 @@ classdef FilterDesignerTests < matlab.unittest.TestCase
                 config = cook_input(struct('Rdata',rate,'RxTx','Tx'));
                 config.txrx = 'tx';
                 testCase.testFunctionGeneral(config);
+            end
+        end
+
+        % Test DLL results with reference without EQ at many different
+        % rates
+        function testTXManyRatesDLL(testCase)
+            rates = [1,10:10:60].*1e6;
+            for rate = rates
+                config = cook_input(struct('Rdata',rate,'RxTx','Tx'));
+                config.txrx = 'tx';
+                testCase.testGeneratedFunctionGeneral(config);
             end
         end
         % Test DLL results with standard setting
