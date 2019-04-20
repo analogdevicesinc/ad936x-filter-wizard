@@ -1,0 +1,16 @@
+stages:
+  - test
+  - test_hardware
+  - deploy
+  
+# Linux test
+test:linux:
+    tags:
+     - linux
+     - matlab
+    stage: test
+    script:
+     - /usr/local/MATLAB/R2018b/bin/matlab -nodisplay -nodesktop -nosplash -r "addpath(genpath('test'));runTests;"
+    artifacts:
+        paths:
+            - test/
