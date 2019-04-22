@@ -193,7 +193,9 @@ if ~isfield(input, 'caldiv')
 end
 
 if ~isfield(input, 'RFbw')
-    [input.RFbw, input.caldiv] = calculate_rfbw(input.PLL_rate, input.caldiv, input.RxTx, false);
+    [input.RFbw, input.caldiv] = calculate_rfbw(input.PLL_rate, input.caldiv, input.RxTx, true);
+    % Update wnom to use hardware applicable value
+    input.wnom = double(input.RFbw);
 end
 
 % Assume no dBmin

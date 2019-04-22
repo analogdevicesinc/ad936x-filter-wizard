@@ -1,4 +1,4 @@
-function [input,savedFilterConfig] = auto_fast_rates(input)
+function [input,savedFilterConfig] = auto_fast_rates(input,FIR_config)
 %auto_fast_rates Configures halfband filters, PLL clock, and
 %converter rates in an optimal configuration based on the
 %current 'Rdata' property
@@ -20,8 +20,12 @@ savedFilterConfig = 0;
 
 DR = input.Rdata;
 
-for FIR = [4,2,1]
-    
+if nargin == 1
+    FIR_config = [1,2,4];
+end
+
+for FIR = FIR_config
+
     FilterConfig = [...
         3,2,2,FIR;...
         2,2,2,FIR;...
@@ -81,6 +85,10 @@ for FIR = [4,2,1]
     end
 end
 
+if savedFilterConfig==0
+    input = [];
+    return;
+end
 
 % Set HBs based on best config found
 PLLDivider = savedPLL;

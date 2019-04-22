@@ -70,7 +70,7 @@ end
 
 % nominal frequency can't be zero
 if ~input.wnom
-    input.wnom = (input.PLL_rate/input.caldiv)*(log(2)/(2*pi));
+    input.wnom = double(calculate_rfbw(input.PLL_rate, input.caldiv, input.RxTx, true));
 end
 
 if strcmp(input.RxTx, 'Rx')
