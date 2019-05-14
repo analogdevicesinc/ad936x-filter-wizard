@@ -574,7 +574,7 @@ else
 end
 grpdelayvar = max(groupdelay)-min(groupdelay);
 
-aTFIR = 1 + ceil(log2(max(Hmd.Numerator)));
+aTFIR = 1 + ceil(log2(max(abs(Hmd.Numerator))));
 switch aTFIR
     case 2
         gain = 6;
