@@ -745,7 +745,7 @@ fprintf(fid, '\t%d, // rx_dec\n', handles.rx.FIR);
 coefficients = sprintf('%.0f,', flip(rot90(handles.rfirtaps)));
 coefficients = coefficients(1:end-1); % strip final comma
 fprintf(fid, '\t{%s}, // rx_coef[128]\n', coefficients);
-fprintf(fid, '\t%d, // rx_coef_size\n', handles.nfirtaps);
+fprintf(fid, '\t%d, // rx_coef_size\n', handles.nrfirtaps);
 fprintf(fid, '\t{%.0f,%.0f,%.0f,%.0f,%.0f,%.0f}, // rx_path_clks[6]\n', ...
     PLL_rate, rx_HB3_rate, rx_HB2_rate, rx_HB1_rate, rx_FIR_rate, handles.rx.Rdata);
 fprintf(fid, '\t%.0f // rx_bandwidth\n', rx_RFbw_hw);
@@ -759,7 +759,7 @@ fprintf(fid, '\t%d, // tx_int\n', handles.tx.FIR);
 coefficients = sprintf('%.0f,', flip(rot90(handles.tfirtaps)));
 coefficients = coefficients(1:end-1); % strip final comma
 fprintf(fid, '\t{%s}, // tx_coef[128]\n', coefficients);
-fprintf(fid, '\t%d, // tx_coef_size\n', handles.nfirtaps);
+fprintf(fid, '\t%d, // tx_coef_size\n', handles.ntfirtaps);
 fprintf(fid, '\t{%.0f,%.0f,%.0f,%.0f,%.0f,%.0f}, // tx_path_clks[6]\n', ...
     PLL_rate, tx_HB3_rate, tx_HB2_rate, tx_HB1_rate, tx_FIR_rate, handles.tx.Rdata);
 fprintf(fid, '\t%.0f // tx_bandwidth\n', tx_RFbw_hw);
@@ -812,7 +812,7 @@ fprintf(fid, 'BWRX %.0f\r\n', rx_RFbw_hw);
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
 
 % output all non-zero coefficients since they're padded to 128 with zeros
-for i = 1:handles.nfirtaps
+for i = 1:max(handles.ntfirtaps, handles.nrfirtaps)
     fprintf(fid, '%d,%d\r\n', coefficients(i,:));
 end
 
@@ -840,7 +840,7 @@ fir_filter_str = strcat(fir_filter_str, sprintf('\nBWRX %.0f', rx_RFbw_hw));
 coefficients = flip(rot90(vertcat(handles.tfirtaps, handles.rfirtaps)));
 
 % output all non-zero coefficients since they're padded to 128 with zeros
-for i = 1:handles.nfirtaps
+for i = 1:max(handles.ntfirtaps, handles.nrfirtaps)
     fir_filter_str = strcat(fir_filter_str, sprintf('\n%d,%d', coefficients(i,:)));
 end
 
@@ -1199,6 +1199,7 @@ if get(handles.filter_type, 'Value') == 1  % Rx
     addStage(handles.plutofilter, hf);
     addStage(handles.plotpluto, hf);
     handles.rfirtaps = int32(filter_result.firtaps);
+    handles.nrfirtaps = filter_result.nfirtaps;
     
     % values used for saving to a filter file or pushing to the target directly
     handles.rx = filter_result;
@@ -1225,6 +1226,7 @@ else  % Tx
     addStage(handles.plutofilter, hf, 1);
     addStage(handles.plotpluto, hf, 1);
     handles.tfirtaps = int32(filter_result.firtaps);
+    handles.ntfirtaps = filter_result.nfirtaps;
     
     % values used for saving to a filter file or pushing to the target directly
     handles.tx = filter_result;
@@ -1236,7 +1238,6 @@ if get(handles.phase_eq, 'Value')
     set(handles.target_delay, 'String', num2str(filter_input.phEQ, 8));
 end
 
-handles.nfirtaps = filter_result.nfirtaps;
 handles.Hmiddle = filter_result.Hmiddle;
 
 set(handles.FVTool_deeper, 'Visible', 'on');
@@ -1270,7 +1271,7 @@ set(handles.results_maxinputdB, 'Visible', 'on');
 set(handles.results_taps, 'Visible', 'on');
 set(handles.results_group_delay, 'Visible', 'on');
 
-set(handles.results_taps, 'String', [num2str(handles.nfirtaps) ' ']);
+set(handles.results_taps, 'String', [num2str(filter_result.nfirtaps) ' ']);
 set(handles.RFbw, 'String', num2str(Hz2value(handles, handles.freq_units, RFbw)));
 
 G = 8192;
