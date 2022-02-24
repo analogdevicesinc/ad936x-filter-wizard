@@ -34,8 +34,19 @@ classdef FilterWizardTests < matlab.unittest.TestCase
                 i = load([m{:},'_input.mat']);
                 o = load([m{:},'_output.mat']);
                 output = internal_design_filter(i.input);
-                testCase.verifyThat(output,IsEqualTo(o.output));
+                testCase.verifyThat(o.output.firtaps,IsEqualTo(output.firtaps));
             end
+        end
+        
+        function testOFFilterGeneration(testCase)
+            import matlab.unittest.constraints.IsEqualTo
+            % Verify EZ OR filter
+            i = load('ez555448.mat');
+            output = internal_design_filter(i.input);
+            testCase.verifyThat(...
+                double(int16(output.firtaps)),...
+                IsEqualTo(...
+                double(int32(output.firtaps))));
         end
         
     end

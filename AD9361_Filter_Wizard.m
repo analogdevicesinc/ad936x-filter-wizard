@@ -1198,7 +1198,7 @@ if get(handles.filter_type, 'Value') == 1  % Rx
     
     addStage(handles.plutofilter, hf);
     addStage(handles.plotpluto, hf);
-    handles.rfirtaps = int32(filter_result.firtaps);
+    handles.rfirtaps = int16(filter_result.firtaps);
     
     % values used for saving to a filter file or pushing to the target directly
     handles.rx = filter_result;
@@ -1224,7 +1224,7 @@ else  % Tx
     
     addStage(handles.plutofilter, hf, 1);
     addStage(handles.plotpluto, hf, 1);
-    handles.tfirtaps = int32(filter_result.firtaps);
+    handles.tfirtaps = int16(filter_result.firtaps);
     
     % values used for saving to a filter file or pushing to the target directly
     handles.tx = filter_result;

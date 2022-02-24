@@ -603,8 +603,11 @@ else
     end
 end
 
-bTFIR = 16 - aTFIR;
+bTFIR = min([16 - aTFIR,16]);
 firtaps = Hmd.Numerator.*(2^bTFIR);
+if ~isequal(double(int16(firtaps)),double(int32(firtaps)))
+    firtaps = Hmd.Numerator.*(2^(bTFIR-1));
+end
 
 if length(firtaps) < 128
     firtaps = [firtaps,zeros(1,128-length(firtaps))];
