@@ -422,7 +422,7 @@ else
         case 4
             Nmax = 128;
     end
-    N = min(16*floor(input.converter_rate*input.DAC_div/(2*input.Rdata)),Nmax);
+    N = min(16*floor(input.converter_rate/(input.Rdata)),Nmax);
 end
 
 tap_store = zeros(N/16,N);
