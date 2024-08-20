@@ -19,7 +19,8 @@ classdef FilterWizardTests < matlab.unittest.TestCase
             sr = testCase.SampleRates;
             limit = testCase.MaxRippleDB;
             % Test ripple of generated filters           
-            parfor r = 1:length(sr)
+            // parfor r = 1:length(sr)
+            for r = 1:length(sr)
                 out = internal_design_filter_opt_ripple(sr(r));
                 verifyThat(testCase, out.Apass_actual, IsLessThanOrEqualTo(limit), ...
                     sprintf('Generated filter for rate %d with ripple %f (Limit %f)',...
