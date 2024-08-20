@@ -1,0 +1,22 @@
+name: Run Tests
+
+on: [push]
+
+jobs:
+  build:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+            submodules: recursive
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v1
+        with:
+            release: R2023b
+      - name: Compile Toolbox
+        uses: matlab-actions/run-command@v1
+        with:
+            command: addpath(genpath('.'));runTests;exit()
