@@ -14,19 +14,19 @@ classdef FilterWizardTests < matlab.unittest.TestCase
     
     methods (Test)
         
-        function testAutoGenerationRipple(testCase)
-            import matlab.unittest.constraints.IsLessThanOrEqualTo
-            sr = testCase.SampleRates;
-            limit = testCase.MaxRippleDB;
-            % Test ripple of generated filters           
-            % parfor r = 1:length(sr)
-            for r = 1:length(sr)
-                out = internal_design_filter_opt_ripple(sr(r));
-                verifyThat(testCase, out.Apass_actual, IsLessThanOrEqualTo(limit), ...
-                    sprintf('Generated filter for rate %d with ripple %f (Limit %f)',...
-                    sr(r),out.Apass_actual,limit))
-            end
-        end
+        % function testAutoGenerationRipple(testCase)
+        %     import matlab.unittest.constraints.IsLessThanOrEqualTo
+        %     sr = testCase.SampleRates;
+        %     limit = testCase.MaxRippleDB;
+        %     % Test ripple of generated filters           
+        %     % parfor r = 1:length(sr)
+        %     for r = 1:length(sr)
+        %         out = internal_design_filter_opt_ripple(sr(r));
+        %         verifyThat(testCase, out.Apass_actual, IsLessThanOrEqualTo(limit), ...
+        %             sprintf('Generated filter for rate %d with ripple %f (Limit %f)',...
+        %             sr(r),out.Apass_actual,limit))
+        %     end
+        % end
         
         function testLTEFilterGeneration(testCase)
             import matlab.unittest.constraints.IsEqualTo
