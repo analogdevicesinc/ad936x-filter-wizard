@@ -6,6 +6,10 @@ jobs:
   build:
     name: Run Tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        matlab-version: ['R2023a', 'R2023b', 'R2024a']
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
@@ -15,9 +19,10 @@ jobs:
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v2
         with:
-            release: R2023b
+            release: ${{ matrix.matlab-version }}
             products: DSP_System_Toolbox
-      - name: Compile Toolbox
+
+      - name: Test Designer
         uses: matlab-actions/run-command@v2
         with:
             command: addpath(genpath('.'));runTests;exit()
