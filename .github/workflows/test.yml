@@ -7,6 +7,7 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         matlab-version: ['R2023a', 'R2023b', 'R2024a']
 
