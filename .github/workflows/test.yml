@@ -1,0 +1,34 @@
+name: Run Tests
+
+on: [push]
+
+jobs:
+  build:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        matlab-version: ['R2021a', 'R2021b', 'R2022a', 'R2022b', 'R2023a', 'R2023b', 'R2024a']
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+            submodules: recursive
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+            release: ${{ matrix.matlab-version }}
+            products: >
+                Signal_Processing_Toolbox
+                DSP_System_Toolbox
+                Communications_Toolbox
+                Fixed-Point_Designer
+                Simulink
+
+      - name: Test Designer
+        uses: matlab-actions/run-command@v2
+        with:
+            command: addpath(genpath('.'));cd('test');runTests;exit()
